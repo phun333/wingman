@@ -1,0 +1,19 @@
+{
+  "name": "@ffh/web",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target bun",
+    "start": "bun run dist/index.js",
+    "typecheck": "tsgo --noEmit"
+  },
+  "dependencies": {
+    "@ffh/env": "workspace:*",
+    "@ffh/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@ffh/tsconfig": "workspace:*",
+    "@types/bun": "latest"
+  }
+}

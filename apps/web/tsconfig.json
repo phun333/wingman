@@ -1,0 +1,7 @@
+{
+  "extends": "@ffh/tsconfig/web.json",
+  "include": ["src"],
+  "compilerOptions": {
+    "outDir": "./dist"
+  }
+}

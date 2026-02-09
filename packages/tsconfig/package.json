@@ -1,0 +1,9 @@
+{
+  "name": "@ffh/tsconfig",
+  "private": true,
+  "files": [
+    "base.json",
+    "web.json",
+    "api.json"
+  ]
+}

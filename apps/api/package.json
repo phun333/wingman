@@ -1,0 +1,28 @@
+{
+  "name": "@ffh/api",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target bun",
+    "start": "bun run dist/index.js",
+    "typecheck": "tsgo --noEmit"
+  },
+  "dependencies": {
+    "@ffh/db": "workspace:*",
+    "@ffh/env": "workspace:*",
+    "@ffh/types": "workspace:*",
+    "@orpc/openapi": "^1.13.4",
+    "@orpc/server": "^1.13.4",
+    "@orpc/standard-server-fetch": "^1.13.4",
+    "@orpc/zod": "^1.13.4",
+    "@scalar/hono-api-reference": "^0.9.40",
+    "drizzle-orm": "^0.45.1",
+    "hono": "^4.11.9",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@ffh/tsconfig": "workspace:*",
+    "@types/bun": "latest"
+  }
+}
