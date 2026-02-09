@@ -8,21 +8,13 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio",
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
     "@ffh/env": "workspace:*",
-    "@ffh/types": "workspace:*",
-    "drizzle-orm": "^0.45.1",
-    "postgres": "^3.4.8",
-    "zod": "^4.3.6"
+    "convex": "^1.31.7"
   },
   "devDependencies": {
-    "@ffh/tsconfig": "workspace:*",
-    "drizzle-kit": "^0.31.9"
+    "@ffh/tsconfig": "workspace:*"
   }
 }

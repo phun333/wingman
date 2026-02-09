@@ -1,9 +1,4 @@
+import { ConvexHttpClient } from "convex/browser";
 import { ENV } from "@ffh/env";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-import * as schema from "./schema";
 
-const client = postgres(ENV.DATABASE_URL);
-
-export const db = drizzle(client, { schema });
-export type Database = typeof db;
+export const convex = new ConvexHttpClient(ENV.CONVEX_URL);

@@ -1,2 +1,1 @@
-export * from "./schema";
-export * from "./client";
+export { convex } from "./client";

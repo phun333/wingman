@@ -27,7 +27,7 @@ if (fs.existsSync(envPath)) {
 }
 
 export const ENV = {
-  DATABASE_URL: process.env.DATABASE_URL!,
+  CONVEX_URL: process.env.CONVEX_URL!,
   PORT_API: Number(process.env.PORT_API || 3001),
   PORT_WEB: Number(process.env.PORT_WEB || 3000),
 } as const;

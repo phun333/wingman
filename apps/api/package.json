@@ -17,7 +17,6 @@
     "@orpc/standard-server-fetch": "^1.13.4",
     "@orpc/zod": "^1.13.4",
     "@scalar/hono-api-reference": "^0.9.40",
-    "drizzle-orm": "^0.45.1",
     "hono": "^4.11.9",
     "zod": "^4.3.6"
   },
