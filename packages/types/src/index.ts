@@ -22,6 +22,35 @@ export type InterviewStatus =
 
 export type Difficulty = "easy" | "medium" | "hard";
 
+export interface Interview {
+  _id: string;
+  userId: string;
+  type: InterviewType;
+  status: InterviewStatus;
+  difficulty: Difficulty;
+  language: string;
+  questionCount: number;
+  config?: unknown;
+  startedAt?: number;
+  endedAt?: number;
+  createdAt: number;
+}
+
+export interface Message {
+  _id: string;
+  interviewId: string;
+  role: MessageRole;
+  content: string;
+  audioUrl?: string;
+  timestamp: number;
+}
+
+export interface InterviewStats {
+  total: number;
+  completed: number;
+  thisWeek: number;
+}
+
 // ─── Chat / Voice ────────────────────────────────────────
 
 export type MessageRole = "user" | "assistant" | "system";
