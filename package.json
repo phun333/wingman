@@ -9,8 +9,10 @@
     "dev": "bun run --filter '*' dev",
     "dev:web": "bun run --filter @ffh/web dev",
     "dev:api": "bun run --filter @ffh/api dev",
+    "dev:convex": "bunx convex dev",
     "build": "bun run --filter '*' build",
-    "typecheck": "bun run --filter '*' typecheck",
+    "test": "bun test",
+    "typecheck": "tsgo -p apps/api --noEmit && tsgo -p apps/web --noEmit",
     "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules"
   },
   "workspaces": [

@@ -1,7 +1,12 @@
 {
-  "extends": "@ffh/tsconfig/api.json",
+  "extends": "../../packages/tsconfig/api.json",
   "include": ["src"],
   "compilerOptions": {
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "paths": {
+      "@ffh/env": ["../../packages/env/src/index.ts"],
+      "@ffh/db": ["../../packages/db/src/index.ts"],
+      "@ffh/types": ["../../packages/types/src/index.ts"]
+    }
   }
 }

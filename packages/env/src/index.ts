@@ -27,7 +27,19 @@ if (fs.existsSync(envPath)) {
 }
 
 export const ENV = {
+  // Core
   CONVEX_URL: process.env.CONVEX_URL!,
   PORT_API: Number(process.env.PORT_API || 3001),
   PORT_WEB: Number(process.env.PORT_WEB || 3000),
+  SITE_URL: process.env.SITE_URL || "http://localhost:3000",
+
+  // fal.ai
+  FAL_KEY: process.env.FAL_KEY!,
+  TTS_ENDPOINT: process.env.TTS_ENDPOINT || "freya-mypsdi253hbk/freya-tts",
+  STT_ENDPOINT: process.env.STT_ENDPOINT || "freya-mypsdi253hbk/freya-stt",
+  LLM_ENDPOINT: process.env.LLM_ENDPOINT || "openrouter/router",
+
+  // OpenRouter
+  OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY!,
+  OPENROUTER_MODEL: process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash",
 } as const;
