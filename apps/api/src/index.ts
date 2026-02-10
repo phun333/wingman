@@ -33,6 +33,7 @@ app.get(
       },
       tags: [
         { name: "Users", description: "User management" },
+        { name: "Interviews", description: "Interview session management" },
         { name: "Proxy", description: "fal.ai & OpenRouter proxy endpoints" },
       ],
     },
@@ -52,8 +53,9 @@ app.get(
 
 app.get(
   "/ws/voice",
-  upgradeWebSocket(() => {
+  upgradeWebSocket((c) => {
     let session: VoiceSession | null = null;
+    const interviewId = new URL(c.req.url).searchParams.get("interviewId");
 
     return {
       onOpen(_event, ws) {
@@ -61,7 +63,16 @@ app.get(
           ws.send(JSON.stringify(msg));
         };
         session = new VoiceSession(send);
-        send({ type: "state_change", state: "idle" });
+
+        // Initialize with interview data or free mode
+        if (interviewId) {
+          session.init(interviewId).then(() => {
+            send({ type: "state_change", state: "idle" });
+          });
+        } else {
+          session.initFreeMode();
+          send({ type: "state_change", state: "idle" });
+        }
       },
 
       onMessage(event, _ws) {

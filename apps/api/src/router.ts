@@ -4,8 +4,15 @@ import { z } from "zod";
 import { convex } from "@ffh/db";
 import { api } from "../../../convex/_generated/api";
 import { ENV } from "@ffh/env";
+import { interviewRoutes } from "./routes/interviews";
 
 export const apiRoutes = new Hono();
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  Interview routes (auth-protected)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+apiRoutes.route("/interviews", interviewRoutes);
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  Users
