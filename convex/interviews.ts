@@ -72,6 +72,40 @@ export const complete = mutation({
   },
 });
 
+// ─── Save Code ───────────────────────────────────────────
+
+export const saveCode = mutation({
+  args: {
+    id: v.id("interviews"),
+    code: v.string(),
+    language: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const interview = await ctx.db.get(args.id);
+    if (!interview) throw new Error("Interview not found");
+    await ctx.db.patch(args.id, {
+      finalCode: args.code,
+      codeLanguage: args.language,
+    });
+    return await ctx.db.get(args.id);
+  },
+});
+
+// ─── Set Problem ─────────────────────────────────────────
+
+export const setProblem = mutation({
+  args: {
+    id: v.id("interviews"),
+    problemId: v.id("problems"),
+  },
+  handler: async (ctx, args) => {
+    const interview = await ctx.db.get(args.id);
+    if (!interview) throw new Error("Interview not found");
+    await ctx.db.patch(args.id, { problemId: args.problemId });
+    return await ctx.db.get(args.id);
+  },
+});
+
 // ─── Get by ID ───────────────────────────────────────────
 
 export const getById = query({

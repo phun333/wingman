@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ClientMessage, ServerMessage, VoicePipelineState } from "@ffh/types";
+import type { ClientMessage, ServerMessage, VoicePipelineState, Problem, CodeLanguage, TestResult } from "@ffh/types";
 import { AudioQueuePlayer, decodePCM16, createVolumeMeter } from "./audio";
 
 interface UseVoiceOptions {
   interviewId?: string;
+  onProblemLoaded?: (problem: Problem) => void;
 }
 
 interface UseVoiceReturn {
@@ -16,6 +17,8 @@ interface UseVoiceReturn {
   connected: boolean;
   toggleMic: () => void;
   interrupt: () => void;
+  sendCodeUpdate: (code: string, language: CodeLanguage) => void;
+  sendCodeResult: (results: TestResult[], stdout: string, stderr: string, error?: string) => void;
 }
 
 function buildWsUrl(interviewId?: string): string {
@@ -109,6 +112,10 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
 
       case "error":
         setError(msg.message);
+        break;
+
+      case "problem_loaded":
+        options.onProblemLoaded?.(msg.problem);
         break;
     }
   }
@@ -253,6 +260,17 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
     setAiText("");
   }, []);
 
+  const sendCodeUpdate = useCallback((code: string, language: CodeLanguage) => {
+    send({ type: "code_update", code, language });
+  }, []);
+
+  const sendCodeResult = useCallback(
+    (results: TestResult[], stdout: string, stderr: string, error?: string) => {
+      send({ type: "code_result", results, stdout, stderr, error });
+    },
+    [],
+  );
+
   return {
     state,
     micActive,
@@ -263,5 +281,7 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
     connected,
     toggleMic,
     interrupt,
+    sendCodeUpdate,
+    sendCodeResult,
   };
 }

@@ -10,6 +10,8 @@ import type {
   MessageRole,
   InterviewType,
   Difficulty,
+  CodeLanguage,
+  TestResult,
 } from "@ffh/types";
 
 // ─── fal.ai config ──────────────────────────────────────
@@ -47,6 +49,8 @@ export class VoiceSession {
   private send: (msg: ServerMessage) => void;
   private interview: InterviewInfo | null = null;
   private initialized = false;
+  private currentCode: string = "";
+  private currentCodeLanguage: CodeLanguage = "javascript";
 
   constructor(send: (msg: ServerMessage) => void) {
     this.send = send;
@@ -80,6 +84,34 @@ export class VoiceSession {
         this.interview.language,
       );
       this.conversationHistory.push({ role: "system", content: systemPrompt });
+
+      // For live-coding interviews, load a random problem
+      if (this.interview.type === "live-coding") {
+        try {
+          const problem = await convex.query(api.problems.getRandom, {
+            difficulty: this.interview.difficulty as any,
+          });
+          if (problem) {
+            this.send({ type: "problem_loaded", problem: problem as any });
+            // Add problem context to conversation
+            this.conversationHistory.push({
+              role: "system",
+              content: `[Mülakata atanan problem]\nBaşlık: ${problem.title}\nZorluk: ${problem.difficulty}\nKategori: ${problem.category}\nAçıklama: ${problem.description}\n\nBu problemi adaya sor. Problemi kısaca sesli olarak açıkla ve adayın çözmesini bekle.`,
+            });
+            // Link problem to interview
+            try {
+              await convex.mutation(api.interviews.setProblem, {
+                id: interviewId as any,
+                problemId: problem._id,
+              });
+            } catch {
+              // Non-fatal
+            }
+          }
+        } catch (err) {
+          console.error("Failed to load problem:", err);
+        }
+      }
 
       // Load existing messages from Convex (reconnect support)
       const existingMessages = await convex.query(api.messages.getRecent, {
@@ -155,7 +187,43 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
       case "interrupt":
         this.handleInterrupt();
         break;
+
+      case "code_update":
+        this.currentCode = msg.code;
+        this.currentCodeLanguage = msg.language;
+        break;
+
+      case "code_result":
+        this.handleCodeResult(msg.results, msg.stdout, msg.stderr, msg.error);
+        break;
     }
+  }
+
+  // ─── Code Result → AI Analysis ───────────────────────
+
+  private handleCodeResult(
+    results: TestResult[],
+    stdout: string,
+    stderr: string,
+    error?: string,
+  ): void {
+    const passed = results.filter((r) => r.passed).length;
+    const total = results.length;
+
+    let summary = `\n[Kod Çalıştırma Sonucu]\n`;
+    summary += `${passed}/${total} test geçti.\n`;
+
+    for (let i = 0; i < results.length; i++) {
+      const r = results[i]!;
+      summary += `Test ${i + 1}: ${r.passed ? "✅ Geçti" : `❌ Kaldı — Beklenen: ${r.expected}, Gerçek: ${r.actual}`}\n`;
+    }
+
+    if (error) summary += `Hata: ${error}\n`;
+    if (stderr) summary += `Stderr: ${stderr}\n`;
+
+    // Add to conversation so AI can respond
+    this.conversationHistory.push({ role: "user", content: summary });
+    this.persistMessage("user", summary);
   }
 
   // ─── Pipeline ────────────────────────────────────────
@@ -261,6 +329,22 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
   // ─── LLM ─────────────────────────────────────────────
 
   private async generateResponse(signal: AbortSignal): Promise<string | null> {
+    // Inject current code context if available
+    const messages = [...this.conversationHistory];
+    if (this.currentCode) {
+      const codeContext: ChatMessage = {
+        role: "system",
+        content: `[Adayın şu anki kodu (${this.currentCodeLanguage})]:\n\`\`\`${this.currentCodeLanguage}\n${this.currentCode}\n\`\`\``,
+      };
+      // Insert code context before the last user message
+      const lastUserIdx = messages.findLastIndex((m) => m.role === "user");
+      if (lastUserIdx >= 0) {
+        messages.splice(lastUserIdx, 0, codeContext);
+      } else {
+        messages.push(codeContext);
+      }
+    }
+
     const response = await fetch(
       "https://openrouter.ai/api/v1/chat/completions",
       {
@@ -273,7 +357,7 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
         },
         body: JSON.stringify({
           model: ENV.OPENROUTER_MODEL,
-          messages: this.conversationHistory,
+          messages,
           stream: true,
         }),
         signal,

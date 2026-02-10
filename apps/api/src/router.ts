@@ -5,6 +5,8 @@ import { convex } from "@ffh/db";
 import { api } from "../../../convex/_generated/api";
 import { ENV } from "@ffh/env";
 import { interviewRoutes } from "./routes/interviews";
+import { problemRoutes } from "./routes/problems";
+import { codeRoutes } from "./routes/code";
 
 export const apiRoutes = new Hono();
 
@@ -13,6 +15,18 @@ export const apiRoutes = new Hono();
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 apiRoutes.route("/interviews", interviewRoutes);
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  Problem routes
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+apiRoutes.route("/problems", problemRoutes);
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  Code execution routes
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+apiRoutes.route("/code", codeRoutes);
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  Users

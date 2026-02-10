@@ -61,6 +61,50 @@ export type VoicePipelineState =
   | "processing"
   | "speaking";
 
+// ─── Problem ─────────────────────────────────────────────
+
+export type CodeLanguage = "javascript" | "typescript" | "python";
+
+export interface TestCase {
+  input: string;
+  expectedOutput: string;
+  isHidden: boolean;
+}
+
+export interface Problem {
+  _id: string;
+  title: string;
+  description: string;
+  difficulty: Difficulty;
+  category: string;
+  starterCode?: {
+    javascript?: string;
+    python?: string;
+    typescript?: string;
+  };
+  testCases: TestCase[];
+  timeComplexity?: string;
+  spaceComplexity?: string;
+  createdAt: number;
+}
+
+// ─── Code Execution ──────────────────────────────────────
+
+export interface TestResult {
+  input: string;
+  expected: string;
+  actual: string;
+  passed: boolean;
+}
+
+export interface CodeExecutionResult {
+  results: TestResult[];
+  stdout: string;
+  stderr: string;
+  executionTimeMs: number;
+  error?: string;
+}
+
 // ─── WebSocket Protocol ──────────────────────────────────
 
 /** Client → Server */
@@ -69,7 +113,9 @@ export type ClientMessage =
   | { type: "start_listening" }
   | { type: "stop_listening" }
   | { type: "interrupt" }
-  | { type: "config"; language?: string; speed?: number };
+  | { type: "config"; language?: string; speed?: number }
+  | { type: "code_update"; code: string; language: CodeLanguage }
+  | { type: "code_result"; results: TestResult[]; stdout: string; stderr: string; error?: string };
 
 /** Server → Client */
 export type ServerMessage =
@@ -78,4 +124,5 @@ export type ServerMessage =
   | { type: "ai_audio"; data: string }
   | { type: "ai_audio_done" }
   | { type: "state_change"; state: VoicePipelineState }
-  | { type: "error"; message: string };
+  | { type: "error"; message: string }
+  | { type: "problem_loaded"; problem: Problem };

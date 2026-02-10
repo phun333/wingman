@@ -3,8 +3,19 @@ import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/Button";
 import { useVoice } from "@/lib/useVoice";
-import { getInterview, completeInterview } from "@/lib/api";
-import type { VoicePipelineState, Interview } from "@ffh/types";
+import { getInterview, completeInterview, executeCode as executeCodeApi, getRandomProblem } from "@/lib/api";
+import type {
+  VoicePipelineState,
+  Interview,
+  Problem,
+  CodeLanguage,
+  CodeExecutionResult,
+} from "@ffh/types";
+import { ProblemPanel } from "@/components/interview/ProblemPanel";
+import { CodeEditor } from "@/components/interview/CodeEditor";
+import { TestResultsPanel } from "@/components/interview/TestResultsPanel";
+import { VoiceBar } from "@/components/interview/VoiceBar";
+import { ResizableSplitter } from "@/components/interview/ResizableSplitter";
 
 const stateLabels: Record<VoicePipelineState, string> = {
   idle: "Hazır",
@@ -20,6 +31,12 @@ const typeLabels: Record<string, string> = {
   practice: "Practice",
 };
 
+const languageLabels: Record<CodeLanguage, string> = {
+  javascript: "JavaScript",
+  typescript: "TypeScript",
+  python: "Python",
+};
+
 export function InterviewRoomPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -27,15 +44,46 @@ export function InterviewRoomPage() {
   const [interview, setInterview] = useState<Interview | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
+  // Live Coding state
+  const [problem, setProblem] = useState<Problem | null>(null);
+  const [problemLoading, setProblemLoading] = useState(false);
+  const [codeLanguage, setCodeLanguage] = useState<CodeLanguage>("javascript");
+  const [code, setCode] = useState("");
+  const [executionResult, setExecutionResult] = useState<CodeExecutionResult | null>(null);
+  const [executing, setExecuting] = useState(false);
+
+  // Debounced code update ref
+  const codeUpdateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const isLiveCoding = interview?.type === "live-coding";
+
   // Load interview data
   useEffect(() => {
     if (!id) return;
     getInterview(id)
-      .then(setInterview)
+      .then((iv) => {
+        setInterview(iv);
+        // If live-coding but no problem loaded via WS, fetch one
+        if (iv.type === "live-coding") {
+          setProblemLoading(true);
+        }
+      })
       .catch((err) => {
         setLoadError(err instanceof Error ? err.message : "Mülakat bulunamadı");
       });
   }, [id]);
+
+  // Handle problem loaded from WebSocket or fetch fallback
+  const handleProblemLoaded = useCallback(
+    (p: Problem) => {
+      setProblem(p);
+      setProblemLoading(false);
+      // Load starter code
+      const starter = p.starterCode?.[codeLanguage] ?? "";
+      setCode(starter);
+    },
+    [codeLanguage],
+  );
 
   const {
     state,
@@ -47,7 +95,27 @@ export function InterviewRoomPage() {
     connected,
     toggleMic,
     interrupt,
-  } = useVoice({ interviewId: id });
+    sendCodeUpdate,
+    sendCodeResult,
+  } = useVoice({ interviewId: id, onProblemLoaded: handleProblemLoaded });
+
+  // Fallback: if problem not loaded via WS after 5 seconds, fetch from API
+  useEffect(() => {
+    if (!isLiveCoding || problem) return;
+
+    const timeout = setTimeout(async () => {
+      if (!problem && interview) {
+        try {
+          const p = await getRandomProblem({ difficulty: interview.difficulty });
+          handleProblemLoaded(p);
+        } catch {
+          setProblemLoading(false);
+        }
+      }
+    }, 5000);
+
+    return () => clearTimeout(timeout);
+  }, [isLiveCoding, problem, interview, handleProblemLoaded]);
 
   // Timer
   const [elapsed, setElapsed] = useState(0);
@@ -66,6 +134,72 @@ export function InterviewRoomPage() {
     return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   }
 
+  // ─── Code change (debounced WS update) ───────────────
+
+  const handleCodeChange = useCallback(
+    (newCode: string) => {
+      setCode(newCode);
+
+      // Debounce: send to AI every 3 seconds
+      if (codeUpdateTimer.current) clearTimeout(codeUpdateTimer.current);
+      codeUpdateTimer.current = setTimeout(() => {
+        sendCodeUpdate(newCode, codeLanguage);
+      }, 3000);
+    },
+    [codeLanguage, sendCodeUpdate],
+  );
+
+  // ─── Language change ─────────────────────────────────
+
+  const handleLanguageChange = useCallback(
+    (lang: CodeLanguage) => {
+      setCodeLanguage(lang);
+      if (problem?.starterCode?.[lang]) {
+        setCode(problem.starterCode[lang]!);
+      }
+      setExecutionResult(null);
+    },
+    [problem],
+  );
+
+  // ─── Execute code ────────────────────────────────────
+
+  const handleRunCode = useCallback(async () => {
+    if (!problem || executing) return;
+    setExecuting(true);
+    setExecutionResult(null);
+
+    try {
+      const testCases = problem.testCases.map((tc) => ({
+        input: tc.input,
+        expectedOutput: tc.expectedOutput,
+      }));
+
+      const result = await executeCodeApi({
+        code,
+        language: codeLanguage,
+        testCases,
+      });
+
+      setExecutionResult(result);
+
+      // Send result to AI via WebSocket
+      sendCodeResult(result.results, result.stdout, result.stderr, result.error);
+    } catch (err) {
+      setExecutionResult({
+        results: [],
+        stdout: "",
+        stderr: err instanceof Error ? err.message : "Execution failed",
+        executionTimeMs: 0,
+        error: "Bağlantı hatası",
+      });
+    } finally {
+      setExecuting(false);
+    }
+  }, [problem, code, codeLanguage, executing, sendCodeResult]);
+
+  // ─── End interview ───────────────────────────────────
+
   const handleEnd = useCallback(async () => {
     if (timerRef.current) clearInterval(timerRef.current);
     if (id) {
@@ -78,6 +212,8 @@ export function InterviewRoomPage() {
     navigate("/");
   }, [id, navigate]);
 
+  // ─── Mic click ───────────────────────────────────────
+
   function handleMicClick() {
     if (state === "speaking" || state === "processing") {
       interrupt();
@@ -86,7 +222,8 @@ export function InterviewRoomPage() {
     toggleMic();
   }
 
-  // Loading state
+  // ─── Loading / Error ─────────────────────────────────
+
   if (loadError) {
     return (
       <div className="flex h-screen items-center justify-center bg-bg">
@@ -100,7 +237,161 @@ export function InterviewRoomPage() {
     );
   }
 
-  // Dynamic orb scale based on voice volume or AI state
+  // ─── Voice-only mode (non-live-coding) ───────────────
+
+  if (!isLiveCoding) {
+    return <VoiceOnlyRoom
+      interview={interview}
+      state={state}
+      micActive={micActive}
+      volume={volume}
+      transcript={transcript}
+      aiText={aiText}
+      error={error}
+      connected={connected}
+      elapsed={elapsed}
+      formatTime={formatTime}
+      onMicClick={handleMicClick}
+      onEnd={handleEnd}
+    />;
+  }
+
+  // ─── Live Coding layout ──────────────────────────────
+
+  return (
+    <div className="flex flex-col h-screen bg-bg">
+      {/* Top bar */}
+      <header className="flex h-12 items-center justify-between border-b border-border-subtle bg-surface/80 backdrop-blur-sm px-4">
+        <div className="flex items-center gap-3">
+          <div className="h-6 w-6 rounded-md bg-amber/15 flex items-center justify-center">
+            <span className="text-amber font-display text-xs font-bold">F</span>
+          </div>
+          <span className="text-sm font-medium text-text-secondary">
+            {interview ? typeLabels[interview.type] ?? interview.type : "Mülakat"}
+          </span>
+          {interview && (
+            <span className="text-xs text-text-muted px-2 py-0.5 rounded-md bg-surface-raised border border-border">
+              {interview.difficulty === "easy" ? "Kolay" : interview.difficulty === "medium" ? "Orta" : "Zor"}
+            </span>
+          )}
+          <span
+            className={`h-2 w-2 rounded-full ${connected ? "bg-success" : "bg-danger animate-pulse"}`}
+            title={connected ? "Bağlı" : "Bağlantı yok"}
+          />
+        </div>
+
+        <div className="flex items-center gap-3">
+          {/* Language selector */}
+          <select
+            value={codeLanguage}
+            onChange={(e) => handleLanguageChange(e.target.value as CodeLanguage)}
+            className="text-xs bg-surface-raised text-text border border-border rounded-md px-2 py-1 cursor-pointer focus:outline-none focus:border-amber"
+          >
+            {(Object.keys(languageLabels) as CodeLanguage[]).map((lang) => (
+              <option key={lang} value={lang}>
+                {languageLabels[lang]}
+              </option>
+            ))}
+          </select>
+
+          <span className="text-sm font-mono text-text-muted tabular-nums">
+            {formatTime(elapsed)}
+          </span>
+          <Button variant="danger" size="sm" onClick={handleEnd}>
+            Bitir
+          </Button>
+        </div>
+      </header>
+
+      {/* Main content: Problem | Code Editor + Tests */}
+      <div className="flex-1 overflow-hidden">
+        <ResizableSplitter
+          defaultLeftPercent={35}
+          minLeftPercent={20}
+          maxLeftPercent={55}
+          left={
+            <div className="h-full border-r border-border-subtle bg-surface">
+              <ProblemPanel problem={problem} loading={problemLoading} />
+            </div>
+          }
+          right={
+            <div className="h-full flex flex-col">
+              {/* Code editor (top 60%) */}
+              <div className="flex-1 min-h-0">
+                <ResizableSplitter
+                  direction="vertical"
+                  defaultLeftPercent={65}
+                  minLeftPercent={30}
+                  maxLeftPercent={85}
+                  left={
+                    <div className="h-full">
+                      <CodeEditor
+                        language={codeLanguage}
+                        value={code}
+                        onChange={handleCodeChange}
+                      />
+                    </div>
+                  }
+                  right={
+                    <TestResultsPanel
+                      result={executionResult}
+                      running={executing}
+                      onRun={handleRunCode}
+                    />
+                  }
+                />
+              </div>
+            </div>
+          }
+        />
+      </div>
+
+      {/* Voice bar at bottom */}
+      <VoiceBar
+        state={state}
+        micActive={micActive}
+        volume={volume}
+        connected={connected}
+        transcript={transcript}
+        aiText={aiText}
+        error={error}
+        onMicClick={handleMicClick}
+      />
+    </div>
+  );
+}
+
+// ─── Voice-Only Room (for non-live-coding interviews) ────
+
+interface VoiceOnlyRoomProps {
+  interview: Interview | null;
+  state: VoicePipelineState;
+  micActive: boolean;
+  volume: number;
+  transcript: string;
+  aiText: string;
+  error: string | null;
+  connected: boolean;
+  elapsed: number;
+  formatTime: (s: number) => string;
+  onMicClick: () => void;
+  onEnd: () => void;
+}
+
+function VoiceOnlyRoom({
+  interview,
+  state,
+  micActive,
+  volume,
+  transcript,
+  aiText,
+  error,
+  connected,
+  elapsed,
+  formatTime,
+  onMicClick,
+  onEnd,
+}: VoiceOnlyRoomProps) {
   const orbScale =
     state === "listening"
       ? 1 + Math.min(volume * 8, 0.2)
@@ -124,18 +415,15 @@ export function InterviewRoomPage() {
               {interview.difficulty === "easy" ? "Kolay" : interview.difficulty === "medium" ? "Orta" : "Zor"}
             </span>
           )}
-          {/* Connection indicator */}
           <span
             className={`h-2 w-2 rounded-full ${connected ? "bg-success" : "bg-danger animate-pulse"}`}
-            title={connected ? "Bağlı" : "Bağlantı yok"}
           />
         </div>
-
         <div className="flex items-center gap-4">
           <span className="text-sm font-mono text-text-muted tabular-nums">
             {formatTime(elapsed)}
           </span>
-          <Button variant="danger" size="sm" onClick={handleEnd}>
+          <Button variant="danger" size="sm" onClick={onEnd}>
             Bitir
           </Button>
         </div>
@@ -143,7 +431,6 @@ export function InterviewRoomPage() {
 
       {/* Main area */}
       <div className="flex-1 flex flex-col items-center justify-center relative overflow-hidden">
-        {/* Ambient background */}
         <div className="absolute inset-0 pointer-events-none">
           <div
             className={`
@@ -157,7 +444,6 @@ export function InterviewRoomPage() {
           />
         </div>
 
-        {/* AI Orb */}
         <motion.div
           animate={
             state === "speaking"
@@ -185,17 +471,13 @@ export function InterviewRoomPage() {
               ${state === "speaking" ? "border-info/40 bg-info/5 shadow-[0_0_40px_rgba(59,130,246,0.2)]" : ""}
             `}
           >
-            <span className="font-display text-5xl font-bold text-amber/80">
-              F
-            </span>
+            <span className="font-display text-5xl font-bold text-amber/80">F</span>
           </div>
         </motion.div>
 
-        {/* State label */}
         <div className="relative z-10 mt-6 flex items-center gap-2">
           <span
-            className={`
-              h-2 w-2 rounded-full
+            className={`h-2 w-2 rounded-full
               ${state === "idle" ? "bg-text-muted" : ""}
               ${state === "listening" ? "bg-success animate-pulse" : ""}
               ${state === "processing" ? "bg-amber animate-pulse" : ""}
@@ -207,14 +489,12 @@ export function InterviewRoomPage() {
           </span>
         </div>
 
-        {/* Error */}
         {error && (
           <div className="relative z-10 mt-4 rounded-lg bg-danger/10 border border-danger/20 px-4 py-2 max-w-md">
             <p className="text-sm text-danger">{error}</p>
           </div>
         )}
 
-        {/* AI text */}
         <AnimatePresence mode="wait">
           {aiText && (
             <motion.div
@@ -224,14 +504,11 @@ export function InterviewRoomPage() {
               exit={{ opacity: 0 }}
               className="relative z-10 mt-6 max-w-lg text-center px-6"
             >
-              <p className="text-text-secondary text-sm leading-relaxed">
-                {aiText}
-              </p>
+              <p className="text-text-secondary text-sm leading-relaxed">{aiText}</p>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* User transcript */}
         <AnimatePresence mode="wait">
           {transcript && (
             <motion.div
@@ -253,7 +530,6 @@ export function InterviewRoomPage() {
       {/* Bottom controls */}
       <div className="border-t border-border-subtle bg-surface/80 backdrop-blur-sm py-5">
         <div className="flex items-center justify-center gap-6">
-          {/* Volume indicator */}
           <div className="relative">
             {micActive && (
               <motion.div
@@ -263,10 +539,8 @@ export function InterviewRoomPage() {
                 style={{ margin: -8 }}
               />
             )}
-
-            {/* Mic button */}
             <button
-              onClick={handleMicClick}
+              onClick={onMicClick}
               disabled={!connected}
               className={`
                 relative h-16 w-16 rounded-full flex items-center justify-center
@@ -280,13 +554,6 @@ export function InterviewRoomPage() {
                       : "border-border bg-surface-raised text-text-muted hover:border-text-muted hover:text-text"
                 }
               `}
-              aria-label={
-                state === "speaking" || state === "processing"
-                  ? "Sözünü kes"
-                  : micActive
-                    ? "Mikrofonu kapat"
-                    : "Mikrofonu aç"
-              }
             >
               <span className="text-2xl" aria-hidden="true">
                 {state === "speaking" || state === "processing" ? "✋" : "🎙"}
@@ -294,7 +561,6 @@ export function InterviewRoomPage() {
             </button>
           </div>
         </div>
-
         <p className="text-center text-xs text-text-muted mt-3">
           {!connected
             ? "Bağlantı kuruluyor…"

@@ -1,4 +1,13 @@
-import type { Interview, InterviewStats, Message, InterviewType, Difficulty } from "@ffh/types";
+import type {
+  Interview,
+  InterviewStats,
+  Message,
+  InterviewType,
+  Difficulty,
+  Problem,
+  CodeExecutionResult,
+  CodeLanguage,
+} from "@ffh/types";
 
 const BASE = "/api";
 
@@ -62,4 +71,45 @@ export async function getInterviewMessages(id: string): Promise<Message[]> {
 
 export async function getInterviewStats(): Promise<InterviewStats> {
   return request<InterviewStats>("/interviews/stats");
+}
+
+// ─── Problems ────────────────────────────────────────────
+
+export async function listProblems(params?: {
+  difficulty?: Difficulty;
+  category?: string;
+}): Promise<Problem[]> {
+  const q = new URLSearchParams();
+  if (params?.difficulty) q.set("difficulty", params.difficulty);
+  if (params?.category) q.set("category", params.category);
+  const qs = q.toString();
+  return request<Problem[]>(`/problems${qs ? `?${qs}` : ""}`);
+}
+
+export async function getRandomProblem(params?: {
+  difficulty?: Difficulty;
+  category?: string;
+}): Promise<Problem> {
+  const q = new URLSearchParams();
+  if (params?.difficulty) q.set("difficulty", params.difficulty);
+  if (params?.category) q.set("category", params.category);
+  const qs = q.toString();
+  return request<Problem>(`/problems/random${qs ? `?${qs}` : ""}`);
+}
+
+export async function getProblem(id: string): Promise<Problem> {
+  return request<Problem>(`/problems/${id}`);
+}
+
+// ─── Code Execution ──────────────────────────────────────
+
+export async function executeCode(params: {
+  code: string;
+  language: CodeLanguage;
+  testCases: { input: string; expectedOutput: string }[];
+}): Promise<CodeExecutionResult> {
+  return request<CodeExecutionResult>("/code/execute", {
+    method: "POST",
+    body: JSON.stringify(params),
+  });
 }
