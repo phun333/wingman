@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { createInterview, startInterview } from "@/lib/api";
 import type { InterviewType, Difficulty } from "@ffh/types";
 
 const types: {
@@ -59,10 +60,31 @@ export function NewInterviewPage() {
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
   const [questionCount, setQuestionCount] = useState(5);
 
-  function handleStart() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleStart() {
     if (!selectedType) return;
-    // TODO: API call to create interview session, then navigate
-    navigate(`/interview/demo?type=${selectedType}&difficulty=${difficulty}&q=${questionCount}`);
+    setLoading(true);
+    setError(null);
+
+    try {
+      const interview = await createInterview({
+        type: selectedType,
+        difficulty,
+        language: "tr",
+        questionCount,
+      });
+
+      // Start the interview immediately
+      await startInterview(interview._id);
+
+      navigate(`/interview/${interview._id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Mülakat oluşturulamadı");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -165,21 +187,26 @@ export function NewInterviewPage() {
 
       {/* Summary & Start */}
       <motion.div variants={fadeUp} className="mt-10">
-        <Card className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-text-secondary">
-              {selectedType
-                ? `${types.find((t) => t.id === selectedType)?.title} · ${difficulties.find((d) => d.id === difficulty)?.label} · ${questionCount} Soru`
-                : "Mülakat türü seçin"}
-            </p>
+        <Card className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-text-secondary">
+                {selectedType
+                  ? `${types.find((t) => t.id === selectedType)?.title} · ${difficulties.find((d) => d.id === difficulty)?.label} · ${questionCount} Soru`
+                  : "Mülakat türü seçin"}
+              </p>
+            </div>
+            <Button
+              onClick={handleStart}
+              disabled={!selectedType || loading}
+              size="lg"
+            >
+              {loading ? "Oluşturuluyor…" : "Mülakata Başla"}
+            </Button>
           </div>
-          <Button
-            onClick={handleStart}
-            disabled={!selectedType}
-            size="lg"
-          >
-            Mülakata Başla
-          </Button>
+          {error && (
+            <p className="text-sm text-danger">{error}</p>
+          )}
         </Card>
       </motion.div>
     </motion.div>

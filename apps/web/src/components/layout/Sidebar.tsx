@@ -10,6 +10,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { to: "/", label: "Dashboard", icon: "◆", end: true },
   { to: "/interview/new", label: "Yeni Mülakat", icon: "▶" },
+  { to: "/history", label: "Geçmiş", icon: "◷" },
 ];
 
 export function Sidebar() {

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-type BadgeVariant = "default" | "amber" | "success" | "danger" | "info";
+export type BadgeVariant = "default" | "amber" | "success" | "danger" | "info";
 
 interface BadgeProps {
   variant?: BadgeVariant;

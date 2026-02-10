@@ -1,7 +1,11 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { listInterviews, getInterviewStats } from "@/lib/api";
+import type { Interview, InterviewStats } from "@ffh/types";
 
 const interviewTypes = [
   {
@@ -42,6 +46,20 @@ const interviewTypes = [
   },
 ] as const;
 
+const typeLabels: Record<string, string> = {
+  "live-coding": "Live Coding",
+  "system-design": "System Design",
+  "phone-screen": "Phone Screen",
+  practice: "Practice",
+};
+
+const statusLabels: Record<string, { label: string; variant: "success" | "amber" | "danger" | "default" }> = {
+  created: { label: "Oluşturuldu", variant: "default" },
+  "in-progress": { label: "Devam Ediyor", variant: "amber" },
+  completed: { label: "Tamamlandı", variant: "success" },
+  evaluated: { label: "Değerlendirildi", variant: "success" },
+};
+
 const stagger = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.08 } },
@@ -52,8 +70,41 @@ const fadeUp = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
 };
 
+function formatDate(ts: number): string {
+  return new Intl.DateTimeFormat("tr-TR", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(ts));
+}
+
+function formatDuration(start?: number, end?: number): string {
+  if (!start) return "—";
+  const endTs = end ?? Date.now();
+  const seconds = Math.floor((endTs - start) / 1000);
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}dk ${s}s`;
+}
+
 export function DashboardPage() {
   const { user } = useAuth();
+
+  const [interviews, setInterviews] = useState<Interview[]>([]);
+  const [stats, setStats] = useState<InterviewStats>({ total: 0, completed: 0, thisWeek: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      listInterviews(10).catch(() => [] as Interview[]),
+      getInterviewStats().catch(() => ({ total: 0, completed: 0, thisWeek: 0 })),
+    ]).then(([interviewList, interviewStats]) => {
+      setInterviews(interviewList);
+      setStats(interviewStats);
+      setLoading(false);
+    });
+  }, []);
 
   return (
     <motion.div
@@ -78,10 +129,10 @@ export function DashboardPage() {
         className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-3"
       >
         {[
-          { label: "Toplam Mülakat", value: "0" },
-          { label: "Bu Hafta", value: "0" },
-          { label: "Ortalama Skor", value: "—" },
-          { label: "Seri", value: "0 gün" },
+          { label: "Toplam Mülakat", value: loading ? "…" : String(stats.total) },
+          { label: "Bu Hafta", value: loading ? "…" : String(stats.thisWeek) },
+          { label: "Tamamlanan", value: loading ? "…" : String(stats.completed) },
+          { label: "Başarı Oranı", value: loading ? "…" : stats.total > 0 ? `%${Math.round((stats.completed / stats.total) * 100)}` : "—" },
         ].map((stat) => (
           <Card key={stat.label}>
             <p className="text-xs text-text-muted uppercase tracking-wider font-medium">
@@ -124,31 +175,76 @@ export function DashboardPage() {
         </div>
       </motion.div>
 
-      {/* Empty state — Recent Interviews */}
+      {/* Recent Interviews */}
       <motion.div variants={fadeUp} className="mt-10">
         <h2 className="font-display text-lg font-semibold text-text mb-4">
           Son Mülakatlar
         </h2>
-        <Card className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="h-12 w-12 rounded-full bg-surface-raised border border-border flex items-center justify-center mb-4">
-            <span className="text-xl text-text-muted" aria-hidden="true">
-              ○
-            </span>
+
+        {loading ? (
+          <Card className="flex items-center justify-center py-12">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-amber border-t-transparent" />
+          </Card>
+        ) : interviews.length === 0 ? (
+          <Card className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="h-12 w-12 rounded-full bg-surface-raised border border-border flex items-center justify-center mb-4">
+              <span className="text-xl text-text-muted" aria-hidden="true">
+                ○
+              </span>
+            </div>
+            <p className="text-text-secondary text-sm">
+              Henüz mülakat yapmadın
+            </p>
+            <p className="text-text-muted text-xs mt-1">
+              Hemen bir mülakat başlat ve pratik yapmaya başla
+            </p>
+            <Link
+              to="/interview/new"
+              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-amber/10 border border-amber/20 px-4 py-2 text-sm font-medium text-amber hover:bg-amber/15 transition-colors duration-150"
+            >
+              <span aria-hidden="true">▶</span>
+              İlk Mülakatını Başlat
+            </Link>
+          </Card>
+        ) : (
+          <div className="space-y-2">
+            {interviews.map((interview) => {
+              const statusInfo = statusLabels[interview.status] ?? { label: interview.status, variant: "default" as const };
+              return (
+                <Link key={interview._id} to={
+                  interview.status === "in-progress"
+                    ? `/interview/${interview._id}`
+                    : `/interview/${interview._id}`
+                }>
+                  <Card hover className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="min-w-0">
+                        <p className="font-medium text-text text-sm">
+                          {typeLabels[interview.type] ?? interview.type}
+                        </p>
+                        <p className="text-xs text-text-muted mt-0.5">
+                          {formatDate(interview.createdAt)} · {formatDuration(interview.startedAt, interview.endedAt)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs px-2 py-0.5 rounded-md border ${
+                        interview.difficulty === "easy"
+                          ? "text-success border-success/30 bg-success/10"
+                          : interview.difficulty === "medium"
+                            ? "text-amber border-amber/30 bg-amber/10"
+                            : "text-danger border-danger/30 bg-danger/10"
+                      }`}>
+                        {interview.difficulty === "easy" ? "Kolay" : interview.difficulty === "medium" ? "Orta" : "Zor"}
+                      </span>
+                      <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+                    </div>
+                  </Card>
+                </Link>
+              );
+            })}
           </div>
-          <p className="text-text-secondary text-sm">
-            Henüz mülakat yapmadın
-          </p>
-          <p className="text-text-muted text-xs mt-1">
-            Hemen bir mülakat başlat ve pratik yapmaya başla
-          </p>
-          <Link
-            to="/interview/new"
-            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-amber/10 border border-amber/20 px-4 py-2 text-sm font-medium text-amber hover:bg-amber/15 transition-colors duration-150"
-          >
-            <span aria-hidden="true">▶</span>
-            İlk Mülakatını Başlat
-          </Link>
-        </Card>
+        )}
       </motion.div>
     </motion.div>
   );

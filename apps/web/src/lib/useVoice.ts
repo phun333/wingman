@@ -2,6 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ClientMessage, ServerMessage, VoicePipelineState } from "@ffh/types";
 import { AudioQueuePlayer, decodePCM16, createVolumeMeter } from "./audio";
 
+interface UseVoiceOptions {
+  interviewId?: string;
+}
+
 interface UseVoiceReturn {
   state: VoicePipelineState;
   micActive: boolean;
@@ -14,13 +18,16 @@ interface UseVoiceReturn {
   interrupt: () => void;
 }
 
-const WS_URL = `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/ws/voice`;
+function buildWsUrl(interviewId?: string): string {
+  const base = `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/ws/voice`;
+  return interviewId ? `${base}?interviewId=${interviewId}` : base;
+}
 
 // VAD: silence threshold and duration
 const VAD_THRESHOLD = 0.01;
 const VAD_SILENCE_MS = 800;
 
-export function useVoice(): UseVoiceReturn {
+export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
   const [state, setState] = useState<VoicePipelineState>("idle");
   const [micActive, setMicActive] = useState(false);
   const [volume, setVolume] = useState(0);
@@ -40,7 +47,8 @@ export function useVoice(): UseVoiceReturn {
   // ─── WebSocket ───────────────────────────────────────
 
   useEffect(() => {
-    const ws = new WebSocket(WS_URL);
+    const wsUrl = buildWsUrl(options.interviewId);
+    const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
     ws.onopen = () => {
@@ -70,7 +78,7 @@ export function useVoice(): UseVoiceReturn {
       playerRef.current.destroy();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [options.interviewId]);
 
   function handleServerMessage(msg: ServerMessage): void {
     switch (msg.type) {

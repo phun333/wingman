@@ -13,12 +13,12 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      "/rpc": "http://localhost:3001",
+      "/api/auth": "http://127.0.0.1:3211",
+      "/api": "http://localhost:3001",
       "/ws": {
         target: "ws://localhost:3001",
         ws: true,
       },
-      "/api/auth": "http://127.0.0.1:3211",
     },
   },
 });

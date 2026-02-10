@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/Button";
 import { useVoice } from "@/lib/useVoice";
-import type { VoicePipelineState } from "@ffh/types";
+import { getInterview, completeInterview } from "@/lib/api";
+import type { VoicePipelineState, Interview } from "@ffh/types";
 
 const stateLabels: Record<VoicePipelineState, string> = {
   idle: "Hazır",
@@ -12,9 +13,29 @@ const stateLabels: Record<VoicePipelineState, string> = {
   speaking: "Konuşuyor…",
 };
 
+const typeLabels: Record<string, string> = {
+  "live-coding": "Live Coding",
+  "system-design": "System Design",
+  "phone-screen": "Phone Screen",
+  practice: "Practice",
+};
+
 export function InterviewRoomPage() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+
+  const [interview, setInterview] = useState<Interview | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  // Load interview data
+  useEffect(() => {
+    if (!id) return;
+    getInterview(id)
+      .then(setInterview)
+      .catch((err) => {
+        setLoadError(err instanceof Error ? err.message : "Mülakat bulunamadı");
+      });
+  }, [id]);
 
   const {
     state,
@@ -26,7 +47,7 @@ export function InterviewRoomPage() {
     connected,
     toggleMic,
     interrupt,
-  } = useVoice();
+  } = useVoice({ interviewId: id });
 
   // Timer
   const [elapsed, setElapsed] = useState(0);
@@ -45,13 +66,19 @@ export function InterviewRoomPage() {
     return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   }
 
-  function handleEnd() {
+  const handleEnd = useCallback(async () => {
     if (timerRef.current) clearInterval(timerRef.current);
+    if (id) {
+      try {
+        await completeInterview(id);
+      } catch {
+        // Interview may already be completed
+      }
+    }
     navigate("/");
-  }
+  }, [id, navigate]);
 
   function handleMicClick() {
-    // If AI is speaking/processing, interrupt first
     if (state === "speaking" || state === "processing") {
       interrupt();
       return;
@@ -59,12 +86,26 @@ export function InterviewRoomPage() {
     toggleMic();
   }
 
+  // Loading state
+  if (loadError) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-bg">
+        <div className="text-center">
+          <p className="text-danger text-lg font-medium">{loadError}</p>
+          <Button variant="ghost" className="mt-4" onClick={() => navigate("/")}>
+            Dashboard'a Dön
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   // Dynamic orb scale based on voice volume or AI state
   const orbScale =
     state === "listening"
       ? 1 + Math.min(volume * 8, 0.2)
       : state === "speaking"
-        ? undefined // uses animation
+        ? undefined
         : 1;
 
   return (
@@ -76,8 +117,13 @@ export function InterviewRoomPage() {
             <span className="text-amber font-display text-xs font-bold">F</span>
           </div>
           <span className="text-sm font-medium text-text-secondary">
-            Mülakat #{id?.slice(0, 6) ?? "demo"}
+            {interview ? typeLabels[interview.type] ?? interview.type : "Mülakat"}
           </span>
+          {interview && (
+            <span className="text-xs text-text-muted px-2 py-0.5 rounded-md bg-surface-raised border border-border">
+              {interview.difficulty === "easy" ? "Kolay" : interview.difficulty === "medium" ? "Orta" : "Zor"}
+            </span>
+          )}
           {/* Connection indicator */}
           <span
             className={`h-2 w-2 rounded-full ${connected ? "bg-success" : "bg-danger animate-pulse"}`}
@@ -207,9 +253,8 @@ export function InterviewRoomPage() {
       {/* Bottom controls */}
       <div className="border-t border-border-subtle bg-surface/80 backdrop-blur-sm py-5">
         <div className="flex items-center justify-center gap-6">
-          {/* Volume indicator (behind mic button) */}
+          {/* Volume indicator */}
           <div className="relative">
-            {/* Volume ring */}
             {micActive && (
               <motion.div
                 animate={{ scale: 1 + volume * 6, opacity: 0.3 + volume * 2 }}
