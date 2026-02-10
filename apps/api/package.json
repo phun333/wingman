@@ -13,13 +13,14 @@
     "@ffh/db": "workspace:*",
     "@ffh/env": "workspace:*",
     "@ffh/types": "workspace:*",
-    "@orpc/openapi": "^1.13.4",
-    "@orpc/server": "^1.13.4",
-    "@orpc/standard-server-fetch": "^1.13.4",
-    "@orpc/zod": "^1.13.4",
+    "@hono/standard-validator": "^0.2.2",
     "@scalar/hono-api-reference": "^0.9.40",
+    "@standard-community/standard-json": "^0.3.5",
+    "@standard-community/standard-openapi": "^0.2.9",
     "hono": "^4.11.9",
+    "hono-openapi": "^1.2.0",
     "openai": "^6.19.0",
+    "quansync": "^1.0.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

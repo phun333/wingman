@@ -2,10 +2,9 @@ import { ENV } from "@ffh/env";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { createBunWebSocket } from "hono/bun";
-import { RPCHandler } from "@orpc/server/fetch";
+import { openAPIRouteHandler } from "hono-openapi";
 import { Scalar as apiReference } from "@scalar/hono-api-reference";
-import { router } from "./router";
-import { generateOpenAPISpec } from "./openapi";
+import { apiRoutes } from "./router";
 import { VoiceSession } from "./ws/voice";
 import type { ServerMessage } from "@ffh/types";
 
@@ -19,11 +18,26 @@ app.use("*", cors());
 // Health check
 app.get("/health", (c) => c.json({ status: "ok" }));
 
-// OpenAPI spec
-app.get("/openapi.json", async (c) => {
-  const spec = await generateOpenAPISpec();
-  return c.json(spec);
-});
+// Mount API routes
+app.route("/api", apiRoutes);
+
+// OpenAPI spec (auto-generated from hono-openapi)
+app.get(
+  "/openapi.json",
+  openAPIRouteHandler(app, {
+    documentation: {
+      info: {
+        title: "FFH API",
+        version: "0.1.0",
+        description: "Freya Fal Hackathon API",
+      },
+      tags: [
+        { name: "Users", description: "User management" },
+        { name: "Proxy", description: "fal.ai & OpenRouter proxy endpoints" },
+      ],
+    },
+  }),
+);
 
 // Scalar API docs
 app.get(
@@ -33,18 +47,6 @@ app.get(
     theme: "kepler",
   }),
 );
-
-// oRPC handler
-const rpcHandler = new RPCHandler(router);
-
-app.all("/rpc/*", async (c) => {
-  const { matched, response } = await rpcHandler.handle(c.req.raw, {
-    prefix: "/rpc",
-  });
-
-  if (matched) return response;
-  return c.json({ error: "Not Found" }, 404);
-});
 
 // ─── WebSocket: Voice Pipeline ───────────────────────────
 
