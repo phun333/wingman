@@ -31,3 +31,22 @@ export type VoicePipelineState =
   | "listening"
   | "processing"
   | "speaking";
+
+// ─── WebSocket Protocol ──────────────────────────────────
+
+/** Client → Server */
+export type ClientMessage =
+  | { type: "audio_chunk"; data: string }
+  | { type: "start_listening" }
+  | { type: "stop_listening" }
+  | { type: "interrupt" }
+  | { type: "config"; language?: string; speed?: number };
+
+/** Server → Client */
+export type ServerMessage =
+  | { type: "transcript"; text: string; final: boolean }
+  | { type: "ai_text"; text: string; done: boolean }
+  | { type: "ai_audio"; data: string }
+  | { type: "ai_audio_done" }
+  | { type: "state_change"; state: VoicePipelineState }
+  | { type: "error"; message: string };

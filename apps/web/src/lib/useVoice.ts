@@ -1,0 +1,259 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { ClientMessage, ServerMessage, VoicePipelineState } from "@ffh/types";
+import { AudioQueuePlayer, decodePCM16, createVolumeMeter } from "./audio";
+
+interface UseVoiceReturn {
+  state: VoicePipelineState;
+  micActive: boolean;
+  volume: number;
+  transcript: string;
+  aiText: string;
+  error: string | null;
+  connected: boolean;
+  toggleMic: () => void;
+  interrupt: () => void;
+}
+
+const WS_URL = `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/ws/voice`;
+
+// VAD: silence threshold and duration
+const VAD_THRESHOLD = 0.01;
+const VAD_SILENCE_MS = 800;
+
+export function useVoice(): UseVoiceReturn {
+  const [state, setState] = useState<VoicePipelineState>("idle");
+  const [micActive, setMicActive] = useState(false);
+  const [volume, setVolume] = useState(0);
+  const [transcript, setTranscript] = useState("");
+  const [aiText, setAiText] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [connected, setConnected] = useState(false);
+
+  const wsRef = useRef<WebSocket | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const volumeMeterRef = useRef<{ stop: () => void } | null>(null);
+  const playerRef = useRef<AudioQueuePlayer>(new AudioQueuePlayer());
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const aiTextAccRef = useRef("");
+
+  // ─── WebSocket ───────────────────────────────────────
+
+  useEffect(() => {
+    const ws = new WebSocket(WS_URL);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      setConnected(true);
+      setError(null);
+    };
+
+    ws.onmessage = (event) => {
+      const msg: ServerMessage = JSON.parse(event.data);
+      handleServerMessage(msg);
+    };
+
+    ws.onclose = () => {
+      setConnected(false);
+    };
+
+    ws.onerror = () => {
+      setError("WebSocket bağlantısı kurulamadı");
+      setConnected(false);
+    };
+
+    playerRef.current.init();
+
+    return () => {
+      ws.close();
+      stopMicStream();
+      playerRef.current.destroy();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function handleServerMessage(msg: ServerMessage): void {
+    switch (msg.type) {
+      case "state_change":
+        setState(msg.state);
+        break;
+
+      case "transcript":
+        if (msg.final) setTranscript(msg.text);
+        break;
+
+      case "ai_text":
+        if (msg.done) {
+          // Keep accumulated text visible
+        } else {
+          aiTextAccRef.current += msg.text;
+          setAiText(aiTextAccRef.current);
+        }
+        break;
+
+      case "ai_audio":
+        playerRef.current.enqueue(decodePCM16(msg.data));
+        break;
+
+      case "ai_audio_done":
+        // Playback will finish naturally from queue
+        break;
+
+      case "error":
+        setError(msg.message);
+        break;
+    }
+  }
+
+  // ─── Send helper ─────────────────────────────────────
+
+  function send(msg: ClientMessage): void {
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(msg));
+    }
+  }
+
+  // ─── Mic control ─────────────────────────────────────
+
+  const toggleMic = useCallback(async () => {
+    if (micActive) {
+      stopRecording();
+      stopMicStream();
+      setMicActive(false);
+      send({ type: "stop_listening" });
+    } else {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            sampleRate: 16000,
+          },
+        });
+        mediaStreamRef.current = stream;
+        setMicActive(true);
+        setError(null);
+        setTranscript("");
+        aiTextAccRef.current = "";
+        setAiText("");
+
+        // Volume meter
+        volumeMeterRef.current = createVolumeMeter(stream, (rms) => {
+          setVolume(rms);
+          handleVAD(rms);
+        });
+
+        startRecording(stream);
+        send({ type: "start_listening" });
+      } catch {
+        setError("Mikrofon erişimi reddedildi");
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [micActive]);
+
+  // ─── Recording ───────────────────────────────────────
+
+  function startRecording(stream: MediaStream): void {
+    const recorder = new MediaRecorder(stream, {
+      mimeType: "audio/webm;codecs=opus",
+    });
+    recorderRef.current = recorder;
+
+    recorder.ondataavailable = async (e) => {
+      if (e.data.size === 0) return;
+      const arrayBuffer = await e.data.arrayBuffer();
+      const base64 = btoa(
+        String.fromCharCode(...new Uint8Array(arrayBuffer)),
+      );
+      send({ type: "audio_chunk", data: base64 });
+    };
+
+    // Send chunks every 250ms
+    recorder.start(250);
+  }
+
+  function stopRecording(): void {
+    const recorder = recorderRef.current;
+    if (recorder && recorder.state !== "inactive") {
+      recorder.stop();
+    }
+    recorderRef.current = null;
+  }
+
+  function stopMicStream(): void {
+    volumeMeterRef.current?.stop();
+    volumeMeterRef.current = null;
+    mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
+    mediaStreamRef.current = null;
+    setVolume(0);
+    clearSilenceTimer();
+  }
+
+  // ─── VAD (simple RMS threshold) ──────────────────────
+
+  function handleVAD(rms: number): void {
+    if (rms > VAD_THRESHOLD) {
+      // Voice detected — clear silence timer
+      clearSilenceTimer();
+    } else {
+      // Silence — start timer if not already running
+      if (!silenceTimerRef.current && recorderRef.current) {
+        silenceTimerRef.current = setTimeout(() => {
+          // Silence exceeded threshold — stop and send
+          stopRecording();
+          send({ type: "stop_listening" });
+
+          // Wait for AI to finish, then re-enable recording
+          // Recording restarts when state goes back to idle
+        }, VAD_SILENCE_MS);
+      }
+    }
+  }
+
+  function clearSilenceTimer(): void {
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+  }
+
+  // ─── Auto-restart mic after AI finishes ──────────────
+
+  useEffect(() => {
+    if (state === "idle" && micActive && !recorderRef.current) {
+      // AI finished speaking, restart recording
+      const stream = mediaStreamRef.current;
+      if (stream && stream.active) {
+        aiTextAccRef.current = "";
+        setAiText("");
+        setTranscript("");
+        startRecording(stream);
+        send({ type: "start_listening" });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, micActive]);
+
+  // ─── Interrupt ───────────────────────────────────────
+
+  const interrupt = useCallback(() => {
+    send({ type: "interrupt" });
+    playerRef.current.flush();
+    aiTextAccRef.current = "";
+    setAiText("");
+  }, []);
+
+  return {
+    state,
+    micActive,
+    volume,
+    transcript,
+    aiText,
+    error,
+    connected,
+    toggleMic,
+    interrupt,
+  };
+}
