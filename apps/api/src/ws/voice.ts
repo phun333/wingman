@@ -1,10 +1,15 @@
 import { fal } from "@fal-ai/client";
 import { ENV } from "@ffh/env";
+import { convex } from "@ffh/db";
+import { api } from "../../../../convex/_generated/api";
+import { getSystemPrompt } from "../prompts";
 import type {
   ClientMessage,
   ServerMessage,
   VoicePipelineState,
   MessageRole,
+  InterviewType,
+  Difficulty,
 } from "@ffh/types";
 
 // ─── fal.ai config ──────────────────────────────────────
@@ -23,6 +28,14 @@ interface SessionConfig {
   speed: number;
 }
 
+interface InterviewInfo {
+  id: string;
+  type: InterviewType;
+  difficulty: Difficulty;
+  language: string;
+  userId: string;
+}
+
 // ─── Voice Session ───────────────────────────────────────
 
 export class VoiceSession {
@@ -32,15 +45,77 @@ export class VoiceSession {
   private config: SessionConfig = { language: "tr", speed: 1.0 };
   private abortController: AbortController | null = null;
   private send: (msg: ServerMessage) => void;
+  private interview: InterviewInfo | null = null;
+  private initialized = false;
 
   constructor(send: (msg: ServerMessage) => void) {
     this.send = send;
+  }
+
+  /**
+   * Initialize with interview data — loads config, prompt, and history from Convex.
+   */
+  async init(interviewId: string): Promise<void> {
+    if (this.initialized) return;
+
+    try {
+      const interview = await convex.query(api.interviews.getById, {
+        id: interviewId as any,
+      });
+
+      this.interview = {
+        id: interview._id,
+        type: interview.type as InterviewType,
+        difficulty: interview.difficulty as Difficulty,
+        language: interview.language,
+        userId: interview.userId,
+      };
+
+      this.config.language = interview.language;
+
+      // Build system prompt based on interview config
+      const systemPrompt = getSystemPrompt(
+        this.interview.type,
+        this.interview.difficulty,
+        this.interview.language,
+      );
+      this.conversationHistory.push({ role: "system", content: systemPrompt });
+
+      // Load existing messages from Convex (reconnect support)
+      const existingMessages = await convex.query(api.messages.getRecent, {
+        interviewId: interviewId as any,
+        limit: 50,
+      });
+
+      for (const msg of existingMessages) {
+        if (msg.role === "user" || msg.role === "assistant") {
+          this.conversationHistory.push({
+            role: msg.role,
+            content: msg.content,
+          });
+        }
+      }
+
+      this.initialized = true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Interview yüklenemedi";
+      this.send({ type: "error", message });
+    }
+  }
+
+  /**
+   * Initialize without an interview — free mode with default prompt.
+   */
+  initFreeMode(): void {
+    if (this.initialized) return;
+
     this.conversationHistory.push({
       role: "system",
       content: `Sen Freya adında deneyimli bir teknik mülakatçısın. Türkçe konuşuyorsun. 
 Adayı profesyonel ama samimi bir şekilde karşıla. Sorularını net ve anlaşılır sor.
 Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2-3 cümleyi geçmesin.`,
     });
+    this.initialized = true;
   }
 
   async handleMessage(raw: string): Promise<void> {
@@ -100,12 +175,18 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
       // Add user message to history
       this.conversationHistory.push({ role: "user", content: transcript });
 
+      // Persist user message to Convex
+      await this.persistMessage("user", transcript);
+
       // 2) LLM → streaming text
       const aiResponse = await this.generateResponse(signal);
       if (!aiResponse || signal.aborted) return;
 
       // Add assistant message to history
       this.conversationHistory.push({ role: "assistant", content: aiResponse });
+
+      // Persist assistant message to Convex
+      await this.persistMessage("assistant", aiResponse);
 
       // 3) TTS — send full response as audio
       if (!signal.aborted) {
@@ -123,6 +204,23 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
         this.setState("idle");
       }
       this.abortController = null;
+    }
+  }
+
+  // ─── Persist ─────────────────────────────────────────
+
+  private async persistMessage(role: MessageRole, content: string): Promise<void> {
+    if (!this.interview) return;
+
+    try {
+      await convex.mutation(api.messages.add, {
+        interviewId: this.interview.id as any,
+        role,
+        content,
+      });
+    } catch {
+      // Non-fatal — log but don't break pipeline
+      console.error(`Failed to persist ${role} message for interview ${this.interview.id}`);
     }
   }
 
@@ -191,7 +289,6 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
 
     const decoder = new TextDecoder();
     let fullText = "";
-    let sentenceBuffer = "";
 
     while (true) {
       const { done, value } = await reader.read();
@@ -211,7 +308,6 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
           if (!token) continue;
 
           fullText += token;
-          sentenceBuffer += token;
 
           // Send token to client
           this.send({ type: "ai_text", text: token, done: false });
@@ -257,7 +353,7 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
             this.send({ type: "error", message: event.error.message });
           }
         }
-      } catch (err) {
+      } catch {
         if (signal.aborted) return;
         // Fallback: generate full audio via /audio/speech
         await this.ttsFallback(trimmed, signal);
