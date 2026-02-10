@@ -1,0 +1,127 @@
+@import "tailwindcss";
+
+/* ─── Design Tokens ────────────────────────────────────── */
+
+@theme {
+  --font-display: "Bricolage Grotesque", serif;
+  --font-body: "DM Sans", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --color-bg: #07070a;
+  --color-surface: #0f0f14;
+  --color-surface-raised: #16161d;
+  --color-surface-overlay: #1c1c25;
+  --color-border: #27272f;
+  --color-border-subtle: #1e1e26;
+
+  --color-text: #ededef;
+  --color-text-secondary: #8b8b96;
+  --color-text-muted: #55555f;
+
+  --color-amber: #e5a10e;
+  --color-amber-light: #f5c842;
+  --color-amber-dim: #a3720a;
+  --color-amber-glow: rgba(229, 161, 14, 0.12);
+
+  --color-danger: #ef4444;
+  --color-success: #22c55e;
+  --color-info: #3b82f6;
+}
+
+/* ─── Base ─────────────────────────────────────────────── */
+
+html {
+  color-scheme: dark;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Grain Overlay ────────────────────────────────────── */
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px 128px;
+}
+
+/* ─── Scrollbar ────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+/* ─── Focus ────────────────────────────────────────────── */
+
+*:focus-visible {
+  outline: 2px solid var(--color-amber);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ─── Selection ────────────────────────────────────────── */
+
+::selection {
+  background: var(--color-amber);
+  color: var(--color-bg);
+}
+
+/* ─── Utilities ────────────────────────────────────────── */
+
+@utility text-balance {
+  text-wrap: balance;
+}
+
+@utility text-pretty {
+  text-wrap: pretty;
+}
+
+@utility glow-amber {
+  box-shadow: 0 0 20px var(--color-amber-glow), 0 0 60px var(--color-amber-glow);
+}
+
+@utility glow-amber-sm {
+  box-shadow: 0 0 10px var(--color-amber-glow);
+}
+
+@utility bg-gradient-radial {
+  background: radial-gradient(ellipse at center, var(--tw-gradient-from) 0%, var(--tw-gradient-to) 70%);
+}
+
+/* ─── Reduced Motion ───────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
