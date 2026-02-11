@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/Button";
 import { useVoice } from "@/lib/useVoice";
 import { getInterview, completeInterview, executeCode as executeCodeApi, getRandomProblem } from "@/lib/api";
+import { typeLabels } from "@/lib/constants";
+import { Mic, Hand, Coffee, Clock } from "lucide-react";
 import type {
   VoicePipelineState,
   Interview,
@@ -25,13 +27,6 @@ const stateLabels: Record<VoicePipelineState, string> = {
   listening: "Dinliyor…",
   processing: "Düşünüyor…",
   speaking: "Konuşuyor…",
-};
-
-const typeLabels: Record<string, string> = {
-  "live-coding": "Live Coding",
-  "system-design": "System Design",
-  "phone-screen": "Phone Screen",
-  practice: "Practice",
 };
 
 const languageLabels: Record<CodeLanguage, string> = {
@@ -69,7 +64,6 @@ export function InterviewRoomPage() {
     getInterview(id)
       .then((iv) => {
         setInterview(iv);
-        // If live-coding or practice, prepare to load a problem
         if (iv.type === "live-coding" || iv.type === "practice") {
           // Only set loading if we don't have a problem yet
           setProblem((currentProblem) => {
@@ -178,8 +172,6 @@ export function InterviewRoomPage() {
   const handleCodeChange = useCallback(
     (newCode: string) => {
       setCode(newCode);
-
-      // Debounce: send to AI every 3 seconds
       if (codeUpdateTimer.current) clearTimeout(codeUpdateTimer.current);
       codeUpdateTimer.current = setTimeout(() => {
         sendCodeUpdate(newCode, codeLanguage);
@@ -221,8 +213,6 @@ export function InterviewRoomPage() {
       });
 
       setExecutionResult(result);
-
-      // Send result to AI via WebSocket
       sendCodeResult(result.results, result.stdout, result.stderr, result.error);
     } catch (err) {
       setExecutionResult({
@@ -247,7 +237,6 @@ export function InterviewRoomPage() {
       } catch {
         // Interview may already be completed
       }
-      // Navigate to report page instead of dashboard
       navigate(`/interview/${id}/report`);
     } else {
       navigate("/");
@@ -347,15 +336,13 @@ export function InterviewRoomPage() {
             ))}
           </select>
 
-          {/* Practice mode: softer timer, no pressure */}
-          {!isPractice && (
+          {isPractice ? (
+            <span className="text-xs text-text-muted/50 font-mono tabular-nums flex items-center gap-1" title="Süre sınırı yok — rahatça çalış">
+              <Coffee size={11} /> {formatTime(elapsed)}
+            </span>
+          ) : (
             <span className="text-sm font-mono text-text-muted tabular-nums">
               {formatTime(elapsed)}
-            </span>
-          )}
-          {isPractice && (
-            <span className="text-xs text-text-muted/50 font-mono tabular-nums" title="Süre sınırı yok — rahatça çalış">
-              ☕ {formatTime(elapsed)}
             </span>
           )}
           <Button variant="danger" size="sm" onClick={handleEnd}>
@@ -377,7 +364,6 @@ export function InterviewRoomPage() {
           }
           right={
             <div className="h-full flex flex-col">
-              {/* Code editor (top 60%) */}
               <div className="flex-1 min-h-0">
                 <ResizableSplitter
                   direction="vertical"
@@ -556,7 +542,8 @@ function VoiceOnlyRoom({
               )}
             </div>
           )}
-          <span className={`text-sm font-mono tabular-nums ${timeWarning ? "text-amber" : "text-text-muted"}`}>
+          <span className={`text-sm font-mono tabular-nums flex items-center gap-1.5 ${timeWarning ? "text-amber" : "text-text-muted"}`}>
+            {timeWarning && <Clock size={12} />}
             {formatTime(elapsed)}
           </span>
           <Button variant="danger" size="sm" onClick={onEnd}>
@@ -580,9 +567,10 @@ function VoiceOnlyRoom({
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="relative z-10 mt-4 rounded-lg bg-amber/10 border border-amber/20 px-4 py-2 max-w-md"
+            className="relative z-10 mt-4 rounded-lg bg-amber/10 border border-amber/20 px-4 py-2 max-w-md flex items-center gap-2"
           >
-            <p className="text-sm text-amber">⏱ Kalan süre: ~{timeWarning} dakika</p>
+            <Clock size={14} className="text-amber shrink-0" />
+            <p className="text-sm text-amber">Kalan süre: ~{timeWarning} dakika</p>
           </motion.div>
         )}
 
@@ -652,9 +640,11 @@ function VoiceOnlyRoom({
                 }
               `}
             >
-              <span className="text-2xl" aria-hidden="true">
-                {state === "speaking" || state === "processing" ? "✋" : "🎙"}
-              </span>
+              {state === "speaking" || state === "processing" ? (
+                <Hand size={24} strokeWidth={2} />
+              ) : (
+                <Mic size={24} strokeWidth={2} />
+              )}
             </button>
           </div>
         </div>

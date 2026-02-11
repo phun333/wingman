@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Card } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import {
   getReport,
@@ -10,11 +9,23 @@ import {
   getInterview,
   getInterviewMessages,
 } from "@/lib/api";
+import { typeLabels, hireLabels } from "@/lib/constants";
+import {
+  BarChart3,
+  Bot,
+  CheckCircle2,
+  AlertTriangle,
+  ArrowRight,
+  Pin,
+  MessageSquare,
+  ChevronDown,
+  Check,
+  AlertCircle,
+} from "lucide-react";
 import type {
   InterviewResult,
   Interview,
   Message,
-  HireRecommendation,
 } from "@ffh/types";
 import {
   RadarChart,
@@ -25,21 +36,10 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-// ─── Constants ───────────────────────────────────────────
-
-const hireLabels: Record<HireRecommendation, { label: string; color: string; bg: string }> = {
-  "strong-hire": { label: "Strong Hire", color: "text-success", bg: "bg-success/15 border-success/30" },
-  hire: { label: "Hire", color: "text-info", bg: "bg-info/15 border-info/30" },
-  "lean-hire": { label: "Lean Hire", color: "text-amber", bg: "bg-amber/15 border-amber/30" },
-  "no-hire": { label: "No Hire", color: "text-danger", bg: "bg-danger/15 border-danger/30" },
-};
-
-const typeLabels: Record<string, string> = {
-  "live-coding": "Live Coding",
-  "system-design": "System Design",
-  "phone-screen": "Phone Screen",
-  practice: "Practice",
-};
+// ─── Chart color tokens ──────────────────────────────────
+const CHART_GRID = "rgba(39, 39, 47, 0.6)";
+const CHART_TICK = "rgba(139, 139, 150, 1)";
+const CHART_TICK_DIM = "rgba(85, 85, 95, 1)";
 
 function scoreColor(score: number): string {
   if (score >= 80) return "text-success";
@@ -241,7 +241,7 @@ export function ReportPage() {
           className="text-center max-w-md"
         >
           <div className="h-16 w-16 rounded-2xl bg-amber/15 border border-amber/30 flex items-center justify-center mx-auto mb-6">
-            <span className="text-3xl">📊</span>
+            <BarChart3 size={28} className="text-amber" strokeWidth={1.8} />
           </div>
           <h2 className="font-display text-2xl font-bold text-text">
             Mülakat Raporu
@@ -265,7 +265,10 @@ export function ReportPage() {
                 Rapor oluşturuluyor…
               </span>
             ) : (
-              "🤖 Rapor Oluştur"
+              <span className="flex items-center gap-2">
+                <Bot size={16} />
+                Rapor Oluştur
+              </span>
             )}
           </Button>
           <Link
@@ -346,10 +349,6 @@ export function ReportPage() {
                 <span
                   className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium border ${hireInfo.bg} ${hireInfo.color}`}
                 >
-                  {report.hireRecommendation === "strong-hire" && "🟢"}
-                  {report.hireRecommendation === "hire" && "🔵"}
-                  {report.hireRecommendation === "lean-hire" && "🟡"}
-                  {report.hireRecommendation === "no-hire" && "🔴"}
                   {hireInfo.label}
                 </span>
               </div>
@@ -409,21 +408,21 @@ export function ReportPage() {
             </h2>
             <ResponsiveContainer width="100%" height={280}>
               <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="75%">
-                <PolarGrid stroke="#333" />
+                <PolarGrid stroke={CHART_GRID} />
                 <PolarAngleAxis
                   dataKey="subject"
-                  tick={{ fill: "#999", fontSize: 11 }}
+                  tick={{ fill: CHART_TICK, fontSize: 11 }}
                 />
                 <PolarRadiusAxis
                   angle={90}
                   domain={[0, 100]}
-                  tick={{ fill: "#666", fontSize: 10 }}
+                  tick={{ fill: CHART_TICK_DIM, fontSize: 10 }}
                 />
                 <Radar
                   name="Skor"
                   dataKey="value"
-                  stroke="#f59e0b"
-                  fill="#f59e0b"
+                  stroke="#e5a10e"
+                  fill="#e5a10e"
                   fillOpacity={0.2}
                   strokeWidth={2}
                 />
@@ -456,7 +455,7 @@ export function ReportPage() {
           {/* Strengths */}
           <Card className="p-6">
             <h2 className="font-display text-lg font-semibold text-success mb-4 flex items-center gap-2">
-              <span>✅</span> Güçlü Yönler
+              <CheckCircle2 size={18} /> Güçlü Yönler
             </h2>
             <ul className="space-y-2.5">
               {report.strengths.map((s, i) => (
@@ -468,7 +467,7 @@ export function ReportPage() {
                   className="flex items-start gap-2.5"
                 >
                   <span className="mt-0.5 h-5 w-5 rounded-full bg-success/15 flex items-center justify-center flex-shrink-0">
-                    <span className="text-success text-xs">✓</span>
+                    <Check size={12} className="text-success" />
                   </span>
                   <span className="text-sm text-text-secondary">{s}</span>
                 </motion.li>
@@ -479,7 +478,7 @@ export function ReportPage() {
           {/* Weaknesses */}
           <Card className="p-6">
             <h2 className="font-display text-lg font-semibold text-amber mb-4 flex items-center gap-2">
-              <span>⚠️</span> Gelişim Alanları
+              <AlertTriangle size={18} /> Gelişim Alanları
             </h2>
             <ul className="space-y-2.5">
               {report.weaknesses.map((w, i) => (
@@ -491,7 +490,7 @@ export function ReportPage() {
                   className="flex items-start gap-2.5"
                 >
                   <span className="mt-0.5 h-5 w-5 rounded-full bg-amber/15 flex items-center justify-center flex-shrink-0">
-                    <span className="text-amber text-xs">!</span>
+                    <AlertCircle size={12} className="text-amber" />
                   </span>
                   <span className="text-sm text-text-secondary">{w}</span>
                 </motion.li>
@@ -557,7 +556,7 @@ export function ReportPage() {
                   <ul className="space-y-2">
                     {report.codeAnalysis.optimizationSuggestions.map((s, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm text-text-secondary">
-                        <span className="text-info mt-0.5">→</span>
+                        <ArrowRight size={14} className="text-info mt-0.5 shrink-0" />
                         {s}
                       </li>
                     ))}
@@ -576,7 +575,7 @@ export function ReportPage() {
         >
           <Card className="p-6">
             <h2 className="font-display text-lg font-semibold text-text mb-4 flex items-center gap-2">
-              <span>📌</span> Sonraki Adımlar
+              <Pin size={18} /> Sonraki Adımlar
             </h2>
             <ul className="space-y-3">
               {report.nextSteps.map((step, i) => (
@@ -609,16 +608,15 @@ export function ReportPage() {
               className="w-full flex items-center justify-between px-6 py-4 hover:bg-surface-raised/50 transition-colors cursor-pointer"
             >
               <h2 className="font-display text-lg font-semibold text-text flex items-center gap-2">
-                <span>💬</span> Transkript
+                <MessageSquare size={18} /> Transkript
                 <span className="text-xs text-text-muted font-normal">
                   ({messages.filter((m) => m.role !== "system").length} mesaj)
                 </span>
               </h2>
-              <span
+              <ChevronDown
+                size={18}
                 className={`text-text-muted transition-transform duration-200 ${showTranscript ? "rotate-180" : ""}`}
-              >
-                ▼
-              </span>
+              />
             </button>
             <AnimatePresence>
               {showTranscript && (

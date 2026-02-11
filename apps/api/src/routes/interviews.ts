@@ -49,6 +49,9 @@ interviewRoutes.post(
       language: z.string().default("tr"),
       questionCount: z.number().min(1).max(10).default(5),
       codeLanguage: z.enum(["javascript", "typescript", "python"]).optional(),
+      jobPostingId: z.string().optional(),
+      resumeId: z.string().optional(),
+      memoryEnabled: z.boolean().optional(),
     }),
   ),
   async (c) => {
@@ -62,6 +65,9 @@ interviewRoutes.post(
       language: body.language,
       questionCount: body.questionCount,
       config: body.codeLanguage ? { codeLanguage: body.codeLanguage } : undefined,
+      jobPostingId: body.jobPostingId as any,
+      resumeId: body.resumeId as any,
+      memoryEnabled: body.memoryEnabled,
     });
 
     return c.json(interview, 201);

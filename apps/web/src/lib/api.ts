@@ -9,6 +9,10 @@ import type {
   Problem,
   CodeExecutionResult,
   CodeLanguage,
+  JobPosting,
+  Resume,
+  UserProfile,
+  UserMemoryEntry,
 } from "@ffh/types";
 
 const BASE = "/api";
@@ -39,6 +43,9 @@ export async function createInterview(params: {
   language?: string;
   questionCount?: number;
   codeLanguage?: string;
+  jobPostingId?: string;
+  resumeId?: string;
+  memoryEnabled?: boolean;
 }): Promise<Interview> {
   return request<Interview>("/interviews", {
     method: "POST",
@@ -48,6 +55,9 @@ export async function createInterview(params: {
       language: params.language ?? "tr",
       questionCount: params.questionCount ?? 5,
       codeLanguage: params.codeLanguage,
+      jobPostingId: params.jobPostingId,
+      resumeId: params.resumeId,
+      memoryEnabled: params.memoryEnabled,
     }),
   });
 }
@@ -131,6 +141,91 @@ export async function executeCode(params: {
 }): Promise<CodeExecutionResult> {
   return request<CodeExecutionResult>("/code/execute", {
     method: "POST",
+    body: JSON.stringify(params),
+  });
+}
+
+// ─── Job Postings ────────────────────────────────────────
+
+export async function parseJobPosting(params: {
+  url?: string;
+  rawText?: string;
+}): Promise<JobPosting> {
+  return request<JobPosting>("/jobs/parse", {
+    method: "POST",
+    body: JSON.stringify(params),
+  });
+}
+
+export async function listJobPostings(): Promise<JobPosting[]> {
+  return request<JobPosting[]>("/jobs");
+}
+
+export async function deleteJobPosting(id: string): Promise<void> {
+  await request<{ deleted: boolean }>(`/jobs/${id}`, { method: "DELETE" });
+}
+
+// ─── Resumes ─────────────────────────────────────────────
+
+export async function uploadResumeText(params: {
+  text: string;
+  fileName?: string;
+}): Promise<Resume> {
+  return request<Resume>("/resume/upload", {
+    method: "POST",
+    body: JSON.stringify(params),
+  });
+}
+
+export async function uploadResumeFile(file: File): Promise<Resume> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${BASE}/resume/upload`, {
+    method: "POST",
+    credentials: "include",
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw new Error(data?.error ?? `Upload failed: ${res.status}`);
+  }
+
+  return res.json();
+}
+
+export async function listResumes(): Promise<Resume[]> {
+  return request<Resume[]>("/resume");
+}
+
+export async function deleteResume(id: string): Promise<void> {
+  await request<{ deleted: boolean }>(`/resume/${id}`, { method: "DELETE" });
+}
+
+// ─── Profile ─────────────────────────────────────────────
+
+export interface ProfileData {
+  userId: string;
+  name: string;
+  email: string;
+  profile: UserProfile | null;
+  resumes: Resume[];
+  jobPostings: JobPosting[];
+  memory: UserMemoryEntry[];
+}
+
+export async function getProfile(): Promise<ProfileData> {
+  return request<ProfileData>("/profile");
+}
+
+export async function updateProfile(params: {
+  interests?: string[];
+  goals?: string;
+  preferredLanguage?: string;
+}): Promise<UserProfile> {
+  return request<UserProfile>("/profile", {
+    method: "PUT",
     body: JSON.stringify(params),
   });
 }

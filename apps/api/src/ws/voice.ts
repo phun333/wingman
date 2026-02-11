@@ -37,6 +37,9 @@ interface InterviewInfo {
   difficulty: Difficulty;
   language: string;
   userId: string;
+  jobPostingId?: string;
+  resumeId?: string;
+  memoryEnabled?: boolean;
 }
 
 // ─── Voice Session ───────────────────────────────────────
@@ -91,6 +94,9 @@ export class VoiceSession {
         difficulty: interview.difficulty as Difficulty,
         language: interview.language,
         userId: interview.userId,
+        jobPostingId: interview.jobPostingId ?? undefined,
+        resumeId: interview.resumeId ?? undefined,
+        memoryEnabled: interview.memoryEnabled ?? undefined,
       };
 
       this.config.language = interview.language;
@@ -112,6 +118,9 @@ export class VoiceSession {
         this.interview.language,
       );
       this.conversationHistory.push({ role: "system", content: systemPrompt });
+
+      // ── Personalization Context (Faz 6) ──────────────────
+      await this.loadPersonalizationContext();
 
       // For system-design interviews, load a design problem
       if (this.interview.type === "system-design") {
@@ -318,6 +327,125 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
       case "whiteboard_update":
         this.handleWhiteboardUpdate(msg.state);
         break;
+    }
+  }
+
+  // ─── Personalization Context (Faz 6) ──────────────────
+
+  private async loadPersonalizationContext(): Promise<void> {
+    if (!this.interview) return;
+
+    const parts: string[] = [];
+
+    // 1. Job Posting context
+    if (this.interview.jobPostingId) {
+      try {
+        const job = await convex.query(api.jobPostings.getById, {
+          id: this.interview.jobPostingId as any,
+        });
+        if (job) {
+          parts.push(
+            `[Hedef Pozisyon Bilgisi]\nBaşlık: ${job.title}${job.company ? `\nŞirket: ${job.company}` : ""}${job.level ? `\nSeviye: ${job.level}` : ""}\nGereksinimler:\n${job.requirements.map((r) => `  - ${r}`).join("\n")}\nAranan Yetenekler: ${job.skills.join(", ")}\n\nBu pozisyona uygun sorular sor. İlandaki gereksinimlere ve yeteneklere odaklan. Adayın bu pozisyona uygunluğunu değerlendir.`,
+          );
+        }
+      } catch {
+        // non-fatal
+      }
+    }
+
+    // 2. Resume context
+    if (this.interview.resumeId) {
+      try {
+        const resume = await convex.query(api.resumes.getById, {
+          id: this.interview.resumeId as any,
+        });
+        if (resume) {
+          const expText = resume.experience
+            .slice(0, 3)
+            .map(
+              (e) =>
+                `  - ${e.role} @ ${e.company} (${e.duration})${e.highlights.length > 0 ? `: ${e.highlights.slice(0, 2).join(", ")}` : ""}`,
+            )
+            .join("\n");
+          const eduText = resume.education
+            .map((e) => `  - ${e.degree}, ${e.school}`)
+            .join("\n");
+
+          parts.push(
+            `[Aday Özgeçmiş Bilgisi]${resume.name ? `\nİsim: ${resume.name}` : ""}${resume.title ? `\nMevcut Pozisyon: ${resume.title}` : ""}${resume.yearsOfExperience ? `\nDeneyim: ${resume.yearsOfExperience} yıl` : ""}\nYetenekler: ${resume.skills.join(", ")}\nDeneyim:\n${expText}\nEğitim:\n${eduText}\n\nÖzgeçmişindeki deneyimlere ve projelerine referans vererek sorular sor. "Özgeçmişinde X gördüm, bunu detaylandırır mısın?" gibi kişiselleştirilmiş sorular sor.`,
+          );
+        }
+      } catch {
+        // non-fatal
+      }
+    }
+
+    // 3. User Profile context
+    try {
+      const profile = await convex.query(api.userProfiles.getByUser, {
+        userId: this.interview.userId as any,
+      });
+      if (profile && (profile.interests.length > 0 || profile.goals)) {
+        let profileText = "[Aday Profil Bilgisi]";
+        if (profile.interests.length > 0) {
+          profileText += `\nİlgi Alanları: ${profile.interests.join(", ")}`;
+        }
+        if (profile.goals) {
+          profileText += `\nHedefler: ${profile.goals}`;
+        }
+        parts.push(profileText);
+      }
+    } catch {
+      // non-fatal
+    }
+
+    // 4. Memory context (past performance)
+    if (this.interview.memoryEnabled) {
+      try {
+        const memoryEntries = await convex.query(api.userMemory.getAllByUser, {
+          userId: this.interview.userId as any,
+        });
+
+        if (memoryEntries.length > 0) {
+          const memoryLines: string[] = ["[Geçmiş Performans Hafızası]"];
+
+          for (const entry of memoryEntries) {
+            try {
+              const parsed = JSON.parse(entry.value);
+              if (entry.key === "weak_topics" && Array.isArray(parsed) && parsed.length > 0) {
+                memoryLines.push(`Zayıf Konular: ${parsed.join(", ")}`);
+              } else if (entry.key === "strong_topics" && Array.isArray(parsed) && parsed.length > 0) {
+                memoryLines.push(`Güçlü Konular: ${parsed.join(", ")}`);
+              } else if (entry.key === "avg_score") {
+                memoryLines.push(`Ortalama Skor: ${parsed}`);
+              } else if (entry.key === "total_interviews") {
+                memoryLines.push(`Toplam Mülakat: ${parsed}`);
+              } else if (entry.key === "improvement_notes" && typeof parsed === "string") {
+                memoryLines.push(`Gelişim Notları: ${parsed}`);
+              }
+            } catch {
+              // skip unparseable
+            }
+          }
+
+          if (memoryLines.length > 1) {
+            memoryLines.push(
+              "\nBu bilgileri kullanarak adayın zayıf yönlerinde daha fazla soru sor. Gelişim gösterdiği konularda bunu takdir et. Geçmiş performansına göre zorluk seviyesini ayarla.",
+            );
+            parts.push(memoryLines.join("\n"));
+          }
+        }
+      } catch {
+        // non-fatal
+      }
+    }
+
+    // Inject all personalization parts as a single system message
+    if (parts.length > 0) {
+      this.conversationHistory.push({
+        role: "system",
+        content: parts.join("\n\n"),
+      });
     }
   }
 

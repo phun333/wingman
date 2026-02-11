@@ -1,6 +1,7 @@
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Badge } from "@/components/ui/Badge";
+import { Clock, HardDrive, Lightbulb } from "lucide-react";
 import type { Problem } from "@ffh/types";
 
 interface ProblemPanelProps {
@@ -94,13 +95,15 @@ export function ProblemPanel({ problem, loading }: ProblemPanelProps) {
           </h3>
           <div className="flex gap-4 text-xs">
             {problem.timeComplexity && (
-              <span className="text-text-secondary">
-                ⏱ Zaman: <span className="text-text font-mono">{problem.timeComplexity}</span>
+              <span className="text-text-secondary flex items-center gap-1">
+                <Clock size={11} />
+                Zaman: <span className="text-text font-mono">{problem.timeComplexity}</span>
               </span>
             )}
             {problem.spaceComplexity && (
-              <span className="text-text-secondary">
-                💾 Alan: <span className="text-text font-mono">{problem.spaceComplexity}</span>
+              <span className="text-text-secondary flex items-center gap-1">
+                <HardDrive size={11} />
+                Alan: <span className="text-text font-mono">{problem.spaceComplexity}</span>
               </span>
             )}
           </div>

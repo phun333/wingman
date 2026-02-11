@@ -1,17 +1,20 @@
 import { NavLink } from "react-router-dom";
+import { LayoutDashboard, Play, History, TrendingUp, Settings } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 interface NavItem {
   to: string;
   label: string;
-  icon: string;
+  icon: LucideIcon;
   end?: boolean;
 }
 
 const navItems: NavItem[] = [
-  { to: "/", label: "Dashboard", icon: "◆", end: true },
-  { to: "/interview/new", label: "Yeni Mülakat", icon: "▶" },
-  { to: "/history", label: "Geçmiş", icon: "◷" },
-  { to: "/progress", label: "İlerleme", icon: "◈" },
+  { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
+  { to: "/interview/new", label: "Yeni Mülakat", icon: Play },
+  { to: "/history", label: "Geçmiş", icon: History },
+  { to: "/progress", label: "İlerleme", icon: TrendingUp },
+  { to: "/settings", label: "Profil & Ayarlar", icon: Settings },
 ];
 
 export function Sidebar() {
@@ -44,9 +47,7 @@ export function Sidebar() {
               }
             `}
           >
-            <span className="text-xs" aria-hidden="true">
-              {item.icon}
-            </span>
+            <item.icon size={16} strokeWidth={2} aria-hidden="true" />
             {item.label}
           </NavLink>
         ))}

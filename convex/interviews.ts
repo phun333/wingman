@@ -20,6 +20,9 @@ export const create = mutation({
     language: v.string(),
     questionCount: v.number(),
     config: v.optional(v.any()),
+    jobPostingId: v.optional(v.id("jobPostings")),
+    resumeId: v.optional(v.id("resumes")),
+    memoryEnabled: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const id = await ctx.db.insert("interviews", {
@@ -29,6 +32,9 @@ export const create = mutation({
       language: args.language,
       questionCount: args.questionCount,
       config: args.config,
+      jobPostingId: args.jobPostingId,
+      resumeId: args.resumeId,
+      memoryEnabled: args.memoryEnabled,
       status: "created",
       createdAt: Date.now(),
     });

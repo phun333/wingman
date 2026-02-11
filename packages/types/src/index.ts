@@ -31,6 +31,9 @@ export interface Interview {
   language: string;
   questionCount: number;
   config?: unknown;
+  jobPostingId?: string;
+  resumeId?: string;
+  memoryEnabled?: boolean;
   startedAt?: number;
   endedAt?: number;
   createdAt: number;
@@ -192,6 +195,70 @@ export interface DesignProblem {
   expectedComponents: string[];
   discussionPoints: string[];
   createdAt: number;
+}
+
+// ─── Job Posting ─────────────────────────────────────────
+
+export interface JobPosting {
+  _id: string;
+  userId: string;
+  url: string;
+  title: string;
+  company?: string;
+  requirements: string[];
+  skills: string[];
+  level?: string;
+  rawContent: string;
+  parsedAt: number;
+}
+
+// ─── Resume ──────────────────────────────────────────────
+
+export interface ResumeExperience {
+  company: string;
+  role: string;
+  duration: string;
+  highlights: string[];
+}
+
+export interface ResumeEducation {
+  school: string;
+  degree: string;
+}
+
+export interface Resume {
+  _id: string;
+  userId: string;
+  fileName: string;
+  name?: string;
+  title?: string;
+  yearsOfExperience?: number;
+  skills: string[];
+  experience: ResumeExperience[];
+  education: ResumeEducation[];
+  rawText: string;
+  parsedAt: number;
+}
+
+// ─── User Profile ────────────────────────────────────────
+
+export interface UserProfile {
+  _id: string;
+  userId: string;
+  interests: string[];
+  goals?: string;
+  preferredLanguage?: string;
+  updatedAt: number;
+}
+
+// ─── User Memory ─────────────────────────────────────────
+
+export interface UserMemoryEntry {
+  _id: string;
+  userId: string;
+  key: string;
+  value: string;
+  updatedAt: number;
 }
 
 // ─── WebSocket Protocol ──────────────────────────────────

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/Button";
 import { diffLines, type Change } from "diff";
+import { PartyPopper, X, Lightbulb, User, Sparkles } from "lucide-react";
 
 interface SolutionComparisonPanelProps {
   userSolution: string;
@@ -42,7 +43,7 @@ export function SolutionComparisonPanel({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border-subtle">
           <div className="flex items-center gap-3">
-            <span className="text-xl">🎉</span>
+            <PartyPopper size={20} className="text-amber" />
             <div>
               <h2 className="font-display text-lg font-semibold text-text">
                 Tüm Testler Geçti!
@@ -77,7 +78,7 @@ export function SolutionComparisonPanel({
               </button>
             </div>
             <Button variant="ghost" size="sm" onClick={onDismiss}>
-              Kapat ✕
+              Kapat <X size={14} />
             </Button>
           </div>
         </div>
@@ -118,8 +119,9 @@ export function SolutionComparisonPanel({
 
         {/* Footer */}
         <div className="px-6 py-3 border-t border-border-subtle flex items-center justify-between">
-          <p className="text-xs text-text-muted">
-            💡 AI mülakatçı farkları sesli olarak açıklayacak
+          <p className="text-xs text-text-muted flex items-center gap-1.5">
+            <Lightbulb size={12} />
+            AI mülakatçı farkları sesli olarak açıklayacak
           </p>
           <Button size="sm" onClick={onDismiss}>
             Devam Et
@@ -223,7 +225,7 @@ function SideBySideView({
       <div className="flex flex-col overflow-hidden">
         <div className="px-4 py-2.5 bg-surface-raised/50 border-b border-border-subtle">
           <h3 className="text-sm font-medium text-amber flex items-center gap-2">
-            <span>👤</span> Senin Çözümün
+            <User size={14} /> Senin Çözümün
           </h3>
         </div>
         <div className="flex-1 overflow-auto">
@@ -237,7 +239,7 @@ function SideBySideView({
       <div className="flex flex-col overflow-hidden">
         <div className="px-4 py-2.5 bg-surface-raised/50 border-b border-border-subtle">
           <h3 className="text-sm font-medium text-success flex items-center gap-2">
-            <span>✨</span> Optimal Çözüm
+            <Sparkles size={14} /> Optimal Çözüm
           </h3>
         </div>
         <div className="flex-1 overflow-auto">

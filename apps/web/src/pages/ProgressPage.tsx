@@ -4,7 +4,9 @@ import { motion } from "motion/react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { getUserProgress, listInterviews } from "@/lib/api";
-import type { UserProgress, Interview, HireRecommendation } from "@ffh/types";
+import { typeLabels, typeColors, hireLabels, difficultyLabels, formatDate, formatFullDate } from "@/lib/constants";
+import { TrendingUp, Flame, CheckCircle2, AlertTriangle } from "lucide-react";
+import type { UserProgress, Interview } from "@ffh/types";
 import {
   LineChart,
   Line,
@@ -20,51 +22,6 @@ import {
   PolarRadiusAxis,
 } from "recharts";
 
-// ─── Constants ───────────────────────────────────────────
-
-const typeLabels: Record<string, string> = {
-  "live-coding": "Live Coding",
-  "system-design": "System Design",
-  "phone-screen": "Phone Screen",
-  practice: "Practice",
-};
-
-const typeColors: Record<string, string> = {
-  "live-coding": "#3b82f6",
-  "system-design": "#f59e0b",
-  "phone-screen": "#22c55e",
-  practice: "#8b5cf6",
-};
-
-const hireLabels: Record<HireRecommendation, { label: string; variant: "success" | "amber" | "danger" | "default" }> = {
-  "strong-hire": { label: "Strong Hire", variant: "success" },
-  hire: { label: "Hire", variant: "success" },
-  "lean-hire": { label: "Lean Hire", variant: "amber" },
-  "no-hire": { label: "No Hire", variant: "danger" },
-};
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
-};
-
-function formatDate(ts: number): string {
-  return new Intl.DateTimeFormat("tr-TR", {
-    day: "numeric",
-    month: "short",
-  }).format(new Date(ts));
-}
-
-function formatFullDate(ts: number): string {
-  return new Intl.DateTimeFormat("tr-TR", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(ts));
-}
-
 // ─── Custom Tooltip ──────────────────────────────────────
 
 function ScoreTooltip({ active, payload, label }: any) {
@@ -78,6 +35,17 @@ function ScoreTooltip({ active, payload, label }: any) {
     </div>
   );
 }
+
+// ─── Chart color tokens ──────────────────────────────────
+const CHART_GRID = "rgba(39, 39, 47, 0.6)";
+const CHART_AXIS = "rgba(85, 85, 95, 0.8)";
+const CHART_TICK = "rgba(139, 139, 150, 1)";
+const CHART_TICK_DIM = "rgba(85, 85, 95, 1)";
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+};
 
 // ─── Main Component ──────────────────────────────────────
 
@@ -196,11 +164,12 @@ export function ProgressPage() {
           { label: "Ortalama Skor", value: progress?.averageScore ?? 0 },
           { label: "En Yüksek", value: progress?.highestScore ?? 0 },
           { label: "Bu Ay", value: progress?.thisMonth ?? 0 },
-          { label: "Seri 🔥", value: progress?.streak ?? 0 },
+          { label: "Seri", value: progress?.streak ?? 0, icon: Flame },
         ].map((stat) => (
           <Card key={stat.label}>
-            <p className="text-xs text-text-muted uppercase tracking-wider font-medium">
+            <p className="text-xs text-text-muted uppercase tracking-wider font-medium flex items-center gap-1">
               {stat.label}
+              {"icon" in stat && stat.icon && <stat.icon size={11} className="text-amber" />}
             </p>
             <p className="mt-1 font-display text-2xl font-bold text-text tabular-nums">
               {stat.value}
@@ -213,7 +182,7 @@ export function ProgressPage() {
         <motion.div variants={fadeUp} className="mt-10">
           <Card className="flex flex-col items-center justify-center py-16 text-center">
             <div className="h-14 w-14 rounded-2xl bg-amber/15 border border-amber/30 flex items-center justify-center mb-4">
-              <span className="text-2xl">📈</span>
+              <TrendingUp size={24} className="text-amber" strokeWidth={1.8} />
             </div>
             <p className="text-text-secondary text-sm">
               Henüz değerlendirilmiş mülakat yok
@@ -243,24 +212,24 @@ export function ProgressPage() {
               </h2>
               <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={lineData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
                   <XAxis
                     dataKey="date"
-                    tick={{ fill: "#888", fontSize: 11 }}
-                    axisLine={{ stroke: "#444" }}
+                    tick={{ fill: CHART_TICK, fontSize: 11 }}
+                    axisLine={{ stroke: CHART_AXIS }}
                   />
                   <YAxis
                     domain={[0, 100]}
-                    tick={{ fill: "#888", fontSize: 11 }}
-                    axisLine={{ stroke: "#444" }}
+                    tick={{ fill: CHART_TICK, fontSize: 11 }}
+                    axisLine={{ stroke: CHART_AXIS }}
                   />
                   <Tooltip content={<ScoreTooltip />} />
                   <Line
                     type="monotone"
                     dataKey="score"
-                    stroke="#f59e0b"
+                    stroke="#e5a10e"
                     strokeWidth={2}
-                    dot={{ fill: "#f59e0b", r: 4 }}
+                    dot={{ fill: "#e5a10e", r: 4 }}
                     activeDot={{ r: 6 }}
                   />
                 </LineChart>
@@ -277,21 +246,21 @@ export function ProgressPage() {
               </h2>
               <ResponsiveContainer width="100%" height={250}>
                 <RadarChart data={avgRadarData} cx="50%" cy="50%" outerRadius="75%">
-                  <PolarGrid stroke="#333" />
+                  <PolarGrid stroke={CHART_GRID} />
                   <PolarAngleAxis
                     dataKey="subject"
-                    tick={{ fill: "#999", fontSize: 11 }}
+                    tick={{ fill: CHART_TICK, fontSize: 11 }}
                   />
                   <PolarRadiusAxis
                     angle={90}
                     domain={[0, 100]}
-                    tick={{ fill: "#666", fontSize: 10 }}
+                    tick={{ fill: CHART_TICK_DIM, fontSize: 10 }}
                   />
                   <Radar
                     name="Ortalama"
                     dataKey="value"
-                    stroke="#f59e0b"
-                    fill="#f59e0b"
+                    stroke="#e5a10e"
+                    fill="#e5a10e"
                     fillOpacity={0.2}
                     strokeWidth={2}
                   />
@@ -310,7 +279,7 @@ export function ProgressPage() {
               {progress?.topStrengths && progress.topStrengths.length > 0 && (
                 <Card className="p-6">
                   <h2 className="font-display text-lg font-semibold text-success mb-4 flex items-center gap-2">
-                    <span>✅</span> En Sık Güçlü Yönler
+                    <CheckCircle2 size={18} /> En Sık Güçlü Yönler
                   </h2>
                   <ul className="space-y-2.5">
                     {progress.topStrengths.map((s, i) => (
@@ -329,7 +298,7 @@ export function ProgressPage() {
               {progress?.topWeaknesses && progress.topWeaknesses.length > 0 && (
                 <Card className="p-6">
                   <h2 className="font-display text-lg font-semibold text-amber mb-4 flex items-center gap-2">
-                    <span>⚠️</span> Sık Tekrar Eden Gelişim Alanları
+                    <AlertTriangle size={18} /> Sık Tekrar Eden Gelişim Alanları
                   </h2>
                   <ul className="space-y-2.5">
                     {progress.topWeaknesses.map((w, i) => (
@@ -401,6 +370,7 @@ export function ProgressPage() {
                       const result = results.find(
                         (r) => r.interviewId === iv._id,
                       );
+                      const diffInfo = difficultyLabels[iv.difficulty];
                       return (
                         <tr
                           key={iv._id}
@@ -420,21 +390,11 @@ export function ProgressPage() {
                             </span>
                           </td>
                           <td className="px-4 py-3">
-                            <span
-                              className={`text-xs px-2 py-0.5 rounded-md border ${
-                                iv.difficulty === "easy"
-                                  ? "text-success border-success/30 bg-success/10"
-                                  : iv.difficulty === "medium"
-                                    ? "text-amber border-amber/30 bg-amber/10"
-                                    : "text-danger border-danger/30 bg-danger/10"
-                              }`}
-                            >
-                              {iv.difficulty === "easy"
-                                ? "Kolay"
-                                : iv.difficulty === "medium"
-                                  ? "Orta"
-                                  : "Zor"}
-                            </span>
+                            {diffInfo && (
+                              <span className={`text-xs px-2 py-0.5 rounded-md border ${diffInfo.classes}`}>
+                                {diffInfo.label}
+                              </span>
+                            )}
                           </td>
                           <td className="px-4 py-3">
                             {result ? (
