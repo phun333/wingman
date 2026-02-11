@@ -114,7 +114,27 @@ body::before {
   background: radial-gradient(ellipse at center, var(--tw-gradient-from) 0%, var(--tw-gradient-to) 70%);
 }
 
-/* ─── Reduced Motion ───────────────────────────────────── */
+/* ─── tldraw Whiteboard Overrides ──────────────────────── */
+
+.whiteboard-container .tl-background {
+  background-color: #0a0a10 !important;
+}
+
+.whiteboard-container .tl-canvas {
+  background-color: #0a0a10 !important;
+}
+
+/* Make tldraw grid subtle in dark mode */
+.whiteboard-container .tl-grid {
+  opacity: 0.3;
+}
+
+/* Fix tldraw z-index conflicts with our palette */
+.whiteboard-container .tl-overlays {
+  z-index: 40;
+}
+
+/* Reduced Motion ───────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
   *,
