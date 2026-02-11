@@ -17,6 +17,7 @@ import { TestResultsPanel } from "@/components/interview/TestResultsPanel";
 import { VoiceBar } from "@/components/interview/VoiceBar";
 import { ResizableSplitter } from "@/components/interview/ResizableSplitter";
 import { SolutionComparisonPanel } from "@/components/interview/SolutionComparisonPanel";
+import { SystemDesignRoom } from "@/components/interview/SystemDesignRoom";
 
 const stateLabels: Record<VoicePipelineState, string> = {
   idle: "Hazır",
@@ -56,6 +57,7 @@ export function InterviewRoomPage() {
   // Debounced code update ref
   const codeUpdateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const isSystemDesign = interview?.type === "system-design";
   const isLiveCoding = interview?.type === "live-coding";
   const isPractice = interview?.type === "practice";
   const showCodeEditor = isLiveCoding || isPractice;
@@ -249,6 +251,12 @@ export function InterviewRoomPage() {
         </div>
       </div>
     );
+  }
+
+  // ─── System Design mode ─────────────────────────────
+
+  if (isSystemDesign && id) {
+    return <SystemDesignRoom interviewId={id} />;
   }
 
   // ─── Voice-only mode (non-code interviews) ───────────

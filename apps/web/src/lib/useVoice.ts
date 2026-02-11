@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ClientMessage, ServerMessage, VoicePipelineState, Problem, CodeLanguage, TestResult } from "@ffh/types";
+import type { ClientMessage, ServerMessage, VoicePipelineState, Problem, DesignProblem, CodeLanguage, TestResult, WhiteboardState } from "@ffh/types";
 import { AudioQueuePlayer, decodePCM16, createVolumeMeter } from "./audio";
 
 interface UseVoiceOptions {
   interviewId?: string;
   onProblemLoaded?: (problem: Problem) => void;
+  onDesignProblemLoaded?: (problem: DesignProblem) => void;
 }
 
 interface SolutionComparison {
@@ -32,6 +33,7 @@ interface UseVoiceReturn {
   interrupt: () => void;
   sendCodeUpdate: (code: string, language: CodeLanguage) => void;
   sendCodeResult: (results: TestResult[], stdout: string, stderr: string, error?: string) => void;
+  sendWhiteboardUpdate: (state: WhiteboardState) => void;
   requestHint: () => void;
   dismissSolution: () => void;
 }
@@ -155,6 +157,10 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
 
       case "problem_loaded":
         options.onProblemLoaded?.(msg.problem);
+        break;
+
+      case "design_problem_loaded":
+        options.onDesignProblemLoaded?.(msg.problem);
         break;
 
       case "hint_given":
@@ -333,6 +339,10 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
     [],
   );
 
+  const sendWhiteboardUpdate = useCallback((state: WhiteboardState) => {
+    send({ type: "whiteboard_update", state });
+  }, []);
+
   const requestHint = useCallback(() => {
     send({ type: "hint_request" });
   }, []);
@@ -359,6 +369,7 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
     interrupt,
     sendCodeUpdate,
     sendCodeResult,
+    sendWhiteboardUpdate,
     requestHint,
     dismissSolution,
   };
