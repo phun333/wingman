@@ -54,6 +54,19 @@ export class VoiceSession {
   private hintCount: number = 0;
   private processing = false; // Guards against concurrent pipeline runs
 
+  // Question tracking (phone-screen)
+  private currentQuestion: number = 0;
+  private totalQuestions: number = 5;
+
+  // Time limit tracking
+  private timeLimitMs: number = 0; // 0 = no limit
+  private startTime: number = 0;
+  private timeWarningTimer: ReturnType<typeof setTimeout> | null = null;
+  private timeUpTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // Problem reference for solution comparison
+  private currentProblem: { optimalSolution?: string; timeComplexity?: string; spaceComplexity?: string } | null = null;
+
   constructor(send: (msg: ServerMessage) => void) {
     this.send = send;
   }
@@ -78,6 +91,16 @@ export class VoiceSession {
       };
 
       this.config.language = interview.language;
+      this.totalQuestions = interview.questionCount ?? 5;
+
+      // Time limits per type
+      if (this.interview.type === "phone-screen") {
+        const timeLimitsMin: Record<string, number> = { easy: 15, medium: 25, hard: 35 };
+        this.timeLimitMs = (timeLimitsMin[this.interview.difficulty] ?? 25) * 60 * 1000;
+      } else if (this.interview.type === "live-coding") {
+        const timeLimitsMin: Record<string, number> = { easy: 20, medium: 30, hard: 45 };
+        this.timeLimitMs = (timeLimitsMin[this.interview.difficulty] ?? 30) * 60 * 1000;
+      }
 
       // Build system prompt based on interview config
       const systemPrompt = getSystemPrompt(
@@ -95,6 +118,12 @@ export class VoiceSession {
           });
           if (problem) {
             this.send({ type: "problem_loaded", problem: problem as any });
+            // Store problem info for solution comparison
+            this.currentProblem = {
+              optimalSolution: problem.optimalSolution ?? undefined,
+              timeComplexity: problem.timeComplexity ?? undefined,
+              spaceComplexity: problem.spaceComplexity ?? undefined,
+            };
             // Add problem context to conversation
             this.conversationHistory.push({
               role: "system",
@@ -131,6 +160,37 @@ export class VoiceSession {
       }
 
       this.initialized = true;
+
+      // Send initial question counter for phone-screen
+      if (this.interview.type === "phone-screen") {
+        this.currentQuestion = 1;
+        this.send({ type: "question_update", current: this.currentQuestion, total: this.totalQuestions });
+      }
+
+      // Start time limit timers
+      if (this.timeLimitMs > 0) {
+        this.startTime = Date.now();
+        // Warning at 80% of time
+        const warningMs = this.timeLimitMs * 0.8;
+        this.timeWarningTimer = setTimeout(() => {
+          const minutesLeft = Math.ceil((this.timeLimitMs - (Date.now() - this.startTime)) / 60000);
+          this.send({ type: "time_warning", minutesLeft });
+          // Inject time warning into conversation so AI knows
+          this.conversationHistory.push({
+            role: "system",
+            content: `[SYSTEM: Mülakatın bitmesine yaklaşık ${minutesLeft} dakika kaldı. Eğer henüz sormadıysan son bir soru sor ve mülakatı nazikçe sonlandırmaya başla.]`,
+          });
+        }, warningMs);
+        // Time up
+        this.timeUpTimer = setTimeout(() => {
+          this.conversationHistory.push({
+            role: "system",
+            content: `[SYSTEM: Mülakat süresi doldu. Adaya teşekkür et ve mülakatı sonlandır. Kısa ve nazik ol.]`,
+          });
+          // Trigger AI to wrap up
+          this.triggerAIResponse();
+        }, this.timeLimitMs);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Interview yüklenemedi";
       this.send({ type: "error", message });
@@ -233,6 +293,9 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
     this.conversationHistory.push({ role: "user", content: summary });
     this.persistMessage("user", summary);
 
+    // Check if all tests passed for solution comparison (practice mode)
+    this.checkSolutionComparison(results);
+
     // Auto-trigger AI response to comment on the results
     if (this.processing) return;
     this.processing = true;
@@ -320,6 +383,93 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
     }
   }
 
+  // ─── Trigger AI response (for system-injected messages) ─
+
+  private async triggerAIResponse(): Promise<void> {
+    if (this.processing) return;
+    this.processing = true;
+    this.setState("processing");
+    this.abortController = new AbortController();
+    const { signal } = this.abortController;
+
+    try {
+      const aiResponse = await this.generateResponse(signal);
+      if (!aiResponse || signal.aborted) return;
+
+      this.conversationHistory.push({ role: "assistant", content: aiResponse });
+      this.persistMessage("assistant", aiResponse);
+      this.trackQuestionProgress(aiResponse);
+
+      if (!signal.aborted) {
+        this.setState("speaking");
+        await this.synthesizeSpeech(aiResponse, signal);
+      }
+    } catch (err) {
+      if (!signal.aborted) {
+        const message = err instanceof Error ? err.message : "AI response hatası";
+        this.send({ type: "error", message });
+      }
+    } finally {
+      this.processing = false;
+      if (!signal.aborted) {
+        this.send({ type: "ai_audio_done" });
+        this.setState("idle");
+      }
+      this.abortController = null;
+    }
+  }
+
+  // ─── Question tracking ───────────────────────────────
+
+  private trackQuestionProgress(aiResponse: string): void {
+    if (!this.interview || this.interview.type !== "phone-screen") return;
+
+    // Heuristic: detect new question in AI response (ends with ?)
+    const questionMarks = (aiResponse.match(/\?/g) || []).length;
+    const isAskingQuestion = questionMarks > 0 && aiResponse.trim().endsWith("?");
+
+    if (isAskingQuestion && this.currentQuestion < this.totalQuestions) {
+      this.currentQuestion++;
+      this.send({
+        type: "question_update",
+        current: Math.min(this.currentQuestion, this.totalQuestions),
+        total: this.totalQuestions,
+      });
+    }
+
+    // Inject question count awareness into conversation
+    if (this.currentQuestion >= this.totalQuestions) {
+      const alreadyInjected = this.conversationHistory.some((m) =>
+        m.content.includes("[SYSTEM: Tüm sorular soruldu"),
+      );
+      if (!alreadyInjected) {
+        this.conversationHistory.push({
+          role: "system",
+          content: `[SYSTEM: Tüm sorular soruldu (${this.totalQuestions}/${this.totalQuestions}). Adaya teşekkür et ve mülakatı sonlandır.]`,
+        });
+      }
+    }
+  }
+
+  // ─── Solution comparison (practice mode) ─────────────
+
+  private checkSolutionComparison(results: { passed: boolean }[]): void {
+    if (!this.interview) return;
+    if (this.interview.type !== "practice") return;
+    if (!this.currentProblem?.optimalSolution) return;
+
+    const allPassed = results.length > 0 && results.every((r) => r.passed);
+    if (allPassed) {
+      this.send({
+        type: "solution_comparison",
+        userSolution: this.currentCode,
+        optimalSolution: this.currentProblem.optimalSolution,
+        timeComplexity: this.currentProblem.timeComplexity,
+        spaceComplexity: this.currentProblem.spaceComplexity,
+      });
+    }
+  }
+
   // ─── Pipeline ────────────────────────────────────────
 
   private async processAudio(): Promise<void> {
@@ -357,6 +507,9 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
 
       // Persist assistant message to Convex
       await this.persistMessage("assistant", aiResponse);
+
+      // Track question progress for phone-screen
+      this.trackQuestionProgress(aiResponse);
 
       // 3) TTS — send full response as audio
       if (!signal.aborted) {
@@ -600,6 +753,14 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
     if (this.abortController) {
       this.abortController.abort();
       this.abortController = null;
+    }
+    if (this.timeWarningTimer) {
+      clearTimeout(this.timeWarningTimer);
+      this.timeWarningTimer = null;
+    }
+    if (this.timeUpTimer) {
+      clearTimeout(this.timeUpTimer);
+      this.timeUpTimer = null;
     }
   }
 }

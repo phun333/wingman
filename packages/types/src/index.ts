@@ -177,4 +177,7 @@ export type ServerMessage =
   | { type: "state_change"; state: VoicePipelineState }
   | { type: "error"; message: string }
   | { type: "problem_loaded"; problem: Problem }
-  | { type: "hint_given"; level: number; totalHints: number };
+  | { type: "hint_given"; level: number; totalHints: number }
+  | { type: "question_update"; current: number; total: number }
+  | { type: "time_warning"; minutesLeft: number }
+  | { type: "solution_comparison"; userSolution: string; optimalSolution: string; timeComplexity?: string; spaceComplexity?: string };
