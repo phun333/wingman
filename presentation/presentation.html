@@ -1,0 +1,1961 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Wingman — AI Mülakat Platformu</title>
+
+<!-- Fonts (matching project design tokens) -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<!-- Remix Icon CDN -->
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" rel="stylesheet" />
+
+<style>
+/* ══════════════════════════════════════════════════
+   DESIGN TOKENS — Exact match with project index.css
+   ══════════════════════════════════════════════════ */
+
+:root {
+  --font-display: "Bricolage Grotesque", serif;
+  --font-body: "DM Sans", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --color-bg: #07070a;
+  --color-surface: #0f0f14;
+  --color-surface-raised: #16161d;
+  --color-surface-overlay: #1c1c25;
+  --color-border: #27272f;
+  --color-border-subtle: #1e1e26;
+
+  --color-text: #ededef;
+  --color-text-secondary: #8b8b96;
+  --color-text-muted: #55555f;
+
+  --color-amber: #e5a10e;
+  --color-amber-light: #f5c842;
+  --color-amber-dim: #a3720a;
+  --color-amber-glow: rgba(229, 161, 14, 0.12);
+
+  --color-danger: #ef4444;
+  --color-success: #22c55e;
+  --color-info: #3b82f6;
+  --color-purple: #8b5cf6;
+}
+
+/* ══════════════════════════════════════════════════
+   BASE
+   ══════════════════════════════════════════════════ */
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { color-scheme: dark; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Grain Overlay — identical to project */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px 128px;
+}
+
+::selection { background: var(--color-amber); color: var(--color-bg); }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+
+/* ══════════════════════════════════════════════════
+   ICON SIZING
+   ══════════════════════════════════════════════════ */
+i[class^="ri-"] { font-style: normal; }
+.icon-xs { font-size: 14px; }
+.icon-sm { font-size: 16px; }
+.icon-md { font-size: 20px; }
+.icon-lg { font-size: 24px; }
+.icon-xl { font-size: 28px; }
+.icon-2xl { font-size: 36px; }
+.icon-3xl { font-size: 48px; }
+
+/* ══════════════════════════════════════════════════
+   SLIDE ENGINE
+   ══════════════════════════════════════════════════ */
+
+.deck { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+
+.slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 80px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(30px);
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.slide.active { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.slide.exit-up { opacity: 0; transform: translateY(-30px); }
+
+/* ══════════════════════════════════════════════════
+   PROGRESS BAR
+   ══════════════════════════════════════════════════ */
+
+.progress-track {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: 3px; background: var(--color-border-subtle); z-index: 100;
+}
+
+.progress-bar {
+  height: 100%; background: var(--color-amber);
+  box-shadow: 0 0 12px var(--color-amber-glow), 0 0 40px var(--color-amber-glow);
+  transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1); border-radius: 0 2px 2px 0;
+}
+
+/* ══════════════════════════════════════════════════
+   SLIDE COUNTER / NAV
+   ══════════════════════════════════════════════════ */
+
+.slide-counter {
+  position: fixed; bottom: 28px; right: 40px;
+  font-family: var(--font-mono); font-size: 12px;
+  color: var(--color-text-muted); z-index: 100; letter-spacing: 0.05em;
+}
+.slide-counter .current { color: var(--color-amber); font-weight: 600; }
+
+.nav-dots {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 8px; z-index: 100;
+}
+
+.nav-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--color-border); border: none; cursor: pointer;
+  transition: all 0.3s ease; padding: 0;
+}
+.nav-dot:hover { background: var(--color-text-muted); }
+.nav-dot.active {
+  background: var(--color-amber);
+  box-shadow: 0 0 8px var(--color-amber-glow); transform: scale(1.3);
+}
+
+.key-hint {
+  position: fixed; bottom: 24px; left: 40px;
+  display: flex; align-items: center; gap: 6px; z-index: 100;
+}
+.key-hint kbd {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 26px; height: 24px; padding: 0 6px; border-radius: 5px;
+  border: 1px solid var(--color-border); background: var(--color-surface);
+  font-family: var(--font-mono); font-size: 10px; color: var(--color-text-muted);
+}
+.key-hint span { font-size: 11px; color: var(--color-text-muted); }
+
+/* ══════════════════════════════════════════════════
+   TYPOGRAPHY
+   ══════════════════════════════════════════════════ */
+
+.t-display { font-family: var(--font-display); }
+.t-mono    { font-family: var(--font-mono); }
+.t-amber       { color: var(--color-amber); }
+.t-amber-light { color: var(--color-amber-light); }
+.t-secondary   { color: var(--color-text-secondary); }
+.t-muted       { color: var(--color-text-muted); }
+.t-success     { color: var(--color-success); }
+.t-info        { color: var(--color-info); }
+.t-danger      { color: var(--color-danger); }
+.t-purple      { color: var(--color-purple); }
+
+h1 { font-family: var(--font-display); font-weight: 800; line-height: 1.1; }
+h2 { font-family: var(--font-display); font-weight: 700; line-height: 1.2; }
+h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
+
+/* ══════════════════════════════════════════════════
+   COMPONENTS — matching Card, Badge, Button
+   ══════════════════════════════════════════════════ */
+
+.card {
+  border-radius: 12px;
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-surface);
+  padding: 24px;
+}
+
+.card-hover { transition: all 0.2s ease; }
+.card-hover:hover {
+  border-color: rgba(229, 161, 14, 0.3);
+  box-shadow: 0 0 10px var(--color-amber-glow);
+}
+
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  border-radius: 6px; border: 1px solid;
+  padding: 2px 8px; font-size: 12px; font-weight: 500;
+}
+.badge i { font-size: 11px; }
+
+.badge-amber   { background: rgba(229,161,14,0.1); color: var(--color-amber); border-color: rgba(229,161,14,0.2); }
+.badge-success { background: rgba(34,197,94,0.1);  color: var(--color-success); border-color: rgba(34,197,94,0.2); }
+.badge-info    { background: rgba(59,130,246,0.1);  color: var(--color-info); border-color: rgba(59,130,246,0.2); }
+.badge-danger  { background: rgba(239,68,68,0.1);   color: var(--color-danger); border-color: rgba(239,68,68,0.2); }
+.badge-purple  { background: rgba(139,91,246,0.1);  color: var(--color-purple); border-color: rgba(139,91,246,0.2); }
+.badge-default { background: var(--color-surface-raised); color: var(--color-text-secondary); border-color: var(--color-border); }
+
+/* ══════════════════════════════════════════════════
+   GLOW
+   ══════════════════════════════════════════════════ */
+
+.glow-amber    { box-shadow: 0 0 20px var(--color-amber-glow), 0 0 60px var(--color-amber-glow); }
+.glow-amber-sm { box-shadow: 0 0 10px var(--color-amber-glow); }
+
+/* ══════════════════════════════════════════════════
+   ANIMATIONS
+   ══════════════════════════════════════════════════ */
+
+.slide.active .reveal {
+  animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+.slide.active .reveal:nth-child(1)  { animation-delay: 0.05s; }
+.slide.active .reveal:nth-child(2)  { animation-delay: 0.12s; }
+.slide.active .reveal:nth-child(3)  { animation-delay: 0.19s; }
+.slide.active .reveal:nth-child(4)  { animation-delay: 0.26s; }
+.slide.active .reveal:nth-child(5)  { animation-delay: 0.33s; }
+.slide.active .reveal:nth-child(6)  { animation-delay: 0.40s; }
+.slide.active .reveal:nth-child(7)  { animation-delay: 0.47s; }
+.slide.active .reveal:nth-child(8)  { animation-delay: 0.54s; }
+.slide.active .reveal:nth-child(9)  { animation-delay: 0.61s; }
+.slide.active .reveal:nth-child(10) { animation-delay: 0.68s; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-ring {
+  0%   { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+@keyframes signal-ping {
+  0%   { transform: scale(1); opacity: 0.5; }
+  75%, 100% { transform: scale(2.2); opacity: 0; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@keyframes waveform {
+  0%, 100% { height: 8px; }
+  50%      { height: 28px; }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.06); }
+}
+
+/* ══════════════════════════════════════════════════
+   BACKGROUNDS
+   ══════════════════════════════════════════════════ */
+
+.grid-bg {
+  position: absolute; inset: 0; opacity: 0.03; pointer-events: none;
+  background-image:
+    linear-gradient(var(--color-amber) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-amber) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+.ambient-glow {
+  position: absolute; border-radius: 50%; pointer-events: none; filter: blur(120px);
+}
+
+/* ══════════════════════════════════════════════════
+   ORB (matching LoginPage)
+   ══════════════════════════════════════════════════ */
+
+.orb {
+  width: 140px; height: 140px; border-radius: 50%;
+  background: rgba(229, 161, 14, 0.1);
+  border: 1px solid rgba(229, 161, 14, 0.2);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 20px var(--color-amber-glow), 0 0 60px var(--color-amber-glow);
+  position: relative;
+}
+
+.orb-letter {
+  font-family: var(--font-display); font-size: 60px; font-weight: 800;
+  color: var(--color-amber);
+}
+
+.orb-ring {
+  position: absolute; inset: -12px; border-radius: 50%;
+  border: 1px solid rgba(229, 161, 14, 0.15);
+  animation: pulse-ring 2.5s ease-out infinite;
+}
+
+/* ══════════════════════════════════════════════════
+   ARCHITECTURE DIAGRAM
+   ══════════════════════════════════════════════════ */
+
+.arch-box {
+  border-radius: 12px; border: 1px solid var(--color-border-subtle);
+  background: var(--color-surface); padding: 16px 20px;
+  text-align: center; font-size: 13px; font-weight: 500;
+  transition: all 0.3s ease;
+}
+.arch-box:hover {
+  border-color: rgba(229,161,14,0.3);
+  box-shadow: 0 0 10px var(--color-amber-glow);
+}
+.arch-box .arch-icon {
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 6px; width: 32px; height: 32px; border-radius: 8px;
+}
+
+.arch-connector {
+  width: 2px; height: 32px;
+  background: linear-gradient(to bottom, var(--color-amber), transparent);
+  margin: 0 auto;
+}
+
+.arch-connector-h {
+  height: 2px; width: 40px;
+  background: linear-gradient(to right, transparent, var(--color-amber), transparent);
+}
+
+/* ══════════════════════════════════════════════════
+   PIPELINE
+   ══════════════════════════════════════════════════ */
+
+.pipeline-step {
+  display: flex; align-items: center; gap: 16px;
+  padding: 20px 24px; border-radius: 12px;
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-surface); min-width: 200px;
+}
+
+.pipeline-icon {
+  width: 44px; height: 44px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+}
+
+.pipeline-arrow {
+  font-size: 20px; color: var(--color-amber); flex-shrink: 0;
+  animation: float 2s ease-in-out infinite;
+}
+
+/* ══════════════════════════════════════════════════
+   VOICE ORBS — matching InterviewRoomPage states
+   ══════════════════════════════════════════════════ */
+
+.voice-orb-wrap {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  width: 100px; height: 100px;
+}
+
+.voice-orb {
+  width: 100px; height: 100px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid; transition: all 0.5s ease;
+  position: relative; z-index: 2;
+}
+
+.voice-idle {
+  border-color: var(--color-border);
+  background: var(--color-surface-raised);
+}
+
+.voice-listen {
+  border-color: rgba(34,197,94,0.5);
+  background: rgba(34,197,94,0.05);
+  box-shadow: 0 0 30px rgba(34,197,94,0.15);
+  animation: breathe 2s ease-in-out infinite;
+}
+
+.voice-process {
+  border-color: rgba(229,161,14,0.4);
+  background: rgba(229,161,14,0.05);
+  box-shadow: 0 0 20px var(--color-amber-glow), 0 0 60px var(--color-amber-glow);
+}
+
+.voice-speak {
+  border-color: rgba(59,130,246,0.4);
+  background: rgba(59,130,246,0.05);
+  box-shadow: 0 0 40px rgba(59,130,246,0.2);
+}
+
+/* Signal rings for listening state */
+.signal-ring {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 2px solid var(--color-success);
+  animation: signal-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+  z-index: 1;
+}
+.signal-ring:nth-child(2) { animation-delay: 0.5s; }
+.signal-ring:nth-child(3) { animation-delay: 1.0s; }
+
+/* ══════════════════════════════════════════════════
+   WAVEFORM
+   ══════════════════════════════════════════════════ */
+
+.waveform { display: flex; align-items: center; gap: 3px; height: 32px; }
+.waveform-bar {
+  width: 3px; background: var(--color-info); border-radius: 2px;
+  animation: waveform 0.6s ease-in-out infinite;
+}
+
+/* ══════════════════════════════════════════════════
+   FEATURE CARD
+   ══════════════════════════════════════════════════ */
+
+.feature-card {
+  border-radius: 12px; border: 1px solid var(--color-border-subtle);
+  background: var(--color-surface); padding: 28px;
+  transition: all 0.25s ease;
+}
+.feature-card:hover {
+  border-color: rgba(229,161,14,0.3);
+  box-shadow: 0 0 10px var(--color-amber-glow);
+  transform: translateY(-2px);
+}
+
+.feature-icon {
+  width: 44px; height: 44px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; margin-bottom: 16px;
+}
+
+/* ══════════════════════════════════════════════════
+   CODE BLOCK (matching Monaco theme)
+   ══════════════════════════════════════════════════ */
+
+.code-block {
+  background: var(--color-surface); border: 1px solid var(--color-border-subtle);
+  border-radius: 12px; padding: 20px 24px;
+  font-family: var(--font-mono); font-size: 13px; line-height: 1.7;
+  overflow-x: auto;
+}
+.code-block .kw   { color: var(--color-amber); }
+.code-block .str  { color: var(--color-success); }
+.code-block .num  { color: var(--color-info); }
+.code-block .cm   { color: var(--color-text-muted); font-style: italic; }
+.code-block .fn   { color: var(--color-amber-light); }
+.code-block .type { color: var(--color-amber-light); }
+
+/* ══════════════════════════════════════════════════
+   TECH PILL
+   ══════════════════════════════════════════════════ */
+
+.tech-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 16px; border-radius: 8px;
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-surface); font-size: 13px; font-weight: 500;
+  color: var(--color-text); transition: all 0.2s;
+}
+.tech-pill:hover {
+  border-color: rgba(229,161,14,0.3);
+  box-shadow: 0 0 10px var(--color-amber-glow);
+}
+.tech-pill .pill-icon {
+  width: 22px; height: 22px; border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+}
+
+/* ══════════════════════════════════════════════════
+   SCORE RING (matching ReportPage)
+   ══════════════════════════════════════════════════ */
+
+.score-ring {
+  position: relative; display: inline-flex;
+  align-items: center; justify-content: center;
+}
+.score-ring svg { transform: rotate(-90deg); }
+.score-ring .score-label {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+
+/* ══════════════════════════════════════════════════
+   STAT CARD (matching DashboardPage)
+   ══════════════════════════════════════════════════ */
+
+.stat-card {
+  border-radius: 12px; border: 1px solid var(--color-border-subtle);
+  background: var(--color-surface); padding: 20px;
+}
+.stat-label {
+  font-size: 11px; text-transform: uppercase;
+  letter-spacing: 0.05em; font-weight: 500;
+  color: var(--color-text-muted);
+}
+.stat-value {
+  font-family: var(--font-display); font-size: 28px;
+  font-weight: 700; color: var(--color-text); margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ══════════════════════════════════════════════════
+   MOCKUP WINDOW
+   ══════════════════════════════════════════════════ */
+
+.mockup-window {
+  border-radius: 12px; border: 1px solid var(--color-border);
+  background: var(--color-surface); overflow: hidden;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+}
+.mockup-titlebar {
+  height: 36px; background: var(--color-surface-raised);
+  border-bottom: 1px solid var(--color-border-subtle);
+  display: flex; align-items: center; padding: 0 14px; gap: 7px;
+}
+.mockup-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+/* ══════════════════════════════════════════════════
+   USER FLOW
+   ══════════════════════════════════════════════════ */
+
+.flow-step {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 12px; width: 140px; text-align: center;
+}
+.flow-circle {
+  width: 64px; height: 64px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid; transition: all 0.3s; position: relative;
+}
+.flow-arrow {
+  color: var(--color-amber); font-size: 18px; flex-shrink: 0;
+  animation: float 2s ease-in-out infinite;
+}
+.flow-num {
+  position: absolute; top: -6px; right: -6px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--color-amber); color: var(--color-bg);
+  font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ══════════════════════════════════════════════════
+   LAYOUT UTILITIES
+   ══════════════════════════════════════════════════ */
+
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-wrap { flex-wrap: wrap; }
+.items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.gap-2  { gap: 8px; }
+.gap-3  { gap: 12px; }
+.gap-4  { gap: 16px; }
+.gap-5  { gap: 20px; }
+.gap-6  { gap: 24px; }
+.gap-8  { gap: 32px; }
+.gap-10 { gap: 40px; }
+.gap-12 { gap: 48px; }
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.relative { position: relative; }
+.w-full { width: 100%; }
+
+.slide-content { width: 100%; max-width: 1100px; }
+</style>
+</head>
+
+<body>
+
+<!-- PROGRESS -->
+<div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+
+<!-- NAVIGATION -->
+<div class="nav-dots" id="navDots"></div>
+<div class="slide-counter"><span class="current" id="currentSlide">01</span> <span style="margin:0 2px;">/</span> <span id="totalSlides">14</span></div>
+<div class="key-hint"><kbd>←</kbd><kbd>→</kbd><span>ile gezin</span></div>
+
+<!-- ═══════════════════════════════════════════════════
+     DECK
+     ═══════════════════════════════════════════════════ -->
+<div class="deck" id="deck">
+
+  <!-- ═══════════ SLIDE 1 — Title ═══════════ -->
+  <div class="slide active" data-slide="0">
+    <div class="grid-bg"></div>
+    <div class="ambient-glow" style="width:500px;height:500px;background:rgba(229,161,14,0.05);top:50%;left:50%;transform:translate(-50%,-50%)"></div>
+    <div class="ambient-glow" style="width:300px;height:300px;background:rgba(229,161,14,0.03);top:35%;left:35%;transform:translate(-50%,-50%)"></div>
+
+    <div class="flex flex-col items-center gap-8 relative" style="z-index:1">
+      <!-- Hackathon context -->
+      <div class="reveal flex items-center gap-3" style="margin-bottom:-4px;">
+        <span class="badge badge-amber" style="font-size:11px; padding:3px 10px;"><i class="ri-mic-line icon-xs"></i> Voice AI Hackathon</span>
+        <span class="t-muted" style="font-size:12px;">·</span>
+        <span class="t-muted" style="font-size:12px; font-family:var(--font-mono);">15 Şubat 2026</span>
+      </div>
+
+      <div class="reveal">
+        <div class="orb" style="animation: float 3s ease-in-out infinite;">
+          <div class="orb-ring"></div>
+          <div class="orb-ring" style="animation-delay:0.8s; inset:-24px;"></div>
+          <span class="orb-letter">W</span>
+        </div>
+      </div>
+
+      <div class="reveal text-center">
+        <h1 style="font-size:56px; letter-spacing:-0.02em;">
+          Wingman
+        </h1>
+        <p class="t-amber t-display" style="font-size:22px; font-weight:600; margin-top:6px;">Sesli AI Mülakat Platformu</p>
+      </div>
+
+      <div class="reveal" style="max-width:460px;">
+        <p class="t-secondary text-center" style="font-size:16px; line-height:1.6;">
+          Türkçe sesli AI mülakatçı ile gerçek zamanlı teknik mülakat simülasyonu. Kodla, konuş, değerlendir.
+        </p>
+      </div>
+
+      <div class="reveal flex gap-3" style="margin-top:8px;">
+        <span class="badge badge-amber"><i class="ri-sparkling-2-fill icon-xs"></i> fal.ai</span>
+        <span class="badge badge-info"><i class="ri-mic-line icon-xs"></i> Freya STT/TTS</span>
+        <span class="badge badge-success"><i class="ri-brain-line icon-xs"></i> OpenRouter LLM</span>
+        <span class="badge badge-default"><i class="ri-terminal-box-line icon-xs"></i> Bun + Convex</span>
+      </div>
+
+      <div class="reveal flex items-center gap-4" style="margin-top:20px;">
+        <span class="t-muted" style="font-size:11px;">Powered by</span>
+        <span class="t-secondary" style="font-size:12px; font-weight:500;">Freya AI</span>
+        <span class="t-muted" style="font-size:11px;">×</span>
+        <span class="t-secondary" style="font-size:12px; font-weight:500;">fal.ai</span>
+        <span class="t-muted" style="font-size:11px;">×</span>
+        <span class="t-secondary" style="font-size:12px; font-weight:500;">Komünite</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SLIDE 2 — Problem & Solution ═══════════ -->
+  <div class="slide" data-slide="1">
+    <div class="slide-content flex flex-col gap-10">
+      <div class="reveal">
+        <p class="t-amber t-mono" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px;">Problem & Çözüm</p>
+        <h2 style="font-size:40px;">Teknik mülakatlara hazırlanmak<br><span class="t-amber">neden bu kadar zor?</span></h2>
+      </div>
+
+      <!-- Hackathon Category Tag -->
+      <div class="reveal">
+        <span class="badge badge-purple" style="font-size:11px; padding:3px 10px;"><i class="ri-graduation-cap-line icon-xs"></i> Hackathon Kategorisi: İnteraktif Eğitim ve Koçluk (EdTech)</span>
+      </div>
+
+      <div class="flex gap-8" style="margin-top:8px;">
+        <!-- Problem -->
+        <div class="reveal flex-col gap-5" style="flex:1; display:flex;">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+            <i class="ri-close-circle-line t-danger icon-lg"></i>
+            <h3 style="font-size:18px;" class="t-danger">Sorunlar</h3>
+          </div>
+          <div class="card" style="border-color:rgba(239,68,68,0.15);">
+            <p class="t-secondary" style="font-size:14px; line-height:1.8;">
+              <i class="ri-checkbox-blank-circle-fill t-danger icon-xs" style="font-size:8px; vertical-align:middle;"></i>&ensp;Gerçek mülakat deneyimi olmadan pratik yetersiz<br>
+              <i class="ri-checkbox-blank-circle-fill t-danger icon-xs" style="font-size:8px; vertical-align:middle;"></i>&ensp;İngilizce ağırlıklı kaynaklar, Türkçe destek yok<br>
+              <i class="ri-checkbox-blank-circle-fill t-danger icon-xs" style="font-size:8px; vertical-align:middle;"></i>&ensp;Statik sorular — etkileşim ve geri bildirim eksik<br>
+              <i class="ri-checkbox-blank-circle-fill t-danger icon-xs" style="font-size:8px; vertical-align:middle;"></i>&ensp;Ses ve iletişim becerisi ölçülemiyor<br>
+              <i class="ri-checkbox-blank-circle-fill t-danger icon-xs" style="font-size:8px; vertical-align:middle;"></i>&ensp;Kişiselleştirilmiş değerlendirme pahalı
+            </p>
+          </div>
+        </div>
+
+        <!-- Solution -->
+        <div class="reveal flex-col gap-5" style="flex:1; display:flex;">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+            <i class="ri-checkbox-circle-line t-success icon-lg"></i>
+            <h3 style="font-size:18px;" class="t-success">Wingman Çözümü</h3>
+          </div>
+          <div class="card" style="border-color:rgba(34,197,94,0.15);">
+            <p class="t-secondary" style="font-size:14px; line-height:1.8;">
+              <i class="ri-checkbox-blank-circle-fill t-success icon-xs" style="font-size:8px; vertical-align:middle;"></i>&ensp;Gerçek zamanlı <strong style="color:var(--color-text)">sesli AI mülakatçı</strong><br>
+              <i class="ri-checkbox-blank-circle-fill t-success icon-xs" style="font-size:8px; vertical-align:middle;"></i>&ensp;<strong style="color:var(--color-text)">Türkçe</strong> doğal dil STT + TTS desteği<br>
+              <i class="ri-checkbox-blank-circle-fill t-success icon-xs" style="font-size:8px; vertical-align:middle;"></i>&ensp;4 farklı mülakat tipi, dinamik sorular<br>
+              <i class="ri-checkbox-blank-circle-fill t-success icon-xs" style="font-size:8px; vertical-align:middle;"></i>&ensp;Live coding ortamı + kod çalıştırma<br>
+              <i class="ri-checkbox-blank-circle-fill t-success icon-xs" style="font-size:8px; vertical-align:middle;"></i>&ensp;AI destekli detaylı performans raporu
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SLIDE 3 — Tech Stack ═══════════ -->
+  <div class="slide" data-slide="2">
+    <div class="slide-content flex flex-col gap-10">
+      <div class="reveal">
+        <p class="t-amber t-mono" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px;">Teknoloji</p>
+        <h2 style="font-size:40px;">Modern <span class="t-amber">Tech Stack</span></h2>
+        <p class="t-secondary" style="margin-top:8px; font-size:15px;">Bun monorepo · Türkçe AI · Gerçek zamanlı WebSocket</p>
+      </div>
+
+      <div class="reveal" style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px;">
+        <!-- Frontend -->
+        <div class="card flex-col gap-4" style="display:flex;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="feature-icon" style="background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.2);">
+              <i class="ri-layout-4-line t-info icon-md"></i>
+            </div>
+            <h3 style="font-size:15px;">Frontend</h3>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <span class="tech-pill"><span class="pill-icon" style="background:rgba(59,130,246,0.15); color:var(--color-info);"><i class="ri-reactjs-line"></i></span>React 19</span>
+            <span class="tech-pill"><span class="pill-icon" style="background:rgba(229,161,14,0.15); color:var(--color-amber);"><i class="ri-flashlight-line"></i></span>Vite</span>
+            <span class="tech-pill"><span class="pill-icon" style="background:rgba(59,130,246,0.15); color:var(--color-info);"><i class="ri-palette-line"></i></span>TailwindCSS 4</span>
+            <span class="tech-pill"><span class="pill-icon" style="background:rgba(229,161,14,0.15); color:var(--color-amber);"><i class="ri-code-s-slash-line"></i></span>Monaco Editor</span>
+            <span class="tech-pill"><span class="pill-icon" style="background:rgba(34,197,94,0.15); color:var(--color-success);"><i class="ri-play-circle-line"></i></span>Motion</span>
+            <span class="tech-pill"><span class="pill-icon" style="background:rgba(239,68,68,0.15); color:var(--color-danger);"><i class="ri-bar-chart-box-line"></i></span>Recharts</span>
+            <span class="tech-pill"><span class="pill-icon" style="background:rgba(139,91,246,0.15); color:var(--color-purple);"><i class="ri-pencil-ruler-2-line"></i></span>tldraw</span>
+          </div>
+        </div>
+
+        <!-- Backend -->
+        <div class="card flex-col gap-4" style="display:flex;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="feature-icon" style="background:rgba(229,161,14,0.1); border:1px solid rgba(229,161,14,0.2);">
+              <i class="ri-server-line t-amber icon-md"></i>
+            </div>
+            <h3 style="font-size:15px;">Backend</h3>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <span class="tech-pill"><span class="pill-icon" style="background:rgba(229,161,14,0.15); color:var(--color-amber);"><i class="ri-speed-line"></i></span>Bun Runtime</span>
+            <span class="tech-pill"><span class="pill-icon" style="background:rgba(239,68,68,0.15); color:var(--color-danger);"><i class="ri-fire-line"></i></span>Hono</span>
+            <span class="tech-pill"><span class="pill-icon" style="background:rgba(59,130,246,0.15); color:var(--color-info);"><i class="ri-link"></i></span>WebSocket</span>
+            <span class="tech-pill"><span class="pill-icon" style="background:rgba(34,197,94,0.15); color:var(--color-success);"><i class="ri-database-2-line"></i></span>Convex</span>
+            <span class="tech-pill"><span class="pill-icon" style="background:rgba(229,161,14,0.15); color:var(--color-amber);"><i class="ri-shield-keyhole-line"></i></span>better-auth</span>
+            <span class="tech-pill"><span class="pill-icon" style="background:rgba(59,130,246,0.15); color:var(--color-info);"><i class="ri-file-list-3-line"></i></span>Scalar Docs</span>
+          </div>
+        </div>
+
+        <!-- AI -->
+        <div class="card flex-col gap-4" style="display:flex;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="feature-icon" style="background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.2);">
+              <i class="ri-brain-line t-success icon-md"></i>
+            </div>
+            <h3 style="font-size:15px;">AI / ML</h3>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <span class="tech-pill"><span class="pill-icon" style="background:rgba(229,161,14,0.15); color:var(--color-amber);"><i class="ri-sparkling-2-fill"></i></span>fal.ai</span>
+            <span class="tech-pill"><span class="pill-icon" style="background:rgba(34,197,94,0.15); color:var(--color-success);"><i class="ri-volume-up-line"></i></span>Freya TTS</span>
+            <span class="tech-pill"><span class="pill-icon" style="background:rgba(59,130,246,0.15); color:var(--color-info);"><i class="ri-mic-line"></i></span>Freya STT</span>
+            <span class="tech-pill"><span class="pill-icon" style="background:rgba(239,68,68,0.15); color:var(--color-danger);"><i class="ri-route-line"></i></span>OpenRouter</span>
+            <span class="tech-pill"><span class="pill-icon" style="background:rgba(229,161,14,0.15); color:var(--color-amber);"><i class="ri-headphone-line"></i></span>PCM16 Stream</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal flex gap-3 justify-center" style="margin-top:4px;">
+        <span class="badge badge-default"><i class="ri-code-s-slash-line icon-xs"></i> TypeScript Strict</span>
+        <span class="badge badge-default"><i class="ri-box-3-line icon-xs"></i> ES Modules</span>
+        <span class="badge badge-default"><i class="ri-shield-check-line icon-xs"></i> Zod v4</span>
+        <span class="badge badge-default"><i class="ri-git-branch-line icon-xs"></i> Monorepo Workspaces</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SLIDE 4 — Architecture ═══════════ -->
+  <div class="slide" data-slide="3">
+    <div class="slide-content flex flex-col gap-10">
+      <div class="reveal">
+        <p class="t-amber t-mono" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px;">Mimari</p>
+        <h2 style="font-size:40px;">Sistem <span class="t-amber">Mimarisi</span></h2>
+      </div>
+
+      <div class="reveal flex flex-col items-center gap-3">
+        <!-- Client -->
+        <div class="arch-box" style="width:300px; border-color:rgba(59,130,246,0.3); background:rgba(59,130,246,0.03);">
+          <div class="arch-icon" style="background:rgba(59,130,246,0.1); border-radius:8px;"><i class="ri-window-line t-info icon-md"></i></div>
+          <strong>React SPA</strong>
+          <div class="t-muted" style="font-size:11px; margin-top:2px;">Vite · TailwindCSS · Monaco · Motion</div>
+        </div>
+
+        <div class="arch-connector"></div>
+
+        <!-- API Layer -->
+        <div class="flex items-center gap-4">
+          <div class="arch-box" style="width:220px; border-color:rgba(229,161,14,0.3); background:rgba(229,161,14,0.03);">
+            <div class="arch-icon" style="background:rgba(229,161,14,0.1); border-radius:8px;"><i class="ri-server-line t-amber icon-md"></i></div>
+            <strong>Hono API</strong>
+            <div class="t-muted" style="font-size:11px; margin-top:2px;">REST · OpenAPI · Scalar</div>
+          </div>
+          <div class="arch-connector-h"></div>
+          <div class="arch-box" style="width:220px; border-color:rgba(34,197,94,0.3); background:rgba(34,197,94,0.03);">
+            <div class="arch-icon" style="background:rgba(34,197,94,0.1); border-radius:8px;"><i class="ri-link t-success icon-md"></i></div>
+            <strong>WebSocket</strong>
+            <div class="t-muted" style="font-size:11px; margin-top:2px;">Voice Pipeline · Real-time</div>
+          </div>
+        </div>
+
+        <div class="arch-connector"></div>
+
+        <!-- Services -->
+        <div class="flex gap-4">
+          <div class="arch-box" style="width:160px;">
+            <div class="arch-icon" style="background:rgba(229,161,14,0.1); border-radius:8px;"><i class="ri-volume-up-line t-amber icon-sm"></i></div>
+            <strong class="t-amber">Freya TTS</strong>
+            <div class="t-muted" style="font-size:11px; margin-top:2px;">fal.ai streaming</div>
+          </div>
+          <div class="arch-box" style="width:160px;">
+            <div class="arch-icon" style="background:rgba(59,130,246,0.1); border-radius:8px;"><i class="ri-mic-line t-info icon-sm"></i></div>
+            <strong class="t-info">Freya STT</strong>
+            <div class="t-muted" style="font-size:11px; margin-top:2px;">fal.ai transcription</div>
+          </div>
+          <div class="arch-box" style="width:160px;">
+            <div class="arch-icon" style="background:rgba(34,197,94,0.1); border-radius:8px;"><i class="ri-brain-line t-success icon-sm"></i></div>
+            <strong class="t-success">OpenRouter</strong>
+            <div class="t-muted" style="font-size:11px; margin-top:2px;">LLM streaming</div>
+          </div>
+          <div class="arch-box" style="width:160px;">
+            <div class="arch-icon" style="background:rgba(139,91,246,0.1); border-radius:8px;"><i class="ri-database-2-line t-purple icon-sm"></i></div>
+            <strong class="t-purple">Convex</strong>
+            <div class="t-muted" style="font-size:11px; margin-top:2px;">DB + Auth</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal flex gap-3 justify-center">
+        <span class="badge badge-amber"><i class="ri-speed-line icon-xs"></i> Bun Runtime</span>
+        <span class="badge badge-default"><i class="ri-shield-keyhole-line icon-xs"></i> better-auth</span>
+        <span class="badge badge-info"><i class="ri-openai-line icon-xs"></i> OpenAI-compat API</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SLIDE 5 — Voice Pipeline ═══════════ -->
+  <div class="slide" data-slide="4">
+    <div class="slide-content flex flex-col gap-10">
+      <div class="reveal">
+        <p class="t-amber t-mono" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px;">Çekirdek Özellik</p>
+        <h2 style="font-size:40px;">Sesli AI <span class="t-amber">Pipeline</span></h2>
+        <p class="t-secondary" style="margin-top:6px; font-size:15px;">STT → LLM → TTS: Tam gerçek zamanlı ses döngüsü</p>
+      </div>
+
+      <div class="reveal flex items-center justify-center gap-4" style="flex-wrap:wrap;">
+        <div class="pipeline-step">
+          <div class="pipeline-icon" style="background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.2);"><i class="ri-mic-line t-success icon-lg"></i></div>
+          <div>
+            <p style="font-size:14px; font-weight:600;">Mikrofon</p>
+            <p class="t-muted" style="font-size:11px;">WebM/Opus 16kHz</p>
+          </div>
+        </div>
+        <span class="pipeline-arrow"><i class="ri-arrow-right-line"></i></span>
+
+        <div class="pipeline-step" style="border-color:rgba(59,130,246,0.2);">
+          <div class="pipeline-icon" style="background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.2);"><i class="ri-file-text-line t-info icon-lg"></i></div>
+          <div>
+            <p style="font-size:14px; font-weight:600;">Freya <span class="t-info">STT</span></p>
+            <p class="t-muted" style="font-size:11px;">Türkçe transkript</p>
+          </div>
+        </div>
+        <span class="pipeline-arrow"><i class="ri-arrow-right-line"></i></span>
+
+        <div class="pipeline-step" style="border-color:rgba(229,161,14,0.2);">
+          <div class="pipeline-icon" style="background:rgba(229,161,14,0.1); border:1px solid rgba(229,161,14,0.2);"><i class="ri-brain-line t-amber icon-lg"></i></div>
+          <div>
+            <p style="font-size:14px; font-weight:600;"><span class="t-amber">LLM</span> Streaming</p>
+            <p class="t-muted" style="font-size:11px;">OpenRouter SSE</p>
+          </div>
+        </div>
+        <span class="pipeline-arrow"><i class="ri-arrow-right-line"></i></span>
+
+        <div class="pipeline-step" style="border-color:rgba(229,161,14,0.2);">
+          <div class="pipeline-icon" style="background:rgba(229,161,14,0.1); border:1px solid rgba(229,161,14,0.2);"><i class="ri-volume-up-line t-amber icon-lg"></i></div>
+          <div>
+            <p style="font-size:14px; font-weight:600;">Freya <span class="t-amber">TTS</span></p>
+            <p class="t-muted" style="font-size:11px;">PCM16 streaming</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Voice States -->
+      <div class="reveal flex justify-center gap-10" style="margin-top:8px;">
+        <!-- Idle -->
+        <div class="flex flex-col items-center gap-3">
+          <div class="voice-orb-wrap">
+            <div class="voice-orb voice-idle"><i class="ri-mic-line t-muted icon-xl"></i></div>
+          </div>
+          <span class="t-muted" style="font-size:12px;">Hazır</span>
+        </div>
+        <!-- Listening — with signal rings -->
+        <div class="flex flex-col items-center gap-3">
+          <div class="voice-orb-wrap">
+            <div class="signal-ring"></div>
+            <div class="signal-ring"></div>
+            <div class="signal-ring"></div>
+            <div class="voice-orb voice-listen"><i class="ri-mic-fill t-success icon-xl"></i></div>
+          </div>
+          <span class="t-success" style="font-size:12px;">Dinliyor</span>
+        </div>
+        <!-- Processing -->
+        <div class="flex flex-col items-center gap-3">
+          <div class="voice-orb-wrap">
+            <div class="voice-orb voice-process"><i class="ri-loader-4-line t-amber icon-xl" style="animation:spin 1.5s linear infinite;"></i></div>
+          </div>
+          <span class="t-amber" style="font-size:12px;">Düşünüyor</span>
+        </div>
+        <!-- Speaking -->
+        <div class="flex flex-col items-center gap-3">
+          <div class="voice-orb-wrap">
+            <div class="voice-orb voice-speak">
+              <div class="waveform">
+                <div class="waveform-bar" style="animation-delay:0s;"></div>
+                <div class="waveform-bar" style="animation-delay:0.1s;"></div>
+                <div class="waveform-bar" style="animation-delay:0.2s;"></div>
+                <div class="waveform-bar" style="animation-delay:0.3s;"></div>
+                <div class="waveform-bar" style="animation-delay:0.15s;"></div>
+              </div>
+            </div>
+          </div>
+          <span class="t-info" style="font-size:12px;">Konuşuyor</span>
+        </div>
+      </div>
+
+      <div class="reveal flex gap-3 justify-center">
+        <span class="badge badge-default"><i class="ri-sound-module-line icon-xs"></i> VAD Silence Detection</span>
+        <span class="badge badge-default"><i class="ri-refresh-line icon-xs"></i> Auto-reconnect</span>
+        <span class="badge badge-default"><i class="ri-hand-coin-line icon-xs"></i> Interrupt Support</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SLIDE 6 — Interview Types ═══════════ -->
+  <div class="slide" data-slide="5">
+    <div class="slide-content flex flex-col gap-10">
+      <div class="reveal">
+        <p class="t-amber t-mono" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px;">Mülakat Tipleri</p>
+        <h2 style="font-size:40px;">4 Farklı <span class="t-amber">Mülakat Modu</span></h2>
+      </div>
+
+      <div class="reveal" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <!-- Live Coding -->
+        <div class="feature-card">
+          <div class="flex items-center gap-4" style="margin-bottom:12px;">
+            <div class="feature-icon" style="background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.2);"><i class="ri-keyboard-box-line t-info icon-md"></i></div>
+            <div>
+              <h3 style="font-size:17px;">Live Coding</h3>
+              <span class="badge badge-info" style="margin-top:4px;"><i class="ri-code-s-slash-line icon-xs"></i> Kod + Ses</span>
+            </div>
+          </div>
+          <p class="t-secondary" style="font-size:13px; line-height:1.6;">Monaco Editor ile gerçek zamanlı kodlama. Test çalıştırma, AI kod analizi ve sesli geri bildirim. Problem havuzundan dinamik soru atama.</p>
+          <div class="flex gap-2 flex-wrap" style="margin-top:12px;">
+            <span class="badge badge-default">JS</span>
+            <span class="badge badge-default">TS</span>
+            <span class="badge badge-default">Python</span>
+          </div>
+        </div>
+
+        <!-- System Design -->
+        <div class="feature-card">
+          <div class="flex items-center gap-4" style="margin-bottom:12px;">
+            <div class="feature-icon" style="background:rgba(229,161,14,0.1); border:1px solid rgba(229,161,14,0.2);"><i class="ri-mind-map t-amber icon-md"></i></div>
+            <div>
+              <h3 style="font-size:17px;">System Design</h3>
+              <span class="badge badge-amber" style="margin-top:4px;"><i class="ri-discuss-line icon-xs"></i> Whiteboard + Ses</span>
+            </div>
+          </div>
+          <p class="t-secondary" style="font-size:13px; line-height:1.6;">tldraw whiteboard ile gerçek zamanlı mimari çizim. Bileşen paleti, oklar ve sesli tartışma. AI whiteboard'u takip eder.</p>
+          <div class="flex gap-2 flex-wrap" style="margin-top:12px;">
+            <span class="badge badge-default">tldraw</span>
+            <span class="badge badge-default">Custom Shapes</span>
+          </div>
+        </div>
+
+        <!-- Phone Screen -->
+        <div class="feature-card">
+          <div class="flex items-center gap-4" style="margin-bottom:12px;">
+            <div class="feature-icon" style="background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.2);"><i class="ri-phone-line t-success icon-md"></i></div>
+            <div>
+              <h3 style="font-size:17px;">Phone Screen</h3>
+              <span class="badge badge-success" style="margin-top:4px;"><i class="ri-chat-voice-line icon-xs"></i> Klasik Format</span>
+            </div>
+          </div>
+          <p class="t-secondary" style="font-size:13px; line-height:1.6;">Klasik telefon mülakatı simülasyonu. Algoritma, veri yapıları ve temel CS konularında soru-cevap formatında mülakat.</p>
+        </div>
+
+        <!-- Practice -->
+        <div class="feature-card">
+          <div class="flex items-center gap-4" style="margin-bottom:12px;">
+            <div class="feature-icon" style="background:rgba(139,91,246,0.1); border:1px solid rgba(139,91,246,0.2);"><i class="ri-flask-line t-purple icon-md"></i></div>
+            <div>
+              <h3 style="font-size:17px;">Practice</h3>
+              <span class="badge badge-purple" style="margin-top:4px;"><i class="ri-cup-line icon-xs"></i> Stressiz</span>
+            </div>
+          </div>
+          <p class="t-secondary" style="font-size:13px; line-height:1.6;">Serbest pratik modu. Süre baskısı yok. Kademeli ipucu sistemi (3 seviye). Kod editörü + sesli yönlendirme.</p>
+          <div class="flex gap-2" style="margin-top:12px;">
+            <span class="badge badge-amber"><i class="ri-lightbulb-line icon-xs"></i> İpucu Sistemi</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SLIDE 7 — Live Coding Room ═══════════ -->
+  <div class="slide" data-slide="6">
+    <div class="slide-content flex flex-col gap-8">
+      <div class="reveal">
+        <p class="t-amber t-mono" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px;">Arayüz</p>
+        <h2 style="font-size:36px;">Live Coding <span class="t-amber">Mülakat Odası</span></h2>
+      </div>
+
+      <div class="reveal">
+        <div class="mockup-window">
+          <div class="mockup-titlebar">
+            <div class="mockup-dot" style="background:#ef4444;"></div>
+            <div class="mockup-dot" style="background:#eab308;"></div>
+            <div class="mockup-dot" style="background:#22c55e;"></div>
+            <span class="t-muted" style="font-size:11px; margin-left:8px; font-family:var(--font-mono);">
+              <i class="ri-code-s-slash-line icon-xs t-amber" style="margin-right:4px;"></i>Wingman — Live Coding · Orta
+            </span>
+            <span style="margin-left:auto; display:flex; align-items:center; gap:6px;">
+              <span style="font-size:10px; font-family:var(--font-mono); color:var(--color-text-muted);">12:34</span>
+              <span style="padding:3px 8px; border-radius:4px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); font-size:10px; color:var(--color-danger); font-weight:500;">Bitir</span>
+            </span>
+          </div>
+          <div style="display:flex; height:360px;">
+            <!-- Problem Panel -->
+            <div style="width:35%; border-right:1px solid var(--color-border-subtle); padding:16px; overflow:hidden; background:var(--color-surface);">
+              <div style="display:flex; align-items:center; gap:6px; margin-bottom:12px;">
+                <span style="font-size:15px; font-family:var(--font-display); font-weight:700;">Two Sum</span>
+                <span class="badge badge-amber" style="font-size:10px; padding:1px 6px;">Orta</span>
+                <span class="badge badge-default" style="font-size:10px; padding:1px 6px;">Array</span>
+              </div>
+              <p class="t-secondary" style="font-size:12px; line-height:1.6;">
+                Verilen bir tamsayı dizisi <code style="background:var(--color-surface-raised); padding:1px 4px; border-radius:3px; color:var(--color-amber); font-family:var(--font-mono); font-size:11px;">nums</code> ve bir hedef tamsayı <code style="background:var(--color-surface-raised); padding:1px 4px; border-radius:3px; color:var(--color-amber); font-family:var(--font-mono); font-size:11px;">target</code> için, toplamları hedefe eşit olan iki sayının indekslerini döndürün.
+              </p>
+              <div style="margin-top:16px; padding:10px; border-radius:8px; border:1px solid var(--color-border-subtle); background:var(--color-surface-raised); font-family:var(--font-mono); font-size:11px;">
+                <div class="t-muted" style="font-size:10px;">Girdi:</div>
+                <div>nums = [2,7,11,15], target = 9</div>
+                <div class="t-muted" style="font-size:10px; margin-top:6px;">Çıktı:</div>
+                <div class="t-success">[0, 1]</div>
+              </div>
+              <div style="margin-top:12px; display:flex; gap:12px; font-size:11px; color:var(--color-text-secondary);">
+                <span><i class="ri-timer-line icon-xs t-muted" style="margin-right:3px;"></i>Zaman: <span class="t-mono" style="color:var(--color-text);">O(n)</span></span>
+                <span><i class="ri-database-line icon-xs t-muted" style="margin-right:3px;"></i>Alan: <span class="t-mono" style="color:var(--color-text);">O(n)</span></span>
+              </div>
+            </div>
+
+            <!-- Code Editor -->
+            <div style="flex:1; display:flex; flex-direction:column;">
+              <div style="flex:1; padding:16px; background:var(--color-surface); font-family:var(--font-mono); font-size:12px; line-height:1.8; overflow:hidden;">
+                <span class="t-muted" style="user-select:none; margin-right:12px;">1</span><span class="kw">function</span> <span class="fn">twoSum</span>(nums, target) {<br>
+                <span class="t-muted" style="user-select:none; margin-right:12px;">2</span>&ensp;&ensp;<span class="kw">const</span> map = <span class="kw">new</span> <span class="type">Map</span>();<br>
+                <span class="t-muted" style="user-select:none; margin-right:12px;">3</span>&ensp;&ensp;<span class="kw">for</span> (<span class="kw">let</span> i = <span class="num">0</span>; i &lt; nums.length; i++) {<br>
+                <span class="t-muted" style="user-select:none; margin-right:12px;">4</span>&ensp;&ensp;&ensp;&ensp;<span class="kw">const</span> complement = target - nums[i];<br>
+                <span class="t-muted" style="user-select:none; margin-right:12px;">5</span>&ensp;&ensp;&ensp;&ensp;<span class="kw">if</span> (map.<span class="fn">has</span>(complement)) {<br>
+                <span class="t-muted" style="user-select:none; margin-right:12px;">6</span>&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;<span class="kw">return</span> [map.<span class="fn">get</span>(complement), i];<br>
+                <span class="t-muted" style="user-select:none; margin-right:12px;">7</span>&ensp;&ensp;&ensp;&ensp;}<br>
+                <span class="t-muted" style="user-select:none; margin-right:12px;">8</span>&ensp;&ensp;&ensp;&ensp;map.<span class="fn">set</span>(nums[i], i);<br>
+                <span class="t-muted" style="user-select:none; margin-right:12px;">9</span>&ensp;&ensp;}<br>
+                <span class="t-muted" style="user-select:none; margin-right:8px;">10</span>}<span style="display:inline-block;width:2px;height:14px;background:var(--color-amber);animation:blink 1s infinite;vertical-align:middle;margin-left:1px;"></span>
+              </div>
+              <!-- Test Results -->
+              <div style="border-top:1px solid var(--color-border-subtle); padding:12px 16px; background:var(--color-surface); display:flex; align-items:center; justify-content:space-between;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span class="t-muted" style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; font-weight:500;">Test Sonuçları</span>
+                  <span style="font-size:11px; font-family:var(--font-mono); padding:2px 6px; border-radius:4px; background:rgba(34,197,94,0.1); color:var(--color-success);">3/3</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:4px; padding:4px 10px; border-radius:6px; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.2); font-size:11px; color:var(--color-success); font-weight:500;">
+                  <i class="ri-play-fill icon-xs"></i> Çalıştır
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Voice Bar -->
+          <div style="border-top:1px solid var(--color-border-subtle); padding:10px 16px; background:rgba(15,15,20,0.8); display:flex; align-items:center; gap:12px;">
+            <div style="width:32px; height:32px; border-radius:50%; border:2px solid var(--color-success); background:rgba(34,197,94,0.15); display:flex; align-items:center; justify-content:center;">
+              <i class="ri-mic-fill t-success icon-sm"></i>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="width:6px; height:6px; border-radius:50%; background:var(--color-success); animation:signal-ping 1.5s infinite;"></span>
+              <span class="t-secondary" style="font-size:12px;">Dinliyor…</span>
+            </div>
+            <div style="flex:1; overflow:hidden;">
+              <p style="font-size:11px; color:var(--color-text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                <span class="t-info">Sen:</span> Hash map kullanarak O(n) çözüm oluşturdum…
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SLIDE 8 — System Design Whiteboard ═══════════ -->
+  <div class="slide" data-slide="7">
+    <div class="slide-content flex flex-col gap-8">
+      <div class="reveal">
+        <p class="t-amber t-mono" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px;">Arayüz</p>
+        <h2 style="font-size:36px;">System Design <span class="t-amber">Whiteboard</span></h2>
+        <p class="t-secondary" style="margin-top:6px; font-size:14px;">tldraw tabanlı interaktif mimari çizim + sesli tartışma</p>
+      </div>
+
+      <div class="reveal">
+        <div class="mockup-window">
+          <div class="mockup-titlebar">
+            <div class="mockup-dot" style="background:#ef4444;"></div>
+            <div class="mockup-dot" style="background:#eab308;"></div>
+            <div class="mockup-dot" style="background:#22c55e;"></div>
+            <span class="t-muted" style="font-size:11px; margin-left:8px; font-family:var(--font-mono);">
+              <i class="ri-mind-map icon-xs t-amber" style="margin-right:4px;"></i>Wingman — System Design · Orta
+            </span>
+            <span style="margin-left:auto; display:flex; align-items:center; gap:6px;">
+              <span style="font-size:10px; font-family:var(--font-mono); color:var(--color-text-muted);">18:42</span>
+              <span style="padding:3px 8px; border-radius:4px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); font-size:10px; color:var(--color-danger); font-weight:500;">Bitir</span>
+            </span>
+          </div>
+          <div style="display:flex; height:360px;">
+            <!-- Design Problem Panel -->
+            <div style="width:28%; border-right:1px solid var(--color-border-subtle); padding:16px; overflow:hidden; background:var(--color-surface);">
+              <div style="display:flex; align-items:center; gap:6px; margin-bottom:10px;">
+                <span style="font-size:14px; font-family:var(--font-display); font-weight:700;">URL Shortener</span>
+                <span class="badge badge-amber" style="font-size:9px; padding:1px 5px;">Orta</span>
+              </div>
+              <p class="t-secondary" style="font-size:11px; line-height:1.5; margin-bottom:12px;">
+                Milyonlarca kullanıcının günde 100M+ kısa URL oluşturduğu bir sistem tasarla.
+              </p>
+              <div style="margin-bottom:10px;">
+                <p class="t-muted" style="font-size:10px; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;">Fonksiyonel</p>
+                <div style="font-size:11px; color:var(--color-text-secondary); line-height:1.6;">
+                  ✓ URL kısaltma & yönlendirme<br>
+                  ✓ Analytics dashboard<br>
+                  ✓ Custom alias desteği
+                </div>
+              </div>
+              <div>
+                <p class="t-muted" style="font-size:10px; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;">Non-Fonksiyonel</p>
+                <div style="font-size:11px; color:var(--color-text-secondary); line-height:1.6;">
+                  ✓ 99.99% uptime<br>
+                  ✓ &lt;10ms yönlendirme<br>
+                  ✓ Yatay ölçeklenebilir
+                </div>
+              </div>
+            </div>
+
+            <!-- Whiteboard Area -->
+            <div style="flex:1; position:relative; background:var(--color-bg); display:flex; align-items:center; justify-content:center;">
+              <!-- Grid background -->
+              <div style="position:absolute;inset:0;opacity:0.04; background-image:linear-gradient(var(--color-text-muted) 1px, transparent 1px),linear-gradient(90deg, var(--color-text-muted) 1px, transparent 1px);background-size:40px 40px;"></div>
+
+              <!-- Whiteboard components mockup -->
+              <div style="position:relative; width:90%; height:85%;">
+                <!-- Client -->
+                <div style="position:absolute; top:12px; left:50%; transform:translateX(-50%); padding:8px 14px; border-radius:8px; background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.3); font-size:11px; font-weight:600; color:var(--color-info); display:flex; align-items:center; gap:6px;">
+                  <i class="ri-window-line" style="font-size:13px;"></i> Client
+                </div>
+                <!-- Arrow down -->
+                <div style="position:absolute; top:44px; left:50%; transform:translateX(-50%); width:2px; height:24px; background:linear-gradient(to bottom, var(--color-info), var(--color-amber));"></div>
+                <!-- Load Balancer -->
+                <div style="position:absolute; top:72px; left:50%; transform:translateX(-50%); padding:8px 14px; border-radius:8px; background:rgba(229,161,14,0.1); border:1px solid rgba(229,161,14,0.3); font-size:11px; font-weight:600; color:var(--color-amber); display:flex; align-items:center; gap:6px;">
+                  <i class="ri-git-branch-line" style="font-size:13px;"></i> Load Balancer
+                </div>
+                <!-- Arrows to servers -->
+                <div style="position:absolute; top:106px; left:35%; width:2px; height:24px; background:linear-gradient(to bottom, var(--color-amber), var(--color-success));"></div>
+                <div style="position:absolute; top:106px; left:65%; width:2px; height:24px; background:linear-gradient(to bottom, var(--color-amber), var(--color-success));"></div>
+                <!-- API Servers -->
+                <div style="position:absolute; top:134px; left:20%; padding:8px 12px; border-radius:8px; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); font-size:10px; font-weight:600; color:var(--color-success); display:flex; align-items:center; gap:4px;">
+                  <i class="ri-server-line" style="font-size:12px;"></i> API Server 1
+                </div>
+                <div style="position:absolute; top:134px; left:55%; padding:8px 12px; border-radius:8px; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); font-size:10px; font-weight:600; color:var(--color-success); display:flex; align-items:center; gap:4px;">
+                  <i class="ri-server-line" style="font-size:12px;"></i> API Server 2
+                </div>
+                <!-- Arrow to Cache & DB -->
+                <div style="position:absolute; top:170px; left:35%; width:2px; height:24px; background:linear-gradient(to bottom, var(--color-success), var(--color-danger));"></div>
+                <div style="position:absolute; top:170px; left:65%; width:2px; height:24px; background:linear-gradient(to bottom, var(--color-success), var(--color-purple));"></div>
+                <!-- Cache -->
+                <div style="position:absolute; top:198px; left:15%; padding:8px 12px; border-radius:8px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); font-size:10px; font-weight:600; color:var(--color-danger); display:flex; align-items:center; gap:4px;">
+                  <i class="ri-flashlight-line" style="font-size:12px;"></i> Redis Cache
+                </div>
+                <!-- Database -->
+                <div style="position:absolute; top:198px; left:55%; padding:8px 12px; border-radius:8px; background:rgba(139,91,246,0.1); border:1px solid rgba(139,91,246,0.3); font-size:10px; font-weight:600; color:var(--color-purple); display:flex; align-items:center; gap:4px;">
+                  <i class="ri-database-2-line" style="font-size:12px;"></i> PostgreSQL
+                </div>
+                <!-- CDN -->
+                <div style="position:absolute; top:12px; right:8%; padding:8px 12px; border-radius:8px; background:rgba(229,161,14,0.1); border:1px solid rgba(229,161,14,0.3); font-size:10px; font-weight:600; color:var(--color-amber); display:flex; align-items:center; gap:4px;">
+                  <i class="ri-global-line" style="font-size:12px;"></i> CDN
+                </div>
+              </div>
+
+              <!-- Component Palette -->
+              <div style="position:absolute; top:8px; left:8px; display:flex; flex-direction:column; gap:4px; padding:8px; border-radius:8px; background:var(--color-surface); border:1px solid var(--color-border-subtle);">
+                <div style="width:28px;height:28px;border-radius:6px;background:rgba(139,91,246,0.15);display:flex;align-items:center;justify-content:center;" title="Database"><i class="ri-database-2-line t-purple" style="font-size:13px;"></i></div>
+                <div style="width:28px;height:28px;border-radius:6px;background:rgba(239,68,68,0.15);display:flex;align-items:center;justify-content:center;" title="Cache"><i class="ri-flashlight-line t-danger" style="font-size:13px;"></i></div>
+                <div style="width:28px;height:28px;border-radius:6px;background:rgba(229,161,14,0.15);display:flex;align-items:center;justify-content:center;" title="LB"><i class="ri-git-branch-line t-amber" style="font-size:13px;"></i></div>
+                <div style="width:28px;height:28px;border-radius:6px;background:rgba(34,197,94,0.15);display:flex;align-items:center;justify-content:center;" title="Server"><i class="ri-server-line t-success" style="font-size:13px;"></i></div>
+                <div style="width:28px;height:28px;border-radius:6px;background:rgba(59,130,246,0.15);display:flex;align-items:center;justify-content:center;" title="Queue"><i class="ri-stack-line t-info" style="font-size:13px;"></i></div>
+              </div>
+            </div>
+          </div>
+          <!-- Voice Bar -->
+          <div style="border-top:1px solid var(--color-border-subtle); padding:10px 16px; background:rgba(15,15,20,0.8); display:flex; align-items:center; gap:12px;">
+            <div style="width:32px; height:32px; border-radius:50%; border:2px solid var(--color-info); background:rgba(59,130,246,0.15); display:flex; align-items:center; justify-content:center;">
+              <div class="waveform" style="gap:2px;">
+                <div class="waveform-bar" style="animation-delay:0s; width:2px;"></div>
+                <div class="waveform-bar" style="animation-delay:0.1s; width:2px;"></div>
+                <div class="waveform-bar" style="animation-delay:0.2s; width:2px;"></div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span class="t-info" style="font-size:12px;">AI Konuşuyor…</span>
+            </div>
+            <div style="flex:1; overflow:hidden;">
+              <p style="font-size:11px; color:var(--color-text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                <span class="t-amber">AI:</span> Load Balancer'dan sonra cache katmanı eklemen güzel olmuş. Peki cache invalidation stratejin ne olacak?
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal flex gap-3 justify-center">
+        <span class="badge badge-purple"><i class="ri-pencil-ruler-2-line icon-xs"></i> tldraw Whiteboard</span>
+        <span class="badge badge-default"><i class="ri-shape-line icon-xs"></i> Custom Design Shapes</span>
+        <span class="badge badge-amber"><i class="ri-eye-line icon-xs"></i> AI Whiteboard Takibi</span>
+        <span class="badge badge-info"><i class="ri-links-line icon-xs"></i> Bileşen + Ok Çizimi</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SLIDE 9 — Personalization (Faz 6) ═══════════ -->
+  <div class="slide" data-slide="8">
+    <div class="slide-content flex flex-col gap-10">
+      <div class="reveal">
+        <p class="t-amber t-mono" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px;">Kişiselleştirme · Faz 6</p>
+        <h2 style="font-size:40px;">Akıllı <span class="t-amber">Kişiselleştirme</span></h2>
+        <p class="t-secondary" style="margin-top:6px; font-size:15px;">CV, iş ilanı ve hafıza sistemi ile her mülakatı sana özel yap</p>
+      </div>
+
+      <div class="reveal" style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px;">
+        <!-- Resume Upload -->
+        <div class="feature-card">
+          <div class="feature-icon" style="background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.2);">
+            <i class="ri-file-user-line t-info icon-md"></i>
+          </div>
+          <h3 style="font-size:16px; margin-bottom:6px;">CV Yükleme & Parse</h3>
+          <p class="t-secondary" style="font-size:13px; line-height:1.6; margin-bottom:12px;">
+            PDF veya metin olarak CV yükle. AI otomatik olarak beceriler, deneyim, eğitim bilgilerini çıkarır.
+          </p>
+          <div class="code-block" style="padding:12px 14px; font-size:11px; line-height:1.5;">
+            <span class="cm">// AI Parse Sonucu</span><br>
+            <span class="kw">skills</span>: [<span class="str">"React"</span>, <span class="str">"Node.js"</span>, <span class="str">"TS"</span>]<br>
+            <span class="kw">experience</span>: <span class="num">3</span> yıl<br>
+            <span class="kw">level</span>: <span class="str">"Mid-Senior"</span>
+          </div>
+        </div>
+
+        <!-- Job Posting -->
+        <div class="feature-card">
+          <div class="feature-icon" style="background:rgba(229,161,14,0.1); border:1px solid rgba(229,161,14,0.2);">
+            <i class="ri-briefcase-4-line t-amber icon-md"></i>
+          </div>
+          <h3 style="font-size:16px; margin-bottom:6px;">İş İlanı Analizi</h3>
+          <p class="t-secondary" style="font-size:13px; line-height:1.6; margin-bottom:12px;">
+            İş ilanı URL veya metin yapıştır. AI gereksinimler, beceriler ve seviyeyi çıkarır. Mülakat buna göre şekillenir.
+          </p>
+          <div class="code-block" style="padding:12px 14px; font-size:11px; line-height:1.5;">
+            <span class="cm">// İlan Parse Sonucu</span><br>
+            <span class="kw">title</span>: <span class="str">"Sr. Frontend Dev"</span><br>
+            <span class="kw">skills</span>: [<span class="str">"React"</span>, <span class="str">"GraphQL"</span>]<br>
+            <span class="kw">level</span>: <span class="str">"Senior"</span>
+          </div>
+        </div>
+
+        <!-- Memory System -->
+        <div class="feature-card">
+          <div class="feature-icon" style="background:rgba(139,91,246,0.1); border:1px solid rgba(139,91,246,0.2);">
+            <i class="ri-brain-line t-purple icon-md"></i>
+          </div>
+          <h3 style="font-size:16px; margin-bottom:6px;">Kullanıcı Hafızası</h3>
+          <p class="t-secondary" style="font-size:13px; line-height:1.6; margin-bottom:12px;">
+            AI önceki mülakatlardan öğrenir. Güçlü/zayıf yönlerin, tercihlerin ve ilerleme durumun sonraki mülakata taşınır.
+          </p>
+          <div class="code-block" style="padding:12px 14px; font-size:11px; line-height:1.5;">
+            <span class="cm">// Memory Entries</span><br>
+            <span class="kw">strengths</span>: <span class="str">"Hash map kullanımı"</span><br>
+            <span class="kw">weaknesses</span>: <span class="str">"Space analizi"</span><br>
+            <span class="kw">interests</span>: [<span class="str">"Backend"</span>, <span class="str">"Go"</span>]
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal flex gap-3 justify-center">
+        <span class="badge badge-info"><i class="ri-file-user-line icon-xs"></i> CV Parse (LLM)</span>
+        <span class="badge badge-amber"><i class="ri-briefcase-4-line icon-xs"></i> İlan Analizi (LLM)</span>
+        <span class="badge badge-purple"><i class="ri-database-2-line icon-xs"></i> Convex Memory Store</span>
+        <span class="badge badge-success"><i class="ri-user-settings-line icon-xs"></i> Profil & Tercihler</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SLIDE 10 — Progress & History ═══════════ -->
+  <div class="slide" data-slide="9">
+    <div class="slide-content flex flex-col gap-8">
+      <div class="reveal">
+        <p class="t-amber t-mono" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px;">İlerleme Takibi</p>
+        <h2 style="font-size:40px;">İlerleme & <span class="t-amber">Geçmiş</span></h2>
+      </div>
+
+      <div class="reveal flex gap-6">
+        <!-- Stats Overview -->
+        <div class="flex flex-col gap-4" style="width:220px;">
+          <div class="stat-card" style="border-color:rgba(229,161,14,0.2);">
+            <div class="stat-label"><i class="ri-fire-line icon-xs t-amber" style="margin-right:4px;"></i>Seri</div>
+            <div class="stat-value" style="color:var(--color-amber);">7 <span class="t-muted" style="font-size:14px; font-weight:400;">gün</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label"><i class="ri-line-chart-line icon-xs" style="margin-right:4px;"></i>Ort. Skor</div>
+            <div class="stat-value">78.5</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label"><i class="ri-trophy-line icon-xs" style="margin-right:4px;"></i>En Yüksek</div>
+            <div class="stat-value t-success">92</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label"><i class="ri-calendar-check-line icon-xs" style="margin-right:4px;"></i>Bu Ay</div>
+            <div class="stat-value">12</div>
+          </div>
+        </div>
+
+        <!-- Chart Mockup -->
+        <div class="card" style="flex:1;">
+          <h3 style="font-size:14px; margin-bottom:16px;"><i class="ri-line-chart-line icon-sm t-amber" style="margin-right:6px;"></i>Skor Trendi</h3>
+          <!-- SVG Line Chart Mockup -->
+          <div style="height:180px; position:relative; padding:0 8px;">
+            <svg width="100%" height="100%" viewBox="0 0 500 160" preserveAspectRatio="none">
+              <!-- Grid lines -->
+              <line x1="0" y1="40" x2="500" y2="40" stroke="var(--color-border-subtle)" stroke-width="0.5"/>
+              <line x1="0" y1="80" x2="500" y2="80" stroke="var(--color-border-subtle)" stroke-width="0.5"/>
+              <line x1="0" y1="120" x2="500" y2="120" stroke="var(--color-border-subtle)" stroke-width="0.5"/>
+              <!-- Area fill -->
+              <path d="M0,120 L60,100 L120,110 L180,80 L240,70 L300,60 L360,50 L420,40 L480,30 L500,25 L500,160 L0,160 Z" fill="url(#chartGrad)" opacity="0.3"/>
+              <!-- Line -->
+              <path d="M0,120 L60,100 L120,110 L180,80 L240,70 L300,60 L360,50 L420,40 L480,30" fill="none" stroke="var(--color-amber)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <!-- Dots -->
+              <circle cx="0" cy="120" r="3" fill="var(--color-amber)"/>
+              <circle cx="60" cy="100" r="3" fill="var(--color-amber)"/>
+              <circle cx="120" cy="110" r="3" fill="var(--color-amber)"/>
+              <circle cx="180" cy="80" r="3" fill="var(--color-amber)"/>
+              <circle cx="240" cy="70" r="3" fill="var(--color-amber)"/>
+              <circle cx="300" cy="60" r="3" fill="var(--color-amber)"/>
+              <circle cx="360" cy="50" r="3" fill="var(--color-amber)"/>
+              <circle cx="420" cy="40" r="3" fill="var(--color-amber)"/>
+              <circle cx="480" cy="30" r="4" fill="var(--color-amber)" stroke="var(--color-bg)" stroke-width="2"/>
+              <defs>
+                <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="var(--color-amber)" stop-opacity="0.4"/>
+                  <stop offset="100%" stop-color="var(--color-amber)" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <!-- Labels -->
+            <div style="position:absolute; bottom:-4px; left:0; right:0; display:flex; justify-content:space-between;">
+              <span class="t-muted" style="font-size:9px;">3 Şub</span>
+              <span class="t-muted" style="font-size:9px;">5 Şub</span>
+              <span class="t-muted" style="font-size:9px;">7 Şub</span>
+              <span class="t-muted" style="font-size:9px;">9 Şub</span>
+              <span class="t-amber" style="font-size:9px; font-weight:600;">11 Şub</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Radar Chart Mockup -->
+        <div class="card" style="width:240px;">
+          <h3 style="font-size:14px; margin-bottom:12px;"><i class="ri-radar-line icon-sm t-info" style="margin-right:6px;"></i>Beceri Radarı</h3>
+          <div style="display:flex; align-items:center; justify-content:center; height:180px;">
+            <svg width="180" height="180" viewBox="0 0 200 200">
+              <!-- Pentagon grid -->
+              <polygon points="100,20 176,62 152,148 48,148 24,62" fill="none" stroke="var(--color-border-subtle)" stroke-width="0.5"/>
+              <polygon points="100,44 157,74 140,138 60,138 43,74" fill="none" stroke="var(--color-border-subtle)" stroke-width="0.5"/>
+              <polygon points="100,68 138,86 128,128 72,128 62,86" fill="none" stroke="var(--color-border-subtle)" stroke-width="0.5"/>
+              <!-- Data shape -->
+              <polygon points="100,30 165,70 138,142 55,130 38,68" fill="rgba(229,161,14,0.12)" stroke="var(--color-amber)" stroke-width="2"/>
+              <!-- Dots -->
+              <circle cx="100" cy="30" r="3" fill="var(--color-amber)"/>
+              <circle cx="165" cy="70" r="3" fill="var(--color-amber)"/>
+              <circle cx="138" cy="142" r="3" fill="var(--color-amber)"/>
+              <circle cx="55" cy="130" r="3" fill="var(--color-amber)"/>
+              <circle cx="38" cy="68" r="3" fill="var(--color-amber)"/>
+              <!-- Labels -->
+              <text x="100" y="12" text-anchor="middle" fill="var(--color-text-secondary)" font-size="9" font-family="var(--font-body)">Problem Çözme</text>
+              <text x="190" y="66" text-anchor="start" fill="var(--color-text-secondary)" font-size="9" font-family="var(--font-body)">İletişim</text>
+              <text x="158" y="158" text-anchor="start" fill="var(--color-text-secondary)" font-size="9" font-family="var(--font-body)">Kod</text>
+              <text x="42" y="158" text-anchor="end" fill="var(--color-text-secondary)" font-size="9" font-family="var(--font-body)">Analitik</text>
+              <text x="14" y="66" text-anchor="end" fill="var(--color-text-secondary)" font-size="9" font-family="var(--font-body)">Sistem</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal flex gap-3 justify-center">
+        <span class="badge badge-amber"><i class="ri-fire-line icon-xs"></i> Streak Takibi</span>
+        <span class="badge badge-info"><i class="ri-line-chart-line icon-xs"></i> Recharts Grafikler</span>
+        <span class="badge badge-purple"><i class="ri-radar-line icon-xs"></i> Beceri Radarı</span>
+        <span class="badge badge-success"><i class="ri-history-line icon-xs"></i> Mülakat Geçmişi</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SLIDE 11 — Report System ═══════════ -->
+  <div class="slide" data-slide="10">
+    <div class="slide-content flex flex-col gap-8">
+      <div class="reveal">
+        <p class="t-amber t-mono" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px;">Değerlendirme</p>
+        <h2 style="font-size:40px;">AI Performans <span class="t-amber">Raporu</span></h2>
+      </div>
+
+      <div class="reveal flex gap-6">
+        <!-- Score Column -->
+        <div class="card flex flex-col items-center gap-4" style="width:220px; padding:32px 24px;">
+          <div class="score-ring">
+            <svg width="120" height="120">
+              <circle cx="60" cy="60" r="48" fill="none" stroke="var(--color-surface-raised)" stroke-width="7"></circle>
+              <circle cx="60" cy="60" r="48" fill="none" stroke="var(--color-success)" stroke-width="7" stroke-linecap="round"
+                stroke-dasharray="301.6" stroke-dashoffset="54.3"
+                style="transition:stroke-dashoffset 1.5s ease;"></circle>
+            </svg>
+            <div class="score-label">
+              <span class="t-display t-success" style="font-size:32px; font-weight:800;">82</span>
+              <span class="t-muted" style="font-size:11px;">/ 100</span>
+            </div>
+          </div>
+          <span style="display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:20px; font-size:13px; font-weight:500; border:1px solid rgba(59,130,246,0.3); background:rgba(59,130,246,0.15); color:var(--color-info);">
+            <i class="ri-thumb-up-line icon-xs"></i> Hire
+          </span>
+        </div>
+
+        <!-- Category Scores -->
+        <div class="card" style="flex:1;">
+          <h3 style="font-size:15px; margin-bottom:16px;"><i class="ri-bar-chart-horizontal-line icon-sm t-amber" style="margin-right:6px;"></i>Kategori Skorları</h3>
+          <div class="flex flex-col gap-4">
+            <div>
+              <div class="flex justify-between" style="margin-bottom:5px;">
+                <span class="t-secondary" style="font-size:13px;"><i class="ri-lightbulb-line icon-xs t-muted" style="margin-right:4px;"></i>Problem Çözme</span>
+                <span class="t-success t-mono" style="font-size:13px; font-weight:600;">85</span>
+              </div>
+              <div style="height:7px; border-radius:4px; background:var(--color-surface-raised); overflow:hidden;"><div style="height:100%; width:85%; border-radius:4px; background:var(--color-success);"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between" style="margin-bottom:5px;">
+                <span class="t-secondary" style="font-size:13px;"><i class="ri-chat-3-line icon-xs t-muted" style="margin-right:4px;"></i>İletişim</span>
+                <span class="t-info t-mono" style="font-size:13px; font-weight:600;">78</span>
+              </div>
+              <div style="height:7px; border-radius:4px; background:var(--color-surface-raised); overflow:hidden;"><div style="height:100%; width:78%; border-radius:4px; background:var(--color-info);"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between" style="margin-bottom:5px;">
+                <span class="t-secondary" style="font-size:13px;"><i class="ri-code-s-slash-line icon-xs t-muted" style="margin-right:4px;"></i>Kod Kalitesi</span>
+                <span class="t-success t-mono" style="font-size:13px; font-weight:600;">88</span>
+              </div>
+              <div style="height:7px; border-radius:4px; background:var(--color-surface-raised); overflow:hidden;"><div style="height:100%; width:88%; border-radius:4px; background:var(--color-success);"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between" style="margin-bottom:5px;">
+                <span class="t-secondary" style="font-size:13px;"><i class="ri-search-eye-line icon-xs t-muted" style="margin-right:4px;"></i>Analitik Düşünme</span>
+                <span class="t-amber t-mono" style="font-size:13px; font-weight:600;">75</span>
+              </div>
+              <div style="height:7px; border-radius:4px; background:var(--color-surface-raised); overflow:hidden;"><div style="height:100%; width:75%; border-radius:4px; background:var(--color-amber);"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Strengths & Weaknesses -->
+        <div class="flex flex-col gap-4" style="width:260px;">
+          <div class="card" style="flex:1;">
+            <h3 class="t-success" style="font-size:14px; margin-bottom:10px;"><i class="ri-checkbox-circle-line icon-sm" style="margin-right:4px;"></i>Güçlü Yönler</h3>
+            <div class="flex flex-col gap-2">
+              <div style="display:flex; align-items:flex-start; gap:8px;">
+                <span style="width:18px;height:18px;border-radius:50%;background:rgba(34,197,94,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;"><i class="ri-check-line t-success" style="font-size:11px;"></i></span>
+                <span class="t-secondary" style="font-size:12px; line-height:1.4;">Optimal çözüme hızlı ulaşım</span>
+              </div>
+              <div style="display:flex; align-items:flex-start; gap:8px;">
+                <span style="width:18px;height:18px;border-radius:50%;background:rgba(34,197,94,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;"><i class="ri-check-line t-success" style="font-size:11px;"></i></span>
+                <span class="t-secondary" style="font-size:12px; line-height:1.4;">Temiz ve okunabilir kod</span>
+              </div>
+              <div style="display:flex; align-items:flex-start; gap:8px;">
+                <span style="width:18px;height:18px;border-radius:50%;background:rgba(34,197,94,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;"><i class="ri-check-line t-success" style="font-size:11px;"></i></span>
+                <span class="t-secondary" style="font-size:12px; line-height:1.4;">Edge case farkındalığı</span>
+              </div>
+            </div>
+          </div>
+          <div class="card" style="flex:1;">
+            <h3 class="t-amber" style="font-size:14px; margin-bottom:10px;"><i class="ri-error-warning-line icon-sm" style="margin-right:4px;"></i>Gelişim Alanları</h3>
+            <div class="flex flex-col gap-2">
+              <div style="display:flex; align-items:flex-start; gap:8px;">
+                <span style="width:18px;height:18px;border-radius:50%;background:rgba(229,161,14,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;"><i class="ri-alert-line t-amber" style="font-size:11px;"></i></span>
+                <span class="t-secondary" style="font-size:12px; line-height:1.4;">Düşünce sürecini daha sesli paylaş</span>
+              </div>
+              <div style="display:flex; align-items:flex-start; gap:8px;">
+                <span style="width:18px;height:18px;border-radius:50%;background:rgba(229,161,14,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;"><i class="ri-alert-line t-amber" style="font-size:11px;"></i></span>
+                <span class="t-secondary" style="font-size:12px; line-height:1.4;">Space complexity analizi</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SLIDE 12 — User Journey ═══════════ -->
+  <div class="slide" data-slide="11">
+    <div class="slide-content flex flex-col gap-10">
+      <div class="reveal">
+        <p class="t-amber t-mono" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px;">Kullanıcı Deneyimi</p>
+        <h2 style="font-size:40px;">Uçtan Uca <span class="t-amber">Kullanıcı Akışı</span></h2>
+      </div>
+
+      <!-- Flow Diagram -->
+      <div class="reveal flex items-center justify-center gap-5" style="flex-wrap: nowrap;">
+        <div class="flow-step">
+          <div class="flow-circle" style="border-color:rgba(229,161,14,0.4); background:rgba(229,161,14,0.05);">
+            <div class="flow-num">1</div>
+            <i class="ri-user-add-line t-amber icon-xl"></i>
+          </div>
+          <h3 style="font-size:13px;">Kayıt / Giriş</h3>
+          <p class="t-muted" style="font-size:11px;">better-auth email/password</p>
+        </div>
+        <span class="flow-arrow"><i class="ri-arrow-right-line"></i></span>
+
+        <div class="flow-step">
+          <div class="flow-circle" style="border-color:rgba(59,130,246,0.4); background:rgba(59,130,246,0.05);">
+            <div class="flow-num">2</div>
+            <i class="ri-dashboard-line t-info icon-xl"></i>
+          </div>
+          <h3 style="font-size:13px;">Dashboard</h3>
+          <p class="t-muted" style="font-size:11px;">İstatistikler & hızlı başlat</p>
+        </div>
+        <span class="flow-arrow"><i class="ri-arrow-right-line"></i></span>
+
+        <div class="flow-step">
+          <div class="flow-circle" style="border-color:rgba(34,197,94,0.4); background:rgba(34,197,94,0.05);">
+            <div class="flow-num">3</div>
+            <i class="ri-settings-4-line t-success icon-xl"></i>
+          </div>
+          <h3 style="font-size:13px;">Mülakat Ayarla</h3>
+          <p class="t-muted" style="font-size:11px;">Tür · zorluk · soru sayısı</p>
+        </div>
+        <span class="flow-arrow"><i class="ri-arrow-right-line"></i></span>
+
+        <div class="flow-step">
+          <div class="flow-circle" style="border-color:rgba(229,161,14,0.5); background:rgba(229,161,14,0.08); box-shadow: 0 0 20px var(--color-amber-glow);">
+            <div class="flow-num">4</div>
+            <i class="ri-mic-line t-amber icon-xl"></i>
+          </div>
+          <h3 style="font-size:13px;">Sesli Mülakat</h3>
+          <p class="t-muted" style="font-size:11px;">WebSocket voice pipeline</p>
+        </div>
+        <span class="flow-arrow"><i class="ri-arrow-right-line"></i></span>
+
+        <div class="flow-step">
+          <div class="flow-circle" style="border-color:rgba(139,91,246,0.4); background:rgba(139,91,246,0.05);">
+            <div class="flow-num">5</div>
+            <i class="ri-file-chart-line t-purple icon-xl"></i>
+          </div>
+          <h3 style="font-size:13px;">AI Rapor</h3>
+          <p class="t-muted" style="font-size:11px;">Skor · analiz · öneriler</p>
+        </div>
+        <span class="flow-arrow"><i class="ri-arrow-right-line"></i></span>
+
+        <div class="flow-step">
+          <div class="flow-circle" style="border-color:rgba(59,130,246,0.4); background:rgba(59,130,246,0.05);">
+            <div class="flow-num">6</div>
+            <i class="ri-line-chart-line t-info icon-xl"></i>
+          </div>
+          <h3 style="font-size:13px;">İlerleme Takibi</h3>
+          <p class="t-muted" style="font-size:11px;">Grafik · radar · geçmiş</p>
+        </div>
+        <span class="flow-arrow"><i class="ri-arrow-right-line"></i></span>
+
+        <div class="flow-step">
+          <div class="flow-circle" style="border-color:rgba(139,91,246,0.4); background:rgba(139,91,246,0.05);">
+            <div class="flow-num">7</div>
+            <i class="ri-settings-4-line t-purple icon-xl"></i>
+          </div>
+          <h3 style="font-size:13px;">Kişiselleştirme</h3>
+          <p class="t-muted" style="font-size:11px;">CV · İlan · Hafıza</p>
+        </div>
+      </div>
+
+      <!-- Key numbers -->
+      <div class="reveal" style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px;">
+        <div class="stat-card">
+          <div class="stat-label"><i class="ri-pages-line icon-xs" style="margin-right:4px;"></i>Sayfa</div>
+          <div class="stat-value">9</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label"><i class="ri-server-line icon-xs" style="margin-right:4px;"></i>API Endpoint</div>
+          <div class="stat-value">20+</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label"><i class="ri-database-2-line icon-xs" style="margin-right:4px;"></i>Convex Tablo</div>
+          <div class="stat-value">11</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label"><i class="ri-link icon-xs" style="margin-right:4px;"></i>WS Mesaj Tipi</div>
+          <div class="stat-value">9+13</div>
+        </div>
+      </div>
+
+      <div class="reveal flex gap-3 justify-center">
+        <span class="badge badge-default"><i class="ri-git-branch-line icon-xs"></i> Bun Monorepo</span>
+        <span class="badge badge-default"><i class="ri-box-3-line icon-xs"></i> @ffh/* Packages</span>
+        <span class="badge badge-default"><i class="ri-shield-check-line icon-xs"></i> TypeScript Strict</span>
+        <span class="badge badge-default"><i class="ri-file-list-3-line icon-xs"></i> OpenAPI + Scalar</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SLIDE 13 — Evaluation Criteria Alignment ═══════════ -->
+  <div class="slide" data-slide="12">
+    <div class="slide-content flex flex-col gap-8">
+      <div class="reveal">
+        <p class="t-amber t-mono" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px;">Değerlendirme</p>
+        <h2 style="font-size:40px;">Hackathon <span class="t-amber">Kriterleri</span> ve Wingman</h2>
+      </div>
+
+      <!-- Criteria Cards — 2x2 grid -->
+      <div class="reveal" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <!-- 1: Technical — 35% -->
+        <div class="card" style="border-color:rgba(229,161,14,0.2);">
+          <div class="flex items-center justify-between" style="margin-bottom:12px;">
+            <div class="flex items-center gap-3">
+              <div style="width:40px;height:40px;border-radius:10px;background:rgba(229,161,14,0.1);border:1px solid rgba(229,161,14,0.2);display:flex;align-items:center;justify-content:center;">
+                <i class="ri-speed-line t-amber icon-md"></i>
+              </div>
+              <div>
+                <h3 style="font-size:15px;">Teknik Uygulama & Performans</h3>
+                <p class="t-muted" style="font-size:11px; margin-top:1px;">Latency, interruption, API kullanımı</p>
+              </div>
+            </div>
+            <span class="t-amber t-display" style="font-size:24px; font-weight:800;">%35</span>
+          </div>
+          <div class="flex flex-col gap-2">
+            <div style="display:flex; align-items:flex-start; gap:8px;">
+              <span style="width:18px;height:18px;border-radius:50%;background:rgba(229,161,14,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;"><i class="ri-check-line t-amber" style="font-size:11px;"></i></span>
+              <span class="t-secondary" style="font-size:12px; line-height:1.4;">Streaming TTS ile cümle-bazlı düşük latency yanıtlar</span>
+            </div>
+            <div style="display:flex; align-items:flex-start; gap:8px;">
+              <span style="width:18px;height:18px;border-radius:50%;background:rgba(229,161,14,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;"><i class="ri-check-line t-amber" style="font-size:11px;"></i></span>
+              <span class="t-secondary" style="font-size:12px; line-height:1.4;">AbortController ile interrupt yönetimi — anında araya girme</span>
+            </div>
+            <div style="display:flex; align-items:flex-start; gap:8px;">
+              <span style="width:18px;height:18px;border-radius:50%;background:rgba(229,161,14,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;"><i class="ri-check-line t-amber" style="font-size:11px;"></i></span>
+              <span class="t-secondary" style="font-size:12px; line-height:1.4;">fal.ai STT/TTS + OpenRouter LLM · tldraw whiteboard entegrasyonu</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2: Innovation — 25% -->
+        <div class="card" style="border-color:rgba(59,130,246,0.2);">
+          <div class="flex items-center justify-between" style="margin-bottom:12px;">
+            <div class="flex items-center gap-3">
+              <div style="width:40px;height:40px;border-radius:10px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);display:flex;align-items:center;justify-content:center;">
+                <i class="ri-lightbulb-flash-line t-info icon-md"></i>
+              </div>
+              <div>
+                <h3 style="font-size:15px;">İnovasyon & Problem Çözümü</h3>
+                <p class="t-muted" style="font-size:11px; margin-top:1px;">Anlamlı problem, verimli çözüm</p>
+              </div>
+            </div>
+            <span class="t-info t-display" style="font-size:24px; font-weight:800;">%25</span>
+          </div>
+          <div class="flex flex-col gap-2">
+            <div style="display:flex; align-items:flex-start; gap:8px;">
+              <span style="width:18px;height:18px;border-radius:50%;background:rgba(59,130,246,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;"><i class="ri-check-line t-info" style="font-size:11px;"></i></span>
+              <span class="t-secondary" style="font-size:12px; line-height:1.4;">Türkçe teknik mülakat simülasyonu — pazarda yok</span>
+            </div>
+            <div style="display:flex; align-items:flex-start; gap:8px;">
+              <span style="width:18px;height:18px;border-radius:50%;background:rgba(59,130,246,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;"><i class="ri-check-line t-info" style="font-size:11px;"></i></span>
+              <span class="t-secondary" style="font-size:12px; line-height:1.4;">Ses + Kod + Whiteboard + AI Rapor + Kişiselleştirme (CV/İlan/Hafıza)</span>
+            </div>
+            <div style="display:flex; align-items:flex-start; gap:8px;">
+              <span style="width:18px;height:18px;border-radius:50%;background:rgba(59,130,246,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;"><i class="ri-check-line t-info" style="font-size:11px;"></i></span>
+              <span class="t-secondary" style="font-size:12px; line-height:1.4;">Web formu/tuşlama yerine tamamen voice-first deneyim</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3: UX — 20% -->
+        <div class="card" style="border-color:rgba(34,197,94,0.2);">
+          <div class="flex items-center justify-between" style="margin-bottom:12px;">
+            <div class="flex items-center gap-3">
+              <div style="width:40px;height:40px;border-radius:10px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);display:flex;align-items:center;justify-content:center;">
+                <i class="ri-user-heart-line t-success icon-md"></i>
+              </div>
+              <div>
+                <h3 style="font-size:15px;">Kullanıcı Deneyimi (UX)</h3>
+                <p class="t-muted" style="font-size:11px; margin-top:1px;">Doğal akış, güven, hata yönetimi</p>
+              </div>
+            </div>
+            <span class="t-success t-display" style="font-size:24px; font-weight:800;">%20</span>
+          </div>
+          <div class="flex flex-col gap-2">
+            <div style="display:flex; align-items:flex-start; gap:8px;">
+              <span style="width:18px;height:18px;border-radius:50%;background:rgba(34,197,94,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;"><i class="ri-check-line t-success" style="font-size:11px;"></i></span>
+              <span class="t-secondary" style="font-size:12px; line-height:1.4;">4 mülakat türü · whiteboard takibi · CV/İlan bazlı kişiselleştirilmiş sorular</span>
+            </div>
+            <div style="display:flex; align-items:flex-start; gap:8px;">
+              <span style="width:18px;height:18px;border-radius:50%;background:rgba(34,197,94,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;"><i class="ri-check-line t-success" style="font-size:11px;"></i></span>
+              <span class="t-secondary" style="font-size:12px; line-height:1.4;">VAD ile doğal konuşma akışı — sessizlikte otomatik gönderim</span>
+            </div>
+            <div style="display:flex; align-items:flex-start; gap:8px;">
+              <span style="width:18px;height:18px;border-radius:50%;background:rgba(34,197,94,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;"><i class="ri-check-line t-success" style="font-size:11px;"></i></span>
+              <span class="t-secondary" style="font-size:12px; line-height:1.4;">İlerleme grafikleri, beceri radarı, streak sistemi + geçmiş takibi</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4: Commercialization — 20% -->
+        <div class="card" style="border-color:rgba(139,91,246,0.2);">
+          <div class="flex items-center justify-between" style="margin-bottom:12px;">
+            <div class="flex items-center gap-3">
+              <div style="width:40px;height:40px;border-radius:10px;background:rgba(139,91,246,0.1);border:1px solid rgba(139,91,246,0.2);display:flex;align-items:center;justify-content:center;">
+                <i class="ri-rocket-2-line t-purple icon-md"></i>
+              </div>
+              <div>
+                <h3 style="font-size:15px;">Ticarileşme Potansiyeli</h3>
+                <p class="t-muted" style="font-size:11px; margin-top:1px;">Ürüne dönüşüm, pazar</p>
+              </div>
+            </div>
+            <span class="t-purple t-display" style="font-size:24px; font-weight:800;">%20</span>
+          </div>
+          <div class="flex flex-col gap-2">
+            <div style="display:flex; align-items:flex-start; gap:8px;">
+              <span style="width:18px;height:18px;border-radius:50%;background:rgba(139,91,246,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;"><i class="ri-check-line t-purple" style="font-size:11px;"></i></span>
+              <span class="t-secondary" style="font-size:12px; line-height:1.4;">SaaS modeli: Freemium (3 mülakat/ay) → Pro ($19/ay) → Enterprise</span>
+            </div>
+            <div style="display:flex; align-items:flex-start; gap:8px;">
+              <span style="width:18px;height:18px;border-radius:50%;background:rgba(139,91,246,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;"><i class="ri-check-line t-purple" style="font-size:11px;"></i></span>
+              <span class="t-secondary" style="font-size:12px; line-height:1.4;">Hedef pazar: TR developer topluluğu (500K+), bootcamp'ler, üniversiteler</span>
+            </div>
+            <div style="display:flex; align-items:flex-start; gap:8px;">
+              <span style="width:18px;height:18px;border-radius:50%;background:rgba(139,91,246,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;"><i class="ri-check-line t-purple" style="font-size:11px;"></i></span>
+              <span class="t-secondary" style="font-size:12px; line-height:1.4;">"Bir defa yap, hep sat" — AI interviewer SaaS, ölçeklenebilir</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SLIDE 14 — Thank You + Hackathon Final ═══════════ -->
+  <div class="slide" data-slide="13">
+    <div class="grid-bg"></div>
+    <div class="ambient-glow" style="width:600px;height:600px;background:rgba(229,161,14,0.04);top:50%;left:50%;transform:translate(-50%,-50%)"></div>
+
+    <div class="flex flex-col items-center gap-8 relative" style="z-index:1">
+      <div class="reveal">
+        <div class="orb" style="animation:float 3s ease-in-out infinite; width:110px; height:110px;">
+          <div class="orb-ring"></div>
+          <span class="orb-letter" style="font-size:46px;">W</span>
+        </div>
+      </div>
+
+      <div class="reveal text-center">
+        <h1 style="font-size:44px; letter-spacing:-0.02em;">
+          Wingman
+        </h1>
+        <p class="t-secondary" style="font-size:15px; margin-top:6px; max-width:400px; line-height:1.5;">
+          Türkçe sesli AI mülakat platformu.<br>Sessizliği bozuyoruz.
+        </p>
+      </div>
+
+      <!-- Jury -->
+      <div class="reveal">
+        <p class="t-muted text-center" style="font-size:11px; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px;">Jüri</p>
+        <div class="flex gap-3 justify-center">
+          <div class="card" style="padding:10px 14px; text-align:center; min-width:110px;">
+            <p style="font-size:12px; font-weight:600;">Tunga Bayrak</p>
+            <p class="t-muted" style="font-size:10px;">Co-Founder, Freya</p>
+          </div>
+          <div class="card" style="padding:10px 14px; text-align:center; min-width:110px;">
+            <p style="font-size:12px; font-weight:600;">Görkem Yurtseven</p>
+            <p class="t-muted" style="font-size:10px;">Co-Founder, fal.ai</p>
+          </div>
+          <div class="card" style="padding:10px 14px; text-align:center; min-width:110px;">
+            <p style="font-size:12px; font-weight:600;">Fatih Güner</p>
+            <p class="t-muted" style="font-size:10px;">Founder, Komünite</p>
+          </div>
+          <div class="card" style="padding:10px 14px; text-align:center; min-width:110px;">
+            <p style="font-size:12px; font-weight:600;">Birkan Babakol</p>
+            <p class="t-muted" style="font-size:10px;">Founder, TCC</p>
+          </div>
+          <div class="card" style="padding:10px 14px; text-align:center; min-width:110px;">
+            <p style="font-size:12px; font-weight:600;">Umut Günbak</p>
+            <p class="t-muted" style="font-size:10px;">Operations, fal</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Event Info -->
+      <div class="reveal flex gap-4">
+        <div class="card flex items-center gap-3" style="padding:12px 18px;">
+          <i class="ri-calendar-event-line icon-md t-amber"></i>
+          <div>
+            <p style="font-size:12px; font-weight:600;">15 Şubat 2026 Pazar</p>
+            <p class="t-muted" style="font-size:10px;">09:00 — 21:00</p>
+          </div>
+        </div>
+        <div class="card flex items-center gap-3" style="padding:12px 18px;">
+          <i class="ri-map-pin-line icon-md t-amber"></i>
+          <div>
+            <p style="font-size:12px; font-weight:600;">Komünite Space</p>
+            <p class="t-muted" style="font-size:10px;">Vadistanbul, İstanbul</p>
+          </div>
+        </div>
+        <div class="card flex items-center gap-3" style="padding:12px 18px;">
+          <i class="ri-rocket-2-line icon-md t-amber"></i>
+          <div>
+            <p style="font-size:12px; font-weight:600;">Live Demo</p>
+            <p class="t-muted" style="font-size:10px;">wingman.app</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal flex items-center gap-4" style="margin-top:4px;">
+        <span class="badge badge-amber"><i class="ri-trophy-line icon-xs"></i> Voice AI Hackathon</span>
+        <span class="t-muted" style="font-size:11px;">Powered by</span>
+        <span class="t-secondary" style="font-size:12px; font-weight:500;">Freya AI × fal.ai × Komünite</span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /deck -->
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE ENGINE
+     ═══════════════════════════════════════════════════ -->
+<script>
+(function () {
+  const slides = document.querySelectorAll('.slide');
+  const total  = slides.length;
+  let current  = 0;
+  let animating = false;
+
+  document.getElementById('totalSlides').textContent = String(total).padStart(2, '0');
+
+  const dotsContainer = document.getElementById('navDots');
+  for (let i = 0; i < total; i++) {
+    const dot = document.createElement('button');
+    dot.classList.add('nav-dot');
+    if (i === 0) dot.classList.add('active');
+    dot.setAttribute('aria-label', 'Slayt ' + (i + 1));
+    dot.addEventListener('click', () => goTo(i));
+    dotsContainer.appendChild(dot);
+  }
+
+  function updateUI() {
+    document.getElementById('progressBar').style.width = ((current + 1) / total * 100) + '%';
+    document.getElementById('currentSlide').textContent = String(current + 1).padStart(2, '0');
+    dotsContainer.querySelectorAll('.nav-dot').forEach((dot, i) => {
+      dot.classList.toggle('active', i === current);
+    });
+  }
+
+  function goTo(index) {
+    if (index === current || index < 0 || index >= total || animating) return;
+    animating = true;
+
+    const prev = slides[current];
+    const next = slides[index];
+
+    if (index > current) {
+      prev.classList.remove('active');
+      prev.classList.add('exit-up');
+    } else {
+      prev.classList.remove('active');
+      prev.style.transform = 'translateY(30px)';
+      prev.style.opacity = '0';
+    }
+
+    next.querySelectorAll('.reveal').forEach(el => {
+      el.style.animation = 'none';
+      el.offsetHeight;
+      el.style.animation = '';
+    });
+
+    setTimeout(() => {
+      prev.classList.remove('exit-up');
+      prev.style.transform = '';
+      prev.style.opacity = '';
+      next.classList.add('active');
+      current = index;
+      updateUI();
+      setTimeout(() => { animating = false; }, 400);
+    }, 100);
+  }
+
+  function next() { goTo(current + 1); }
+  function prev() { goTo(current - 1); }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); next(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); prev(); }
+    else if (e.key === 'Home') { e.preventDefault(); goTo(0); }
+    else if (e.key === 'End') { e.preventDefault(); goTo(total - 1); }
+  });
+
+  let touchStartX = 0, touchStartY = 0;
+  document.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) { dx < 0 ? next() : prev(); }
+  }, { passive: true });
+
+  let wheelTimeout;
+  document.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    clearTimeout(wheelTimeout);
+    wheelTimeout = setTimeout(() => { e.deltaY > 0 ? next() : prev(); }, 60);
+  }, { passive: false });
+
+  updateUI();
+})();
+</script>
+
+</body>
+</html>

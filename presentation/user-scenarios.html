@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Wingman — Kullanıcı Senaryoları</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" rel="stylesheet" />
+
+<style>
+:root {
+  --font-display: "Bricolage Grotesque", serif;
+  --font-body: "DM Sans", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --color-bg: #07070a;
+  --color-surface: #0f0f14;
+  --color-surface-raised: #16161d;
+  --color-surface-overlay: #1c1c25;
+  --color-border: #27272f;
+  --color-border-subtle: #1e1e26;
+  --color-text: #ededef;
+  --color-text-secondary: #8b8b96;
+  --color-text-muted: #55555f;
+  --color-amber: #e5a10e;
+  --color-amber-light: #f5c842;
+  --color-amber-dim: #a3720a;
+  --color-amber-glow: rgba(229, 161, 14, 0.12);
+  --color-danger: #ef4444;
+  --color-success: #22c55e;
+  --color-info: #3b82f6;
+  --color-purple: #8b5cf6;
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { color-scheme: dark; }
+body {
+  font-family: var(--font-body);
+  background: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  height: 100vh; width: 100vw;
+}
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: 9999;
+  pointer-events: none; opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat; background-size: 128px 128px;
+}
+::selection { background: var(--color-amber); color: var(--color-bg); }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+i[class^="ri-"] { font-style: normal; }
+h1 { font-family: var(--font-display); font-weight: 800; line-height: 1.1; }
+h2 { font-family: var(--font-display); font-weight: 700; line-height: 1.2; }
+h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
+
+/* ═══════ SLIDE ENGINE ═══════ */
+.deck { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+.slide {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  padding: 60px 80px;
+  opacity: 0; pointer-events: none; transform: translateY(30px);
+  transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1);
+}
+.slide.active { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.slide.exit-up { opacity: 0; transform: translateY(-30px); }
+
+/* ═══════ PROGRESS ═══════ */
+.progress-track { position: fixed; top: 0; left: 0; right: 0; height: 3px; background: var(--color-border-subtle); z-index: 100; }
+.progress-bar { height: 100%; background: var(--color-amber); box-shadow: 0 0 12px var(--color-amber-glow), 0 0 40px var(--color-amber-glow); transition: width 0.5s cubic-bezier(0.16,1,0.3,1); border-radius: 0 2px 2px 0; }
+
+/* ═══════ NAV ═══════ */
+.slide-counter { position: fixed; bottom: 28px; right: 40px; font-family: var(--font-mono); font-size: 12px; color: var(--color-text-muted); z-index: 100; letter-spacing: 0.05em; }
+.slide-counter .current { color: var(--color-amber); font-weight: 600; }
+.nav-dots { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 100; }
+.nav-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-border); border: none; cursor: pointer; transition: all 0.3s ease; padding: 0; }
+.nav-dot:hover { background: var(--color-text-muted); }
+.nav-dot.active { background: var(--color-amber); box-shadow: 0 0 8px var(--color-amber-glow); transform: scale(1.3); }
+.key-hint { position: fixed; bottom: 24px; left: 40px; display: flex; align-items: center; gap: 6px; z-index: 100; }
+.key-hint kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 26px; height: 24px; padding: 0 6px; border-radius: 5px; border: 1px solid var(--color-border); background: var(--color-surface); font-family: var(--font-mono); font-size: 10px; color: var(--color-text-muted); }
+.key-hint span { font-size: 11px; color: var(--color-text-muted); }
+
+/* ═══════ TYPOGRAPHY ═══════ */
+.t-display { font-family: var(--font-display); }
+.t-mono { font-family: var(--font-mono); }
+.t-amber { color: var(--color-amber); }
+.t-amber-light { color: var(--color-amber-light); }
+.t-secondary { color: var(--color-text-secondary); }
+.t-muted { color: var(--color-text-muted); }
+.t-success { color: var(--color-success); }
+.t-info { color: var(--color-info); }
+.t-danger { color: var(--color-danger); }
+.t-purple { color: var(--color-purple); }
+
+/* ═══════ ANIMATIONS ═══════ */
+.slide.active .reveal { animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) forwards; opacity: 0; }
+.slide.active .reveal:nth-child(1) { animation-delay: 0.05s; }
+.slide.active .reveal:nth-child(2) { animation-delay: 0.12s; }
+.slide.active .reveal:nth-child(3) { animation-delay: 0.19s; }
+.slide.active .reveal:nth-child(4) { animation-delay: 0.26s; }
+.slide.active .reveal:nth-child(5) { animation-delay: 0.33s; }
+.slide.active .reveal:nth-child(6) { animation-delay: 0.40s; }
+.slide.active .reveal:nth-child(7) { animation-delay: 0.47s; }
+.slide.active .reveal:nth-child(8) { animation-delay: 0.54s; }
+.slide.active .reveal:nth-child(9) { animation-delay: 0.61s; }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes pulse-ring { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(1.8); opacity: 0; } }
+@keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+@keyframes typing { from { width: 0; } to { width: 100%; } }
+@keyframes blink-caret { 0%, 100% { border-color: var(--color-amber); } 50% { border-color: transparent; } }
+
+/* ═══════ BACKGROUNDS ═══════ */
+.grid-bg { position: absolute; inset: 0; opacity: 0.03; pointer-events: none; background-image: linear-gradient(var(--color-amber) 1px, transparent 1px), linear-gradient(90deg, var(--color-amber) 1px, transparent 1px); background-size: 60px 60px; }
+.ambient-glow { position: absolute; border-radius: 50%; pointer-events: none; filter: blur(120px); }
+
+/* ═══════ COMPONENTS ═══════ */
+.badge { display: inline-flex; align-items: center; gap: 5px; border-radius: 6px; border: 1px solid; padding: 2px 8px; font-size: 12px; font-weight: 500; }
+.badge i { font-size: 11px; }
+.badge-amber { background: rgba(229,161,14,0.1); color: var(--color-amber); border-color: rgba(229,161,14,0.2); }
+.badge-success { background: rgba(34,197,94,0.1); color: var(--color-success); border-color: rgba(34,197,94,0.2); }
+.badge-info { background: rgba(59,130,246,0.1); color: var(--color-info); border-color: rgba(59,130,246,0.2); }
+.badge-danger { background: rgba(239,68,68,0.1); color: var(--color-danger); border-color: rgba(239,68,68,0.2); }
+.badge-purple { background: rgba(139,91,246,0.1); color: var(--color-purple); border-color: rgba(139,91,246,0.2); }
+.badge-default { background: var(--color-surface-raised); color: var(--color-text-secondary); border-color: var(--color-border); }
+
+.card { border-radius: 12px; border: 1px solid var(--color-border-subtle); background: var(--color-surface); padding: 24px; }
+
+.slide-content { width: 100%; max-width: 1100px; }
+
+/* ═══════ PERSONA ═══════ */
+.persona-avatar {
+  width: 80px; height: 80px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px; flex-shrink: 0;
+  border: 2px solid;
+}
+
+.persona-card {
+  border-radius: 16px; border: 1px solid var(--color-border-subtle);
+  background: var(--color-surface); padding: 32px;
+  transition: all 0.3s ease; position: relative; overflow: hidden;
+}
+.persona-card:hover {
+  border-color: rgba(229,161,14,0.25);
+  box-shadow: 0 0 20px var(--color-amber-glow);
+}
+
+.persona-quote {
+  position: relative; padding-left: 20px;
+  border-left: 3px solid var(--color-amber);
+  font-style: italic; font-size: 15px;
+  color: var(--color-text-secondary); line-height: 1.6;
+}
+
+/* ═══════ JOURNEY LINE ═══════ */
+.journey-step {
+  display: flex; gap: 20px; align-items: flex-start;
+  position: relative; padding-left: 36px;
+}
+.journey-step::before {
+  content: ""; position: absolute;
+  left: 14px; top: 32px; bottom: -24px; width: 2px;
+  background: linear-gradient(to bottom, var(--color-amber), var(--color-border-subtle));
+}
+.journey-step:last-child::before { display: none; }
+.journey-dot {
+  position: absolute; left: 4px; top: 4px;
+  width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; z-index: 2;
+  border: 2px solid var(--color-amber); background: var(--color-surface);
+  color: var(--color-amber); font-family: var(--font-mono);
+}
+
+/* ═══════ PAIN POINT ═══════ */
+.pain-point {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 14px 18px; border-radius: 10px;
+  border: 1px solid rgba(239,68,68,0.12);
+  background: rgba(239,68,68,0.03);
+}
+.pain-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: rgba(239,68,68,0.12);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 15px; color: var(--color-danger);
+}
+
+.solution-point {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 14px 18px; border-radius: 10px;
+  border: 1px solid rgba(229,161,14,0.12);
+  background: rgba(229,161,14,0.03);
+}
+.solution-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: rgba(229,161,14,0.12);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 15px; color: var(--color-amber);
+}
+
+/* ═══════ STAT PILL ═══════ */
+.stat-pill {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 16px 24px; border-radius: 12px;
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-surface); min-width: 120px;
+}
+.stat-pill .num {
+  font-family: var(--font-display); font-size: 28px; font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.stat-pill .label {
+  font-size: 11px; color: var(--color-text-muted); margin-top: 2px;
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+
+/* ═══════ CHAT BUBBLE ═══════ */
+.chat-bubble {
+  max-width: 380px; padding: 14px 18px; border-radius: 14px;
+  font-size: 14px; line-height: 1.55; position: relative;
+}
+.chat-user {
+  background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2);
+  align-self: flex-end; border-bottom-right-radius: 4px;
+  color: var(--color-text);
+}
+.chat-ai {
+  background: rgba(229,161,14,0.08); border: 1px solid rgba(229,161,14,0.15);
+  align-self: flex-start; border-bottom-left-radius: 4px;
+  color: var(--color-text);
+}
+.chat-label {
+  font-size: 10px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.06em; margin-bottom: 5px; display: block;
+}
+
+/* ═══════ ORBS ═══════ */
+.orb {
+  width: 100px; height: 100px; border-radius: 50%;
+  background: rgba(229,161,14,0.1); border: 1px solid rgba(229,161,14,0.2);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 20px var(--color-amber-glow), 0 0 60px var(--color-amber-glow);
+  position: relative;
+}
+.orb-ring {
+  position: absolute; inset: -12px; border-radius: 50%;
+  border: 1px solid rgba(229,161,14,0.15);
+  animation: pulse-ring 2.5s ease-out infinite;
+}
+
+/* ═══════ TIMELINE ═══════ */
+.timeline-row {
+  display: flex; align-items: center; gap: 16px;
+}
+.timeline-node {
+  width: 48px; height: 48px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0; border: 1px solid;
+}
+.timeline-connector {
+  width: 32px; height: 2px; flex-shrink: 0;
+  background: linear-gradient(to right, transparent, var(--color-amber), transparent);
+}
+
+/* ═══════ LAYOUT ═══════ */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-wrap { flex-wrap: wrap; }
+.items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.gap-2 { gap: 8px; }
+.gap-3 { gap: 12px; }
+.gap-4 { gap: 16px; }
+.gap-5 { gap: 20px; }
+.gap-6 { gap: 24px; }
+.gap-8 { gap: 32px; }
+.gap-10 { gap: 40px; }
+.gap-12 { gap: 48px; }
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.relative { position: relative; }
+.w-full { width: 100%; }
+</style>
+</head>
+
+<body>
+
+<div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+<div class="nav-dots" id="navDots"></div>
+<div class="slide-counter"><span class="current" id="currentSlide">01</span> <span style="margin:0 2px;">/</span> <span id="totalSlides">09</span></div>
+<div class="key-hint"><kbd>←</kbd><kbd>→</kbd><span>ile gezin</span></div>
+
+<div class="deck" id="deck">
+
+  <!-- ═══════════ SLIDE 1 — Title ═══════════ -->
+  <div class="slide active" data-slide="0">
+    <div class="grid-bg"></div>
+    <div class="ambient-glow" style="width:500px;height:500px;background:rgba(229,161,14,0.05);top:50%;left:50%;transform:translate(-50%,-50%)"></div>
+
+    <div class="flex flex-col items-center gap-8 relative" style="z-index:1">
+      <div class="reveal flex items-center gap-3">
+        <span class="badge badge-amber" style="font-size:11px; padding:3px 10px;"><i class="ri-user-heart-line" style="font-size:11px;"></i> User Scenarios</span>
+      </div>
+
+      <div class="reveal">
+        <div class="orb" style="animation: float 3s ease-in-out infinite;">
+          <div class="orb-ring"></div>
+          <span style="font-family:var(--font-display); font-size:42px; font-weight:800; color:var(--color-amber);">W</span>
+        </div>
+      </div>
+
+      <div class="reveal text-center">
+        <h1 style="font-size:48px; letter-spacing:-0.02em;">
+          Wingman'ı <span class="t-amber">Kim</span> Kullanır?
+        </h1>
+        <p class="t-secondary" style="font-size:17px; margin-top:8px; max-width:500px; line-height:1.6;">
+          Gerçek insanlar, gerçek senaryolar.<br>Neden sesli AI mülakat platformuna ihtiyaç var?
+        </p>
+      </div>
+
+      <div class="reveal flex gap-4" style="margin-top:12px;">
+        <div class="stat-pill">
+          <span class="num t-amber">500K+</span>
+          <span class="label">TR Developer</span>
+        </div>
+        <div class="stat-pill">
+          <span class="num t-danger">%72</span>
+          <span class="label">Mülakata Hazırsız</span>
+        </div>
+        <div class="stat-pill">
+          <span class="num t-success">0</span>
+          <span class="label">Türkçe Alternatif</span>
+        </div>
+        <div class="stat-pill">
+          <span class="num t-info">4</span>
+          <span class="label">Persona</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SLIDE 2 — Persona 1: CS Student ═══════════ -->
+  <div class="slide" data-slide="1">
+    <div class="slide-content flex flex-col gap-8">
+      <div class="reveal flex items-center gap-3">
+        <span class="t-amber t-mono" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em;">Senaryo 1</span>
+        <span class="badge badge-info"><i class="ri-graduation-cap-line" style="font-size:11px;"></i> Üniversite Öğrencisi</span>
+      </div>
+
+      <div class="reveal flex gap-8">
+        <!-- Left: Persona -->
+        <div style="width:320px; flex-shrink:0;">
+          <div class="persona-card" style="border-color:rgba(59,130,246,0.2);">
+            <div class="flex items-center gap-4" style="margin-bottom:20px;">
+              <div class="persona-avatar" style="background:rgba(59,130,246,0.08); border-color:rgba(59,130,246,0.3);">
+                <i class="ri-user-line t-info"></i>
+              </div>
+              <div>
+                <h2 style="font-size:22px;">Elif, 22</h2>
+                <p class="t-secondary" style="font-size:13px;">Bilgisayar Mühendisliği · 4. Sınıf</p>
+                <p class="t-muted" style="font-size:11px; margin-top:2px;">ODTÜ · Ankara</p>
+              </div>
+            </div>
+
+            <div class="persona-quote" style="margin-bottom:20px;">
+              "Algoritmayı çözebiliyorum ama mülakatçıya sesli açıklamak bambaşka bir şey. İlk gerçek mülakatımda donakalıyorum."
+            </div>
+
+            <div class="flex flex-col gap-3">
+              <div class="flex items-center gap-2">
+                <span class="badge badge-default" style="font-size:10px;">🎯 Hedef</span>
+                <span class="t-secondary" style="font-size:12px;">İlk stajına girmek</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="badge badge-default" style="font-size:10px;">💻 Bildiği</span>
+                <span class="t-secondary" style="font-size:12px;">Python, JS, temel DS&Algo</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="badge badge-default" style="font-size:10px;">😰 Korkusu</span>
+                <span class="t-secondary" style="font-size:12px;">Teknik sorularda donakalmak</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Pain → Solution Journey -->
+        <div class="flex flex-col gap-6" style="flex:1;">
+          <div class="reveal flex flex-col gap-3">
+            <h3 style="font-size:15px;"><i class="ri-close-circle-line t-danger" style="margin-right:6px;"></i>Elif'in Sorunları</h3>
+            <div class="pain-point">
+              <div class="pain-icon"><i class="ri-emotion-sad-line"></i></div>
+              <div>
+                <p style="font-size:13px; font-weight:600;">Hiç mülakat deneyimi yok</p>
+                <p class="t-muted" style="font-size:12px; margin-top:2px;">LeetCode çözüyor ama sesli açıklama pratiği yapamıyor</p>
+              </div>
+            </div>
+            <div class="pain-point">
+              <div class="pain-icon"><i class="ri-global-line"></i></div>
+              <div>
+                <p style="font-size:13px; font-weight:600;">İngilizce kaynaklar Türkçe mülakata hazırlamıyor</p>
+                <p class="t-muted" style="font-size:12px; margin-top:2px;">TR firmaları Türkçe mülakat yapıyor, pratik ortamı yok</p>
+              </div>
+            </div>
+            <div class="pain-point">
+              <div class="pain-icon"><i class="ri-money-dollar-circle-line"></i></div>
+              <div>
+                <p style="font-size:13px; font-weight:600;">Mock interview servisleri çok pahalı</p>
+                <p class="t-muted" style="font-size:12px; margin-top:2px;">Pramp/interviewing.io İngilizce, mentör bulmak ise 200₺+/saat</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="reveal flex flex-col gap-3">
+            <h3 style="font-size:15px;"><i class="ri-sparkling-2-fill t-amber" style="margin-right:6px;"></i>Wingman ile Çözüm</h3>
+            <div class="solution-point">
+              <div class="solution-icon"><i class="ri-mic-line"></i></div>
+              <div>
+                <p style="font-size:13px; font-weight:600;"><span class="t-amber">Practice Mode</span> ile stressiz başlangıç</p>
+                <p class="t-muted" style="font-size:12px; margin-top:2px;">Süre baskısı yok, 3 seviye ipucu sistemi, Türkçe sesli yönlendirme</p>
+              </div>
+            </div>
+            <div class="solution-point">
+              <div class="solution-icon"><i class="ri-file-chart-line"></i></div>
+              <div>
+                <p style="font-size:13px; font-weight:600;">Her denemeden sonra detaylı AI rapor</p>
+                <p class="t-muted" style="font-size:12px; margin-top:2px;">İletişim skoru, "düşünceni sesli paylaş" gibi hedefli geri bildirim</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SLIDE 3 — Persona 2: Junior Dev ═══════════ -->
+  <div class="slide" data-slide="2">
+    <div class="slide-content flex flex-col gap-8">
+      <div class="reveal flex items-center gap-3">
+        <span class="t-amber t-mono" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em;">Senaryo 2</span>
+        <span class="badge badge-success"><i class="ri-code-s-slash-line" style="font-size:11px;"></i> Junior Developer</span>
+      </div>
+
+      <div class="reveal flex gap-8">
+        <!-- Left: Persona -->
+        <div style="width:320px; flex-shrink:0;">
+          <div class="persona-card" style="border-color:rgba(34,197,94,0.2);">
+            <div class="flex items-center gap-4" style="margin-bottom:20px;">
+              <div class="persona-avatar" style="background:rgba(34,197,94,0.08); border-color:rgba(34,197,94,0.3);">
+                <i class="ri-code-box-line t-success"></i>
+              </div>
+              <div>
+                <h2 style="font-size:22px;">Burak, 26</h2>
+                <p class="t-secondary" style="font-size:13px;">Frontend Developer · 1.5 yıl tecrübe</p>
+                <p class="t-muted" style="font-size:11px; margin-top:2px;">Startup · İstanbul</p>
+              </div>
+            </div>
+
+            <div class="persona-quote" style="margin-bottom:20px;">
+              "Mid-level pozisyona geçmek istiyorum ama her mülakattta sistem tasarımı sorularında çakılıyorum. Whiteboard'da ne çizeceğimi bilemiyorum."
+            </div>
+
+            <div class="flex flex-col gap-3">
+              <div class="flex items-center gap-2">
+                <span class="badge badge-default" style="font-size:10px;">🎯 Hedef</span>
+                <span class="t-secondary" style="font-size:12px;">Mid-level'a terfi / iş değişikliği</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="badge badge-default" style="font-size:10px;">💻 Bildiği</span>
+                <span class="t-secondary" style="font-size:12px;">React, TypeScript, Node.js</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="badge badge-default" style="font-size:10px;">😰 Korkusu</span>
+                <span class="t-secondary" style="font-size:12px;">System Design soruları</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Journey -->
+        <div class="flex flex-col gap-6" style="flex:1;">
+          <div class="reveal flex flex-col gap-3">
+            <h3 style="font-size:15px;"><i class="ri-close-circle-line t-danger" style="margin-right:6px;"></i>Burak'ın Sorunları</h3>
+            <div class="pain-point">
+              <div class="pain-icon"><i class="ri-mind-map"></i></div>
+              <div>
+                <p style="font-size:13px; font-weight:600;">Sistem tasarımı konusunda deneyimsiz</p>
+                <p class="t-muted" style="font-size:12px; margin-top:2px;">Startup'ta tek dev olarak scalability düşünmedi hiç</p>
+              </div>
+            </div>
+            <div class="pain-point">
+              <div class="pain-icon"><i class="ri-pencil-ruler-2-line"></i></div>
+              <div>
+                <p style="font-size:13px; font-weight:600;">Whiteboard pratiği yapacak ortam yok</p>
+                <p class="t-muted" style="font-size:12px; margin-top:2px;">YouTube videoları izliyor ama interaktif değil, geri bildirim yok</p>
+              </div>
+            </div>
+            <div class="pain-point">
+              <div class="pain-icon"><i class="ri-briefcase-4-line"></i></div>
+              <div>
+                <p style="font-size:13px; font-weight:600;">Hedef firmaya özel hazırlanamıyor</p>
+                <p class="t-muted" style="font-size:12px; margin-top:2px;">İş ilanındaki gereksinimlere göre pratik yok</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="reveal flex flex-col gap-3">
+            <h3 style="font-size:15px;"><i class="ri-sparkling-2-fill t-amber" style="margin-right:6px;"></i>Wingman ile Çözüm</h3>
+            <div class="solution-point">
+              <div class="solution-icon"><i class="ri-mind-map"></i></div>
+              <div>
+                <p style="font-size:13px; font-weight:600;"><span class="t-amber">System Design</span> modu + tldraw whiteboard</p>
+                <p class="t-muted" style="font-size:12px; margin-top:2px;">Bileşen paleti ile mimari çiz, AI whiteboard'u takip edip soru sorar</p>
+              </div>
+            </div>
+            <div class="solution-point">
+              <div class="solution-icon"><i class="ri-briefcase-4-line"></i></div>
+              <div>
+                <p style="font-size:13px; font-weight:600;"><span class="t-amber">İş ilanı yapıştır</span> → Mülakat ona göre şekillensin</p>
+                <p class="t-muted" style="font-size:12px; margin-top:2px;">AI ilanı parse eder, gereksinimlerine göre sorular sorar</p>
+              </div>
+            </div>
+            <div class="solution-point">
+              <div class="solution-icon"><i class="ri-line-chart-line"></i></div>
+              <div>
+                <p style="font-size:13px; font-weight:600;">Beceri radarı ile eksiklerini takip et</p>
+                <p class="t-muted" style="font-size:12px; margin-top:2px;">İletişim, problem çözme, sistem düşüncesi ayrı ayrı izlenir</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SLIDE 4 — Persona 3: Career Changer ═══════════ -->
+  <div class="slide" data-slide="3">
+    <div class="slide-content flex flex-col gap-8">
+      <div class="reveal flex items-center gap-3">
+        <span class="t-amber t-mono" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em;">Senaryo 3</span>
+        <span class="badge badge-purple"><i class="ri-refresh-line" style="font-size:11px;"></i> Kariyer Değiştiren</span>
+      </div>
+
+      <div class="reveal flex gap-8">
+        <!-- Left: Persona -->
+        <div style="width:320px; flex-shrink:0;">
+          <div class="persona-card" style="border-color:rgba(139,91,246,0.2);">
+            <div class="flex items-center gap-4" style="margin-bottom:20px;">
+              <div class="persona-avatar" style="background:rgba(139,91,246,0.08); border-color:rgba(139,91,246,0.3);">
+                <i class="ri-user-star-line t-purple"></i>
+              </div>
+              <div>
+                <h2 style="font-size:22px;">Zeynep, 30</h2>
+                <p class="t-secondary" style="font-size:13px;">Bootcamp Mezunu · Eski Muhasebeci</p>
+                <p class="t-muted" style="font-size:11px; margin-top:2px;">Patika.dev mezunu · İzmir</p>
+              </div>
+            </div>
+
+            <div class="persona-quote" style="margin-bottom:20px;">
+              "Bootcamp'te çok şey öğrendim ama teknik mülakat bambaşka bir dünya. Yazılımcı gibi düşünmeyi biliyorum, ama 'bunu sesli anlat' denince korkuyorum."
+            </div>
+
+            <div class="flex flex-col gap-3">
+              <div class="flex items-center gap-2">
+                <span class="badge badge-default" style="font-size:10px;">🎯 Hedef</span>
+                <span class="t-secondary" style="font-size:12px;">İlk junior developer işi</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="badge badge-default" style="font-size:10px;">💻 Bildiği</span>
+                <span class="t-secondary" style="font-size:12px;">JavaScript, React, temel backend</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="badge badge-default" style="font-size:10px;">😰 Korkusu</span>
+                <span class="t-secondary" style="font-size:12px;">CS bilgisi eksikliği ortaya çıksın</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right -->
+        <div class="flex flex-col gap-6" style="flex:1;">
+          <div class="reveal flex flex-col gap-3">
+            <h3 style="font-size:15px;"><i class="ri-close-circle-line t-danger" style="margin-right:6px;"></i>Zeynep'in Sorunları</h3>
+            <div class="pain-point">
+              <div class="pain-icon"><i class="ri-graduation-cap-line"></i></div>
+              <div>
+                <p style="font-size:13px; font-weight:600;">CS temeli bootcamp kadar güçlü değil</p>
+                <p class="t-muted" style="font-size:12px; margin-top:2px;">Veri yapıları ve algoritmalarda eksiklik hissediyor</p>
+              </div>
+            </div>
+            <div class="pain-point">
+              <div class="pain-icon"><i class="ri-phone-line"></i></div>
+              <div>
+                <p style="font-size:13px; font-weight:600;">Telefon mülakatlarında stres yönetimi zor</p>
+                <p class="t-muted" style="font-size:12px; margin-top:2px;">Yüz yüze değil, ses tonundan anlaşılmak ek baskı yaratıyor</p>
+              </div>
+            </div>
+            <div class="pain-point">
+              <div class="pain-icon"><i class="ri-file-user-line"></i></div>
+              <div>
+                <p style="font-size:13px; font-weight:600;">CV'si developer pozisyonuna uygun değil</p>
+                <p class="t-muted" style="font-size:12px; margin-top:2px;">Muhasebe tecrübesi var, yazılım için kendini nasıl konumlandırsın?</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="reveal flex flex-col gap-3">
+            <h3 style="font-size:15px;"><i class="ri-sparkling-2-fill t-amber" style="margin-right:6px;"></i>Wingman ile Çözüm</h3>
+            <div class="solution-point">
+              <div class="solution-icon"><i class="ri-phone-line"></i></div>
+              <div>
+                <p style="font-size:13px; font-weight:600;"><span class="t-amber">Phone Screen</span> modu ile telefon mülakatı simülasyonu</p>
+                <p class="t-muted" style="font-size:12px; margin-top:2px;">Gerçekçi format, soru-cevap ritmi, zamanlı pratik</p>
+              </div>
+            </div>
+            <div class="solution-point">
+              <div class="solution-icon"><i class="ri-file-user-line"></i></div>
+              <div>
+                <p style="font-size:13px; font-weight:600;"><span class="t-amber">CV yükle</span> → AI CV'ne göre soru sorar</p>
+                <p class="t-muted" style="font-size:12px; margin-top:2px;">Transferable skill'lerini vurgulamayı öğrenir, zayıf noktaları bilir</p>
+              </div>
+            </div>
+            <div class="solution-point">
+              <div class="solution-icon"><i class="ri-brain-line"></i></div>
+              <div>
+                <p style="font-size:13px; font-weight:600;">AI hafızası ile her seferinde daha iyi sorular</p>
+                <p class="t-muted" style="font-size:12px; margin-top:2px;">Önceki mülakatlardan öğrenir, güçlü yönlerini pekiştirir</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SLIDE 5 — Persona 4: Senior Dev ═══════════ -->
+  <div class="slide" data-slide="4">
+    <div class="slide-content flex flex-col gap-8">
+      <div class="reveal flex items-center gap-3">
+        <span class="t-amber t-mono" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em;">Senaryo 4</span>
+        <span class="badge badge-amber"><i class="ri-award-line" style="font-size:11px;"></i> Deneyimli Developer</span>
+      </div>
+
+      <div class="reveal flex gap-8">
+        <!-- Left: Persona -->
+        <div style="width:320px; flex-shrink:0;">
+          <div class="persona-card" style="border-color:rgba(229,161,14,0.2);">
+            <div class="flex items-center gap-4" style="margin-bottom:20px;">
+              <div class="persona-avatar" style="background:rgba(229,161,14,0.08); border-color:rgba(229,161,14,0.3);">
+                <i class="ri-shield-star-line t-amber"></i>
+              </div>
+              <div>
+                <h2 style="font-size:22px;">Kaan, 34</h2>
+                <p class="t-secondary" style="font-size:13px;">Senior Backend Developer · 8 yıl</p>
+                <p class="t-muted" style="font-size:11px; margin-top:2px;">Fintech şirketi · İstanbul</p>
+              </div>
+            </div>
+
+            <div class="persona-quote" style="margin-bottom:20px;">
+              "3 yıldır aynı şirketteyim. Artık mülakat nasıl yapılıyor unuttum. FAANG tarzı mülakatlara hazırlanmam lazım ama nereden başlayacağımı bilmiyorum."
+            </div>
+
+            <div class="flex flex-col gap-3">
+              <div class="flex items-center gap-2">
+                <span class="badge badge-default" style="font-size:10px;">🎯 Hedef</span>
+                <span class="t-secondary" style="font-size:12px;">Büyük tech şirketine geçiş</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="badge badge-default" style="font-size:10px;">💻 Bildiği</span>
+                <span class="t-secondary" style="font-size:12px;">Go, Java, Kubernetes, microservices</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="badge badge-default" style="font-size:10px;">😰 Korkusu</span>
+                <span class="t-secondary" style="font-size:12px;">Mülakat kasından pas atmış olmak</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right -->
+        <div class="flex flex-col gap-6" style="flex:1;">
+          <div class="reveal flex flex-col gap-3">
+            <h3 style="font-size:15px;"><i class="ri-close-circle-line t-danger" style="margin-right:6px;"></i>Kaan'ın Sorunları</h3>
+            <div class="pain-point">
+              <div class="pain-icon"><i class="ri-time-line"></i></div>
+              <div>
+                <p style="font-size:13px; font-weight:600;">3 yıldır mülakat yapmadı</p>
+                <p class="t-muted" style="font-size:12px; margin-top:2px;">Günlük işte uzman ama mülakat formatına uzak, pas atmış</p>
+              </div>
+            </div>
+            <div class="pain-point">
+              <div class="pain-icon"><i class="ri-calendar-close-line"></i></div>
+              <div>
+                <p style="font-size:13px; font-weight:600;">Tam zamanlı çalışırken pratik zamanı yok</p>
+                <p class="t-muted" style="font-size:12px; margin-top:2px;">Akşam 1 saatlik verimli pratik lazım, mock interview ayarlamak zor</p>
+              </div>
+            </div>
+            <div class="pain-point">
+              <div class="pain-icon"><i class="ri-focus-3-line"></i></div>
+              <div>
+                <p style="font-size:13px; font-weight:600;">Hard-level system design pratiği eksik</p>
+                <p class="t-muted" style="font-size:12px; margin-top:2px;">Senior mülakatlarda distributed systems, trade-off'lar soruluyor</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="reveal flex flex-col gap-3">
+            <h3 style="font-size:15px;"><i class="ri-sparkling-2-fill t-amber" style="margin-right:6px;"></i>Wingman ile Çözüm</h3>
+            <div class="solution-point">
+              <div class="solution-icon"><i class="ri-keyboard-box-line"></i></div>
+              <div>
+                <p style="font-size:13px; font-weight:600;"><span class="t-amber">Live Coding</span> Hard + <span class="t-amber">System Design</span> Hard</p>
+                <p class="t-muted" style="font-size:12px; margin-top:2px;">Senior seviye sorular, deep dive tartışma, back-of-envelope hesaplama</p>
+              </div>
+            </div>
+            <div class="solution-point">
+              <div class="solution-icon"><i class="ri-timer-flash-line"></i></div>
+              <div>
+                <p style="font-size:13px; font-weight:600;">Her an hazır, 7/24 pratik imkanı</p>
+                <p class="t-muted" style="font-size:12px; margin-top:2px;">Randevu yok, partner bekleme yok — gece 23:00'te bile mülakat yapabilirsin</p>
+              </div>
+            </div>
+            <div class="solution-point">
+              <div class="solution-icon"><i class="ri-bar-chart-box-line"></i></div>
+              <div>
+                <p style="font-size:13px; font-weight:600;">İlerleme grafiği ile hedef takibi</p>
+                <p class="t-muted" style="font-size:12px; margin-top:2px;">Streak sistemi motivasyon sağlar, skor trendi gidişatı gösterir</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SLIDE 5 — Example Conversation ═══════════ -->
+  <div class="slide" data-slide="5">
+    <div class="slide-content flex flex-col gap-8">
+      <div class="reveal">
+        <p class="t-amber t-mono" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px;">Gerçek Deneyim</p>
+        <h2 style="font-size:40px;">Bir Mülakat <span class="t-amber">Nasıl Geçer?</span></h2>
+        <p class="t-secondary" style="margin-top:6px; font-size:14px;">Elif'in Wingman ile ilk Live Coding pratiği</p>
+      </div>
+
+      <div class="reveal flex gap-8" style="margin-top:4px;">
+        <!-- Chat Flow -->
+        <div class="flex flex-col gap-4" style="flex:1; max-width:520px;">
+          <div class="chat-bubble chat-ai">
+            <span class="chat-label t-amber">🎙️ Wingman AI</span>
+            Merhaba Elif! Bugün Two Sum problemiyle başlayalım. Sana problemi anlatıyorum — bir tamsayı dizisi ve bir hedef değer verilecek. Toplamları hedefe eşit olan iki elemanın indekslerini bulmanı istiyorum. Nasıl yaklaşırsın?
+          </div>
+
+          <div class="chat-bubble chat-user">
+            <span class="chat-label t-info">👤 Elif</span>
+            Hmm… İlk aklıma brute force geliyor, iki iç içe döngü ile her çifti kontrol etmek. Ama bu O(n²) olur. Daha iyi bir yolu var mı diye düşünüyorum…
+          </div>
+
+          <div class="chat-bubble chat-ai">
+            <span class="chat-label t-amber">🎙️ Wingman AI</span>
+            Güzel analiz! O(n²)'yi fark etmen önemli. Peki, her elemanı gördüğünde "tamamlayıcısını daha önce gördüm mü?" diye sormak istesen ne kullanırdın?
+          </div>
+
+          <div class="chat-bubble chat-user">
+            <span class="chat-label t-info">👤 Elif</span>
+            Hash map! Complement'i map'te arayabilirim, O(1)'de bulabilirim. Toplam O(n) olur!
+          </div>
+
+          <div class="chat-bubble chat-ai">
+            <span class="chat-label t-amber">🎙️ Wingman AI</span>
+            Harika! Tam doğru yaklaşım. Şimdi kodu yaz, ben de bakarken edge case'leri konuşalım. Boş dizi gelirse ne olur?
+          </div>
+        </div>
+
+        <!-- Side: What happened -->
+        <div class="flex flex-col gap-4" style="width:340px;">
+          <div class="card" style="border-color:rgba(34,197,94,0.2);">
+            <h3 style="font-size:14px; margin-bottom:12px;"><i class="ri-check-double-line t-success" style="margin-right:6px;"></i>Bu Konuşmada Neler Oldu</h3>
+            <div class="flex flex-col gap-3">
+              <div style="display:flex; gap:10px; align-items:flex-start;">
+                <span style="width:20px;height:20px;border-radius:50%;background:rgba(34,197,94,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;color:var(--color-success);font-weight:700;">1</span>
+                <span class="t-secondary" style="font-size:12px; line-height:1.5;">AI problemi <strong style="color:var(--color-text)">sesli</strong> anlattı — gerçek mülakat gibi</span>
+              </div>
+              <div style="display:flex; gap:10px; align-items:flex-start;">
+                <span style="width:20px;height:20px;border-radius:50%;background:rgba(34,197,94,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;color:var(--color-success);font-weight:700;">2</span>
+                <span class="t-secondary" style="font-size:12px; line-height:1.5;">Elif düşünce sürecini <strong style="color:var(--color-text)">sesli paylaştı</strong></span>
+              </div>
+              <div style="display:flex; gap:10px; align-items:flex-start;">
+                <span style="width:20px;height:20px;border-radius:50%;background:rgba(34,197,94,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;color:var(--color-success);font-weight:700;">3</span>
+                <span class="t-secondary" style="font-size:12px; line-height:1.5;">AI <strong style="color:var(--color-text)">ipucu verdi</strong> — cevabı söylemeden yönlendirdi</span>
+              </div>
+              <div style="display:flex; gap:10px; align-items:flex-start;">
+                <span style="width:20px;height:20px;border-radius:50%;background:rgba(34,197,94,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;color:var(--color-success);font-weight:700;">4</span>
+                <span class="t-secondary" style="font-size:12px; line-height:1.5;">Elif optimal çözüme <strong style="color:var(--color-text)">kendi ulaştı</strong></span>
+              </div>
+              <div style="display:flex; gap:10px; align-items:flex-start;">
+                <span style="width:20px;height:20px;border-radius:50%;background:rgba(34,197,94,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;color:var(--color-success);font-weight:700;">5</span>
+                <span class="t-secondary" style="font-size:12px; line-height:1.5;">Edge case sorusu ile <strong style="color:var(--color-text)">derinleştirildi</strong></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="border-color:rgba(229,161,14,0.15); background:rgba(229,161,14,0.02);">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+              <i class="ri-lightbulb-line t-amber" style="font-size:16px;"></i>
+              <h3 style="font-size:13px;" class="t-amber">Fark</h3>
+            </div>
+            <p class="t-secondary" style="font-size:12px; line-height:1.6;">
+              LeetCode'da "Accepted" alırsın ama <strong style="color:var(--color-text)">düşünce sürecini paylaşma pratiği yapamazsın</strong>. Wingman tam olarak bu boşluğu dolduruyor.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SLIDE 6 — Common Journey ═══════════ -->
+  <div class="slide" data-slide="6">
+    <div class="slide-content flex flex-col gap-10">
+      <div class="reveal">
+        <p class="t-amber t-mono" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px;">Ortak Yolculuk</p>
+        <h2 style="font-size:40px;">Her Kullanıcı İçin <span class="t-amber">Aynı Değer</span></h2>
+      </div>
+
+      <div class="reveal" style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+        <!-- Before Wingman -->
+        <div class="card" style="border-color:rgba(239,68,68,0.15);">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(239,68,68,0.1);display:flex;align-items:center;justify-content:center;">
+              <i class="ri-close-circle-line t-danger" style="font-size:18px;"></i>
+            </div>
+            <h3 style="font-size:16px;" class="t-danger">Wingman Öncesi</h3>
+          </div>
+          <div class="flex flex-col gap-4">
+            <div style="display:flex; gap:12px; align-items:flex-start;">
+              <span class="t-danger" style="font-size:18px; line-height:1; margin-top:2px;">×</span>
+              <div>
+                <p style="font-size:13px; font-weight:600;">LeetCode çöz, umut et</p>
+                <p class="t-muted" style="font-size:11px; margin-top:2px;">Sesli iletişim pratiği yok</p>
+              </div>
+            </div>
+            <div style="display:flex; gap:12px; align-items:flex-start;">
+              <span class="t-danger" style="font-size:18px; line-height:1; margin-top:2px;">×</span>
+              <div>
+                <p style="font-size:13px; font-weight:600;">YouTube "system design" izle</p>
+                <p class="t-muted" style="font-size:11px; margin-top:2px;">Pasif öğrenme, geri bildirim yok</p>
+              </div>
+            </div>
+            <div style="display:flex; gap:12px; align-items:flex-start;">
+              <span class="t-danger" style="font-size:18px; line-height:1; margin-top:2px;">×</span>
+              <div>
+                <p style="font-size:13px; font-weight:600;">Arkadaştan mock interview iste</p>
+                <p class="t-muted" style="font-size:11px; margin-top:2px;">Kalitesiz, takvim uyuşmazlığı</p>
+              </div>
+            </div>
+            <div style="display:flex; gap:12px; align-items:flex-start;">
+              <span class="t-danger" style="font-size:18px; line-height:1; margin-top:2px;">×</span>
+              <div>
+                <p style="font-size:13px; font-weight:600;">Mülakata git, başarısız ol, üzül</p>
+                <p class="t-muted" style="font-size:11px; margin-top:2px;">Nerede hata yaptığını bilemezsin</p>
+              </div>
+            </div>
+            <div style="display:flex; gap:12px; align-items:flex-start;">
+              <span class="t-danger" style="font-size:18px; line-height:1; margin-top:2px;">×</span>
+              <div>
+                <p style="font-size:13px; font-weight:600;">₺200+/saat mentör parası</p>
+                <p class="t-muted" style="font-size:11px; margin-top:2px;">Öğrenciye erişilemez fiyat</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- After Wingman -->
+        <div class="card" style="border-color:rgba(229,161,14,0.2);">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(229,161,14,0.1);display:flex;align-items:center;justify-content:center;">
+              <i class="ri-sparkling-2-fill t-amber" style="font-size:18px;"></i>
+            </div>
+            <h3 style="font-size:16px;" class="t-amber">Wingman Sonrası</h3>
+          </div>
+          <div class="flex flex-col gap-4">
+            <div style="display:flex; gap:12px; align-items:flex-start;">
+              <span class="t-success" style="font-size:18px; line-height:1; margin-top:2px;">✓</span>
+              <div>
+                <p style="font-size:13px; font-weight:600;">Gerçek mülakatçıyla konuş, kodla</p>
+                <p class="t-muted" style="font-size:11px; margin-top:2px;">Türkçe sesli AI, Monaco editör</p>
+              </div>
+            </div>
+            <div style="display:flex; gap:12px; align-items:flex-start;">
+              <span class="t-success" style="font-size:18px; line-height:1; margin-top:2px;">✓</span>
+              <div>
+                <p style="font-size:13px; font-weight:600;">Whiteboard'da sistem tasarla, tartış</p>
+                <p class="t-muted" style="font-size:11px; margin-top:2px;">tldraw, bileşen paleti, AI takip eder</p>
+              </div>
+            </div>
+            <div style="display:flex; gap:12px; align-items:flex-start;">
+              <span class="t-success" style="font-size:18px; line-height:1; margin-top:2px;">✓</span>
+              <div>
+                <p style="font-size:13px; font-weight:600;">7/24 hazır, saniyeler içinde başla</p>
+                <p class="t-muted" style="font-size:11px; margin-top:2px;">Randevu yok, partner bekleme yok</p>
+              </div>
+            </div>
+            <div style="display:flex; gap:12px; align-items:flex-start;">
+              <span class="t-success" style="font-size:18px; line-height:1; margin-top:2px;">✓</span>
+              <div>
+                <p style="font-size:13px; font-weight:600;">Her seferinde detaylı AI rapor al</p>
+                <p class="t-muted" style="font-size:11px; margin-top:2px;">Skor, güçlü/zayıf yönler, öneriler</p>
+              </div>
+            </div>
+            <div style="display:flex; gap:12px; align-items:flex-start;">
+              <span class="t-success" style="font-size:18px; line-height:1; margin-top:2px;">✓</span>
+              <div>
+                <p style="font-size:13px; font-weight:600;">CV + İlan bazlı kişiselleştirme</p>
+                <p class="t-muted" style="font-size:11px; margin-top:2px;">Sana özel sorular, hafıza sistemi</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal flex gap-3 justify-center">
+        <span class="badge badge-info"><i class="ri-graduation-cap-line" style="font-size:11px;"></i> Öğrenci</span>
+        <span class="badge badge-success"><i class="ri-code-s-slash-line" style="font-size:11px;"></i> Junior Dev</span>
+        <span class="badge badge-purple"><i class="ri-refresh-line" style="font-size:11px;"></i> Kariyer Değiştiren</span>
+        <span class="badge badge-amber"><i class="ri-award-line" style="font-size:11px;"></i> Senior Dev</span>
+        <span style="font-size:12px; color:var(--color-text-muted); display:flex; align-items:center;">← Hepsi için aynı platform</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SLIDE 7 — Voice Architecture Deep Dive ═══════════ -->
+  <div class="slide" data-slide="7">
+    <div class="slide-content flex flex-col gap-8">
+      <div class="reveal">
+        <p class="t-amber t-mono" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px;">Teknik Deep Dive</p>
+        <h2 style="font-size:40px;">Voice Pipeline <span class="t-amber">Mimarisi</span></h2>
+        <p class="t-secondary" style="margin-top:6px; font-size:14px;">Kullanıcı konuşmaya başladığında arka planda neler oluyor?</p>
+      </div>
+
+      <!-- Full Pipeline Diagram -->
+      <div class="reveal" style="position:relative;">
+        <div style="display:flex; gap:12px; align-items:stretch;">
+
+          <!-- Step 1: Client / Browser -->
+          <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
+            <div style="text-align:center; margin-bottom:4px;">
+              <span class="badge badge-info" style="font-size:10px;"><i class="ri-window-line" style="font-size:10px;"></i> Browser</span>
+            </div>
+            <div class="card" style="flex:1; padding:16px; border-color:rgba(59,130,246,0.2); background:rgba(59,130,246,0.02);">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+                <div style="width:28px;height:28px;border-radius:7px;background:rgba(59,130,246,0.12);display:flex;align-items:center;justify-content:center;">
+                  <i class="ri-mic-line t-info" style="font-size:14px;"></i>
+                </div>
+                <span style="font-size:13px; font-weight:600;">Mikrofon Yakalama</span>
+              </div>
+              <div style="font-family:var(--font-mono); font-size:10px; line-height:1.6; color:var(--color-text-secondary); padding:8px 10px; background:var(--color-surface-raised); border-radius:6px;">
+                <span style="color:var(--color-amber);">MediaRecorder</span> → WebM/Opus<br>
+                <span style="color:var(--color-amber);">VAD</span> silence detect (800ms)<br>
+                <span style="color:var(--color-amber);">VolumeMeter</span> → animasyon<br>
+                <span style="color:var(--color-text-muted);">// Base64 chunk → WS</span>
+              </div>
+            </div>
+
+            <div class="card" style="flex:1; padding:16px; border-color:rgba(59,130,246,0.2); background:rgba(59,130,246,0.02);">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+                <div style="width:28px;height:28px;border-radius:7px;background:rgba(59,130,246,0.12);display:flex;align-items:center;justify-content:center;">
+                  <i class="ri-volume-up-line t-info" style="font-size:14px;"></i>
+                </div>
+                <span style="font-size:13px; font-weight:600;">Audio Playback</span>
+              </div>
+              <div style="font-family:var(--font-mono); font-size:10px; line-height:1.6; color:var(--color-text-secondary); padding:8px 10px; background:var(--color-surface-raised); border-radius:6px;">
+                <span style="color:var(--color-amber);">AudioQueuePlayer</span><br>
+                PCM16 → Float32 decode<br>
+                16kHz mono, gapless queue<br>
+                <span style="color:var(--color-text-muted);">// BufferSource chain</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Arrow 1 -->
+          <div style="display:flex; flex-direction:column; justify-content:center; gap:12px; padding:0 4px;">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:2px;">
+              <span class="t-muted" style="font-size:8px; text-transform:uppercase; letter-spacing:0.05em;">WS</span>
+              <div style="width:36px; height:2px; background:linear-gradient(to right, rgba(59,130,246,0.5), rgba(229,161,14,0.8));"></div>
+              <span class="t-muted" style="font-size:8px;">audio_chunk</span>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:2px; margin-top:20px;">
+              <span class="t-muted" style="font-size:8px;">ai_audio</span>
+              <div style="width:36px; height:2px; background:linear-gradient(to left, rgba(59,130,246,0.5), rgba(229,161,14,0.8));"></div>
+              <span class="t-muted" style="font-size:8px; text-transform:uppercase; letter-spacing:0.05em;">WS</span>
+            </div>
+          </div>
+
+          <!-- Step 2: API Server / VoiceSession -->
+          <div style="flex:1.4; display:flex; flex-direction:column; gap:8px;">
+            <div style="text-align:center; margin-bottom:4px;">
+              <span class="badge badge-amber" style="font-size:10px;"><i class="ri-server-line" style="font-size:10px;"></i> Hono + Bun WS</span>
+            </div>
+            <div class="card" style="flex:1; padding:16px; border-color:rgba(229,161,14,0.2); background:rgba(229,161,14,0.02);">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+                <div style="width:28px;height:28px;border-radius:7px;background:rgba(229,161,14,0.12);display:flex;align-items:center;justify-content:center;">
+                  <i class="ri-cpu-line t-amber" style="font-size:14px;"></i>
+                </div>
+                <span style="font-size:13px; font-weight:600;">VoiceSession</span>
+                <span class="badge badge-default" style="font-size:9px; padding:1px 5px;">~980 LOC</span>
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <!-- Pipeline steps inside server -->
+                <div style="display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:6px; background:var(--color-surface-raised); border-left:3px solid var(--color-success);">
+                  <span style="font-size:10px; font-weight:700; color:var(--color-success); font-family:var(--font-mono); width:14px;">1</span>
+                  <span style="font-size:11px; color:var(--color-text-secondary);"><strong style="color:var(--color-text);">STT</strong> — Base64 merge → FormData → Freya</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:6px; background:var(--color-surface-raised); border-left:3px solid var(--color-amber);">
+                  <span style="font-size:10px; font-weight:700; color:var(--color-amber); font-family:var(--font-mono); width:14px;">2</span>
+                  <span style="font-size:11px; color:var(--color-text-secondary);"><strong style="color:var(--color-text);">LLM</strong> — SSE stream → token-by-token</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:6px; background:var(--color-surface-raised); border-left:3px solid var(--color-info);">
+                  <span style="font-size:10px; font-weight:700; color:var(--color-info); font-family:var(--font-mono); width:14px;">3</span>
+                  <span style="font-size:11px; color:var(--color-text-secondary);"><strong style="color:var(--color-text);">TTS</strong> — Cümle split → fal.stream → PCM16</span>
+                </div>
+              </div>
+
+              <div style="margin-top:10px; padding:8px 10px; border-radius:6px; background:var(--color-surface-raised); font-size:10px; font-family:var(--font-mono); color:var(--color-text-muted); line-height:1.6;">
+                + AbortController interrupt<br>
+                + Conversation history (Convex persist)<br>
+                + Code/Whiteboard context injection<br>
+                + Question tracking · Time limits<br>
+                + Personalization (CV/Job/Memory)
+              </div>
+            </div>
+          </div>
+
+          <!-- Arrow 2 -->
+          <div style="display:flex; flex-direction:column; justify-content:center; gap:16px; padding:0 4px;">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:2px;">
+              <span class="t-muted" style="font-size:8px;">STT</span>
+              <div style="width:36px; height:2px; background:linear-gradient(to right, rgba(229,161,14,0.5), rgba(34,197,94,0.8));"></div>
+              <span class="t-muted" style="font-size:8px;">fetch</span>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:2px;">
+              <span class="t-muted" style="font-size:8px;">LLM</span>
+              <div style="width:36px; height:2px; background:linear-gradient(to right, rgba(229,161,14,0.5), rgba(34,197,94,0.8));"></div>
+              <span class="t-muted" style="font-size:8px;">SSE</span>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:2px;">
+              <span class="t-muted" style="font-size:8px;">TTS</span>
+              <div style="width:36px; height:2px; background:linear-gradient(to right, rgba(229,161,14,0.5), rgba(34,197,94,0.8));"></div>
+              <span class="t-muted" style="font-size:8px;">stream</span>
+            </div>
+          </div>
+
+          <!-- Step 3: External AI Services -->
+          <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
+            <div style="text-align:center; margin-bottom:4px;">
+              <span class="badge badge-success" style="font-size:10px;"><i class="ri-cloud-line" style="font-size:10px;"></i> AI Services</span>
+            </div>
+
+            <div class="card" style="padding:14px; border-color:rgba(34,197,94,0.2); background:rgba(34,197,94,0.02);">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                <div style="width:24px;height:24px;border-radius:6px;background:rgba(34,197,94,0.12);display:flex;align-items:center;justify-content:center;">
+                  <i class="ri-mic-line t-success" style="font-size:12px;"></i>
+                </div>
+                <span style="font-size:12px; font-weight:600;">Freya STT</span>
+              </div>
+              <div style="font-family:var(--font-mono); font-size:9px; color:var(--color-text-muted); line-height:1.5;">
+                OpenAI-compat multipart<br>Türkçe transkripsiyon
+              </div>
+            </div>
+
+            <div class="card" style="padding:14px; border-color:rgba(34,197,94,0.2); background:rgba(34,197,94,0.02);">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                <div style="width:24px;height:24px;border-radius:6px;background:rgba(34,197,94,0.12);display:flex;align-items:center;justify-content:center;">
+                  <i class="ri-brain-line t-success" style="font-size:12px;"></i>
+                </div>
+                <span style="font-size:12px; font-weight:600;">OpenRouter</span>
+              </div>
+              <div style="font-family:var(--font-mono); font-size:9px; color:var(--color-text-muted); line-height:1.5;">
+                SSE streaming<br>Chat completions
+              </div>
+            </div>
+
+            <div class="card" style="padding:14px; border-color:rgba(34,197,94,0.2); background:rgba(34,197,94,0.02);">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                <div style="width:24px;height:24px;border-radius:6px;background:rgba(34,197,94,0.12);display:flex;align-items:center;justify-content:center;">
+                  <i class="ri-volume-up-line t-success" style="font-size:12px;"></i>
+                </div>
+                <span style="font-size:12px; font-weight:600;">Freya TTS</span>
+              </div>
+              <div style="font-family:var(--font-mono); font-size:9px; color:var(--color-text-muted); line-height:1.5;">
+                fal.stream PCM16<br>Sentence-level latency
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Key Technical Details Row -->
+      <div class="reveal" style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px;">
+        <div class="card" style="padding:14px; text-align:center;">
+          <i class="ri-timer-flash-line t-amber" style="font-size:20px; display:block; margin-bottom:6px;"></i>
+          <p style="font-size:12px; font-weight:600; margin-bottom:2px;">Düşük Latency</p>
+          <p class="t-muted" style="font-size:10px; line-height:1.4;">Cümle-bazlı TTS split, ilk ses chunk'ı LLM bitmeden oynar</p>
+        </div>
+        <div class="card" style="padding:14px; text-align:center;">
+          <i class="ri-hand-coin-line t-info" style="font-size:20px; display:block; margin-bottom:6px;"></i>
+          <p style="font-size:12px; font-weight:600; margin-bottom:2px;">Interrupt</p>
+          <p class="t-muted" style="font-size:10px; line-height:1.4;">AbortController ile pipeline anında kesilir, kullanıcı araya girebilir</p>
+        </div>
+        <div class="card" style="padding:14px; text-align:center;">
+          <i class="ri-eye-line t-success" style="font-size:20px; display:block; margin-bottom:6px;"></i>
+          <p style="font-size:12px; font-weight:600; margin-bottom:2px;">Context Injection</p>
+          <p class="t-muted" style="font-size:10px; line-height:1.4;">Kod, whiteboard, CV, iş ilanı LLM'e her turda enjekte edilir</p>
+        </div>
+        <div class="card" style="padding:14px; text-align:center;">
+          <i class="ri-refresh-line t-purple" style="font-size:20px; display:block; margin-bottom:6px;"></i>
+          <p style="font-size:12px; font-weight:600; margin-bottom:2px;">Reconnect</p>
+          <p class="t-muted" style="font-size:10px; line-height:1.4;">Convex'ten history yükle, bağlantı kopsa bile konuşma devam eder</p>
+        </div>
+      </div>
+
+      <!-- WebSocket Protocol -->
+      <div class="reveal flex gap-6">
+        <div class="card" style="flex:1; padding:16px;">
+          <h3 style="font-size:13px; margin-bottom:8px;"><i class="ri-upload-2-line t-info" style="margin-right:4px;"></i>Client → Server <span class="t-muted" style="font-size:11px; font-weight:400;">(9 mesaj tipi)</span></h3>
+          <div style="display:flex; flex-wrap:wrap; gap:4px;">
+            <span class="badge badge-info" style="font-size:9px; padding:2px 6px;">audio_chunk</span>
+            <span class="badge badge-info" style="font-size:9px; padding:2px 6px;">start_listening</span>
+            <span class="badge badge-info" style="font-size:9px; padding:2px 6px;">stop_listening</span>
+            <span class="badge badge-info" style="font-size:9px; padding:2px 6px;">interrupt</span>
+            <span class="badge badge-info" style="font-size:9px; padding:2px 6px;">config</span>
+            <span class="badge badge-info" style="font-size:9px; padding:2px 6px;">code_update</span>
+            <span class="badge badge-info" style="font-size:9px; padding:2px 6px;">code_result</span>
+            <span class="badge badge-info" style="font-size:9px; padding:2px 6px;">hint_request</span>
+            <span class="badge badge-info" style="font-size:9px; padding:2px 6px;">whiteboard_update</span>
+          </div>
+        </div>
+        <div class="card" style="flex:1; padding:16px;">
+          <h3 style="font-size:13px; margin-bottom:8px;"><i class="ri-download-2-line t-amber" style="margin-right:4px;"></i>Server → Client <span class="t-muted" style="font-size:11px; font-weight:400;">(13 mesaj tipi)</span></h3>
+          <div style="display:flex; flex-wrap:wrap; gap:4px;">
+            <span class="badge badge-amber" style="font-size:9px; padding:2px 6px;">transcript</span>
+            <span class="badge badge-amber" style="font-size:9px; padding:2px 6px;">ai_text</span>
+            <span class="badge badge-amber" style="font-size:9px; padding:2px 6px;">ai_audio</span>
+            <span class="badge badge-amber" style="font-size:9px; padding:2px 6px;">ai_audio_done</span>
+            <span class="badge badge-amber" style="font-size:9px; padding:2px 6px;">state_change</span>
+            <span class="badge badge-amber" style="font-size:9px; padding:2px 6px;">error</span>
+            <span class="badge badge-amber" style="font-size:9px; padding:2px 6px;">problem_loaded</span>
+            <span class="badge badge-amber" style="font-size:9px; padding:2px 6px;">design_problem_loaded</span>
+            <span class="badge badge-amber" style="font-size:9px; padding:2px 6px;">hint_given</span>
+            <span class="badge badge-amber" style="font-size:9px; padding:2px 6px;">question_update</span>
+            <span class="badge badge-amber" style="font-size:9px; padding:2px 6px;">time_warning</span>
+            <span class="badge badge-amber" style="font-size:9px; padding:2px 6px;">solution_comparison</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SLIDE 8 — Market & Impact ═══════════ -->
+  <div class="slide" data-slide="8">
+    <div class="grid-bg"></div>
+    <div class="ambient-glow" style="width:500px;height:500px;background:rgba(229,161,14,0.04);top:50%;left:50%;transform:translate(-50%,-50%)"></div>
+
+    <div class="flex flex-col items-center gap-8 relative" style="z-index:1;">
+      <div class="reveal">
+        <p class="t-amber t-mono text-center" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px;">Pazar & Etki</p>
+        <h2 style="font-size:40px; text-align:center;">Neden <span class="t-amber">Şimdi?</span></h2>
+      </div>
+
+      <div class="reveal" style="display:grid; grid-template-columns:repeat(4,1fr); gap:16px; width:100%; max-width:900px;">
+        <div class="stat-pill" style="padding:24px;">
+          <span class="num t-amber" style="font-size:32px;">500K+</span>
+          <span class="label" style="margin-top:6px;">Türkiye'de Aktif Developer</span>
+        </div>
+        <div class="stat-pill" style="padding:24px;">
+          <span class="num t-danger" style="font-size:32px;">%72</span>
+          <span class="label" style="margin-top:6px;">Mülakata Hazır Değil*</span>
+        </div>
+        <div class="stat-pill" style="padding:24px;">
+          <span class="num t-success" style="font-size:32px;">$6.2B</span>
+          <span class="label" style="margin-top:6px;">Global EdTech Market</span>
+        </div>
+        <div class="stat-pill" style="padding:24px;">
+          <span class="num t-info" style="font-size:32px;">0</span>
+          <span class="label" style="margin-top:6px;">Türkçe Sesli Alternatif</span>
+        </div>
+      </div>
+
+      <div class="reveal" style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px; width:100%; max-width:900px;">
+        <div class="card text-center" style="border-color:rgba(59,130,246,0.15);">
+          <i class="ri-graduation-cap-line t-info" style="font-size:28px; display:block; margin-bottom:8px;"></i>
+          <h3 style="font-size:15px; margin-bottom:4px;">Üniversiteler</h3>
+          <p class="t-secondary" style="font-size:12px; line-height:1.5;">200+ CS bölümü, yılda 50K+ mezun. Kariyer merkezlerine entegrasyon.</p>
+        </div>
+        <div class="card text-center" style="border-color:rgba(229,161,14,0.15);">
+          <i class="ri-rocket-2-line t-amber" style="font-size:28px; display:block; margin-bottom:8px;"></i>
+          <h3 style="font-size:15px; margin-bottom:4px;">Bootcamp'ler</h3>
+          <p class="t-secondary" style="font-size:12px; line-height:1.5;">Patika, Kodluyoruz, Techcareer. Mezunlarına mülakat pratiği sun.</p>
+        </div>
+        <div class="card text-center" style="border-color:rgba(34,197,94,0.15);">
+          <i class="ri-building-4-line t-success" style="font-size:28px; display:block; margin-bottom:8px;"></i>
+          <h3 style="font-size:15px; margin-bottom:4px;">Şirketler</h3>
+          <p class="t-secondary" style="font-size:12px; line-height:1.5;">HR ekipleri adayları ön elemeye tabi tutabilir. İç eğitim aracı olarak kullanabilir.</p>
+        </div>
+      </div>
+
+      <div class="reveal" style="max-width:700px;">
+        <div class="card" style="border-color:rgba(229,161,14,0.15); background:rgba(229,161,14,0.02); padding:20px 28px; text-align:center;">
+          <p style="font-size:15px; line-height:1.7; color:var(--color-text-secondary);">
+            Freya'nın <strong style="color:var(--color-amber);">Türkçe STT/TTS</strong> modelleri sayesinde, daha önce mümkün olmayan
+            <strong style="color:var(--color-text);">anadilde sesli mülakat simülasyonu</strong> artık gerçek.
+            Wingman, bu teknolojik atılımın ilk ve en anlamlı kullanım senaryosu.
+          </p>
+        </div>
+      </div>
+
+      <div class="reveal flex gap-3 justify-center">
+        <span class="badge badge-default" style="font-size:11px;">* Topluluk anketleri, LinkedIn verileri</span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /deck -->
+
+<script>
+(function () {
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let current = 0;
+  let animating = false;
+
+  document.getElementById('totalSlides').textContent = String(total).padStart(2, '0');
+
+  const dotsContainer = document.getElementById('navDots');
+  for (let i = 0; i < total; i++) {
+    const dot = document.createElement('button');
+    dot.classList.add('nav-dot');
+    if (i === 0) dot.classList.add('active');
+    dot.setAttribute('aria-label', 'Slayt ' + (i + 1));
+    dot.addEventListener('click', () => goTo(i));
+    dotsContainer.appendChild(dot);
+  }
+
+  function updateUI() {
+    document.getElementById('progressBar').style.width = ((current + 1) / total * 100) + '%';
+    document.getElementById('currentSlide').textContent = String(current + 1).padStart(2, '0');
+    dotsContainer.querySelectorAll('.nav-dot').forEach((dot, i) => {
+      dot.classList.toggle('active', i === current);
+    });
+  }
+
+  function goTo(index) {
+    if (index === current || index < 0 || index >= total || animating) return;
+    animating = true;
+    const prev = slides[current];
+    const next = slides[index];
+
+    if (index > current) {
+      prev.classList.remove('active');
+      prev.classList.add('exit-up');
+    } else {
+      prev.classList.remove('active');
+      prev.style.transform = 'translateY(30px)';
+      prev.style.opacity = '0';
+    }
+
+    next.querySelectorAll('.reveal').forEach(el => {
+      el.style.animation = 'none';
+      el.offsetHeight;
+      el.style.animation = '';
+    });
+
+    setTimeout(() => {
+      prev.classList.remove('exit-up');
+      prev.style.transform = '';
+      prev.style.opacity = '';
+      next.classList.add('active');
+      current = index;
+      updateUI();
+      setTimeout(() => { animating = false; }, 400);
+    }, 100);
+  }
+
+  function next() { goTo(current + 1); }
+  function prev() { goTo(current - 1); }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); next(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); prev(); }
+    else if (e.key === 'Home') { e.preventDefault(); goTo(0); }
+    else if (e.key === 'End') { e.preventDefault(); goTo(total - 1); }
+  });
+
+  let touchStartX = 0, touchStartY = 0;
+  document.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; }, { passive: true });
+  document.addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) { dx < 0 ? next() : prev(); }
+  }, { passive: true });
+
+  let wheelTimeout;
+  document.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    clearTimeout(wheelTimeout);
+    wheelTimeout = setTimeout(() => { e.deltaY > 0 ? next() : prev(); }, 60);
+  }, { passive: false });
+
+  updateUI();
+})();
+</script>
+
+</body>
+</html>
