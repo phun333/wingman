@@ -94,7 +94,7 @@ FAZ 3  ████████████████████ 100%  ✅ Ta
 FAZ 5  ████████████████████ 100%  ✅ Tamamlandı
 FAZ 4  ████████████████████ 100%  ✅ Tamamlandı
 FAZ 7  ████████████████████ 100%  ✅ Tamamlandı
-FAZ 6  ░░░░░░░░░░░░░░░░░░░░   0%  ❌ Yapılmadı
+FAZ 6  ████████████████████ 100%  ✅ Tamamlandı
 FAZ 8  ░░░░░░░░░░░░░░░░░░░░   0%  ❌ Yapılmadı
 FAZ 10 ░░░░░░░░░░░░░░░░░░░░   0%  ❌ Yapılmadı
 ```
@@ -111,7 +111,7 @@ FAZ 10 ░░░░░░░░░░░░░░░░░░░░   0%  ❌ Ya
 | **7** | Raporlama | ✅ %100 | interviewResults tablosu+CRUD, LLM ile rapor oluşturma (report-generator service), ReportPage (skor kartı, radar chart, kategori skorları, güçlü/zayıf yön, kod analizi, transkript), ProgressPage (line chart, radar chart, istatistik kartları, mülakat geçmişi), kümülatif analiz (topStrengths/topWeaknesses), recharts entegrasyonu | — |
 | **5** | Phone Screen & Practice | ✅ %100 | VoiceOnlyRoom (ses arayüzü, orb animasyonu), phone-screen prompt, practice prompt, practice modunda kod editörü, hint butonu+kademeli ipucu sistemi (3 seviye), soft timer, soru sayacı (Soru X/Y), zaman limiti + AI geçiş (time_warning), çözüm karşılaştırması (SolutionComparisonPanel), **soru başına süre göstergesi (progress bar + countdown)**, **side-by-side diff view (diff kütüphanesi, diff/yan-yana toggle)** | — |
 | **4** | System Design | ✅ %100 | tldraw whiteboard canvas, 10 custom shape (DB/Cache/Queue/LB/Gateway/Server/CDN/Client/Storage/Auth), ComponentPalette (kategorize sürükle-bırak), whiteboard→LLM serialize (bileşenler+bağlantılar+veri akışı), whiteboard state persist (Convex), DesignProblemPanel (gereksinimler+tartışma noktaları), SystemDesignRoom layout (panel+whiteboard+ses), design problem seed data (7 soru: Easy→Hard), AI whiteboard-aware prompt, WS whiteboard_update mesajı, **tldraw snapshot→PNG/SVG export (indirme + dataURL)**, **label inline editing (çift tıkla düzenle)** | — |
-| **6** | Kişiselleştirme | ❌ %0 | — | Job posting parse (URL→LLM analiz), resume upload (PDF→metin), kullanıcı profili sayfası, mülakat config detayları (süre limiti, alt seçenekler), userMemory tablosu, AI davranış uyarlaması |
+| **6** | Kişiselleştirme | ✅ %100 | jobPostings tablosu+parse (URL/text→LLM analiz), resumes tablosu+upload (PDF/text→LLM analiz), userProfiles tablosu+upsert, userMemory tablosu+otomatik güncelleme (rapor sonrası), Settings sayfası (profil/resume/job/memory), NewInterview wizard gelişmiş ayarlar (job/resume/memory seçimi), VoiceSession personalization context inject, Sidebar'a Settings linki | — |
 | **8** | Enterprise Panel | ❌ %0 | — | organizations/positions/candidates tabloları, rol yönetimi, pozisyon oluşturma, davet linki akışı, recruiter dashboard, aday listesi+detay, karşılaştırma, funnel chart, dönüşüm oranları |
 | **10** | Production | ❌ %0 | — | Sentence-level TTS pipelining, rate limiting, sandbox güvenlik hardening, structured logging, health checks, error tracking, Fly.io/Railway deploy, Vercel/Cloudflare deploy, GitHub Actions CI/CD, code splitting, caching, scaling |
 
@@ -128,7 +128,10 @@ apps/api/src/
 │   ├── problems.ts             ← list/random/getById
 │   ├── design-problems.ts      ← System design soru bankası API
 │   ├── code.ts                 ← POST /execute (sandbox)
-│   └── reports.ts              ← Rapor oluşturma + getirme
+│   ├── reports.ts              ← Rapor oluşturma + getirme
+│   ├── jobs.ts                 ← İş ilanı parse (URL/text→LLM)
+│   ├── resume.ts               ← Özgeçmiş upload + analiz
+│   └── profile.ts              ← Profil CRUD + memory
 ├── services/
 │   └── report-generator.ts     ← LLM ile mülakat raporu üretme
 ├── prompts/
@@ -150,11 +153,12 @@ apps/web/src/
 │   └── whiteboard-serializer.ts ← tldraw state → LLM metin dönüştürücü
 ├── pages/
 │   ├── DashboardPage.tsx       ← Hoşgeldin + hızlı başlat + son mülakatlar
-│   ├── NewInterviewPage.tsx    ← Tür/zorluk/soru sayısı seçimi
+│   ├── NewInterviewPage.tsx    ← Tür/zorluk/soru sayısı + gelişmiş ayarlar (job/resume/memory)
 │   ├── InterviewRoomPage.tsx   ← Voice-only + Live Coding + System Design router
 │   ├── ReportPage.tsx          ← Mülakat raporu (skor, radar, güçlü/zayıf)
 │   ├── ProgressPage.tsx        ← İlerleme grafikleri (line, radar, istatistik)
 │   ├── HistoryPage.tsx         ← Geçmiş mülakatlar
+│   ├── SettingsPage.tsx        ← Profil, özgeçmiş, iş ilanları, hafıza
 │   ├── LoginPage.tsx           ← Email/password login
 │   └── RegisterPage.tsx        ← Email/password register
 └── components/
@@ -176,13 +180,17 @@ apps/web/src/
             └── index.ts              ← Barrel export
 
 convex/
-├── schema.ts                   ← users, interviews, messages, problems, designProblems, interviewResults
+├── schema.ts                   ← users, interviews, messages, problems, designProblems, interviewResults, jobPostings, resumes, userProfiles, userMemory
 ├── users.ts                    ← CRUD + list + getById
 ├── interviews.ts               ← create/start/complete/saveCode/setProblem/setDesignProblem/saveWhiteboardState/stats
 ├── messages.ts                 ← add/listByInterview/getRecent
 ├── problems.ts                 ← create/list/getById/getRandom
 ├── designProblems.ts           ← CRUD + getRandom + 7 seed soru
 ├── interviewResults.ts         ← create/getByInterview/getByUser/getUserProgress
+├── jobPostings.ts              ← CRUD + listByUser
+├── resumes.ts                  ← CRUD + listByUser
+├── userProfiles.ts             ← getByUser + upsert
+├── userMemory.ts               ← getByKey + getAllByUser + upsert
 ├── auth.ts                     ← better-auth createAuth()
 ├── http.ts                     ← HTTP routes (auth endpoints)
 └── seed.ts                     ← Coding problem seed data
@@ -191,9 +199,9 @@ convex/
 ### Önerilen Sıralama (Kalan Fazlar)
 
 ```
-Şimdi  ──► FAZ 6   Kişiselleştirme (job parse, resume, memory)
-       ──► FAZ 8   Enterprise panel
+Şimdi  ──► FAZ 8   Enterprise panel
        ──► FAZ 10  Production & deploy
 
 > ✅ FAZ 4 & 5 eksikleri kapatıldı (10 Şubat 2026)
+> ✅ FAZ 6 tamamlandı (10 Şubat 2026)
 ```
