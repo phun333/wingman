@@ -7,6 +7,7 @@ import { ENV } from "@ffh/env";
 import { interviewRoutes } from "./routes/interviews";
 import { problemRoutes } from "./routes/problems";
 import { codeRoutes } from "./routes/code";
+import { reportRoutes } from "./routes/reports";
 
 export const apiRoutes = new Hono();
 
@@ -27,6 +28,12 @@ apiRoutes.route("/problems", problemRoutes);
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 apiRoutes.route("/code", codeRoutes);
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  Report routes (auth-protected)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+apiRoutes.route("/reports", reportRoutes);
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  Users
