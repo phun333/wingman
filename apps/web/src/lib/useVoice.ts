@@ -146,9 +146,13 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
       case "ai_text":
         if (msg.done) {
           // Keep accumulated text visible
+          setAiText(aiTextAccRef.current); // Final update
         } else {
           aiTextAccRef.current += msg.text;
-          setAiText(aiTextAccRef.current);
+          // Throttle UI updates to prevent re-render storm
+          if (aiTextAccRef.current.length % 10 === 0 || msg.text.includes(' ')) {
+            setAiText(aiTextAccRef.current);
+          }
         }
         break;
 
@@ -234,8 +238,13 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
         setAiText("");
 
         // Volume meter
+        let lastVolumeUpdate = 0;
         volumeMeterRef.current = createVolumeMeter(stream, (rms) => {
-          setVolume(rms);
+          const now = Date.now();
+          if (now - lastVolumeUpdate > 50) { // Throttle to 20fps
+            setVolume(rms);
+            lastVolumeUpdate = now;
+          }
           handleVAD(rms);
         });
 
@@ -317,17 +326,22 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
   // ─── Auto-restart mic after AI finishes ──────────────
 
   useEffect(() => {
-    if (state === "idle" && micActive && !recorderRef.current) {
-      // AI finished speaking, restart recording
-      const stream = mediaStreamRef.current;
-      if (stream && stream.active) {
-        aiTextAccRef.current = "";
-        setAiText("");
-        setTranscript("");
-        startRecording(stream);
-        send({ type: "start_listening" });
+    // Add a small delay to prevent re-render loops
+    const timeoutId = setTimeout(() => {
+      if (state === "idle" && micActive && !recorderRef.current) {
+        // AI finished speaking, restart recording
+        const stream = mediaStreamRef.current;
+        if (stream && stream.active) {
+          aiTextAccRef.current = "";
+          setAiText("");
+          setTranscript("");
+          startRecording(stream);
+          send({ type: "start_listening" });
+        }
       }
-    }
+    }, 10);
+
+    return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, micActive]);
 

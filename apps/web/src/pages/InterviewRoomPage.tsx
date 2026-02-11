@@ -16,11 +16,10 @@ import type {
 import { ProblemPanel } from "@/components/interview/ProblemPanel";
 import { CodeEditor } from "@/components/interview/CodeEditor";
 import { TestResultsPanel } from "@/components/interview/TestResultsPanel";
-import { VoiceBar } from "@/components/interview/VoiceBar";
-import { VoiceAssistant } from "@/components/interview/VoiceAssistant";
 import { ResizableSplitter } from "@/components/interview/ResizableSplitter";
 import { SolutionComparisonPanel } from "@/components/interview/SolutionComparisonPanel";
 import { SystemDesignRoom } from "@/components/interview/SystemDesignRoom";
+import { AIChat } from "@/components/interview/AIChat";
 
 const stateLabels: Record<VoicePipelineState, string> = {
   idle: "Hazır",
@@ -393,22 +392,6 @@ export function InterviewRoomPage() {
         />
       </div>
 
-      {/* Voice bar at bottom */}
-      <VoiceBar
-        state={state}
-        micActive={micActive}
-        volume={volume}
-        connected={connected}
-        transcript={transcript}
-        aiText={aiText}
-        error={error}
-        onMicClick={handleMicClick}
-        showHint={isPractice}
-        onHintRequest={requestHint}
-        hintLevel={hintLevel}
-        totalHints={totalHints}
-      />
-
       {/* Solution comparison modal (practice mode) */}
       {solutionComparison && (
         <SolutionComparisonPanel
@@ -419,6 +402,17 @@ export function InterviewRoomPage() {
           onDismiss={dismissSolution}
         />
       )}
+
+      {/* AI Chat with latency tracking and mic control */}
+      <AIChat
+        transcript={transcript}
+        aiText={aiText}
+        micActive={micActive}
+        state={state}
+        volume={volume}
+        onMicClick={handleMicClick}
+        connected={connected}
+      />
     </div>
   );
 }
@@ -555,12 +549,14 @@ function VoiceOnlyRoom({
       {/* Main area */}
       <div className="flex-1 flex flex-col items-center justify-center relative overflow-hidden">
         {/* Voice Assistant */}
-        <VoiceAssistant
-          isListening={state === "listening"}
-          isSpeaking={state === "speaking"}
-          audioLevel={volume}
-          onStart={onMicClick}
-          onStop={onMicClick}
+        <AIChat
+          transcript={transcript}
+          aiText={aiText}
+          micActive={micActive}
+          state={state}
+          volume={volume}
+          onMicClick={onMicClick}
+          connected={connected}
         />
 
         {timeWarning && (
