@@ -155,6 +155,45 @@ export interface CodeExecutionResult {
   error?: string;
 }
 
+// ─── System Design ───────────────────────────────────────
+
+export interface DesignComponent {
+  id: string;
+  type: string;
+  label: string;
+  x: number;
+  y: number;
+}
+
+export interface DesignConnection {
+  id: string;
+  fromId: string;
+  toId: string;
+  fromLabel: string;
+  toLabel: string;
+  label?: string;
+}
+
+export interface WhiteboardState {
+  components: DesignComponent[];
+  connections: DesignConnection[];
+  textRepresentation: string;
+}
+
+export interface DesignProblem {
+  _id: string;
+  title: string;
+  description: string;
+  difficulty: Difficulty;
+  requirements: {
+    functional: string[];
+    nonFunctional: string[];
+  };
+  expectedComponents: string[];
+  discussionPoints: string[];
+  createdAt: number;
+}
+
 // ─── WebSocket Protocol ──────────────────────────────────
 
 /** Client → Server */
@@ -166,7 +205,8 @@ export type ClientMessage =
   | { type: "config"; language?: string; speed?: number }
   | { type: "code_update"; code: string; language: CodeLanguage }
   | { type: "code_result"; results: TestResult[]; stdout: string; stderr: string; error?: string }
-  | { type: "hint_request" };
+  | { type: "hint_request" }
+  | { type: "whiteboard_update"; state: WhiteboardState };
 
 /** Server → Client */
 export type ServerMessage =
@@ -177,6 +217,7 @@ export type ServerMessage =
   | { type: "state_change"; state: VoicePipelineState }
   | { type: "error"; message: string }
   | { type: "problem_loaded"; problem: Problem }
+  | { type: "design_problem_loaded"; problem: DesignProblem }
   | { type: "hint_given"; level: number; totalHints: number }
   | { type: "question_update"; current: number; total: number }
   | { type: "time_warning"; minutesLeft: number }

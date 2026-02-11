@@ -9,6 +9,7 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as designProblems from "../designProblems.js";
 import type * as http from "../http.js";
 import type * as interviewResults from "../interviewResults.js";
 import type * as interviews from "../interviews.js";
@@ -25,6 +26,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  designProblems: typeof designProblems;
   http: typeof http;
   interviewResults: typeof interviewResults;
   interviews: typeof interviews;

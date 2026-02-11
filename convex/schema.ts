@@ -32,8 +32,10 @@ export default defineSchema({
     questionCount: v.number(),
     config: v.optional(v.any()),
     problemId: v.optional(v.id("problems")),
+    designProblemId: v.optional(v.id("designProblems")),
     finalCode: v.optional(v.string()),
     codeLanguage: v.optional(v.string()),
+    whiteboardState: v.optional(v.string()),
     startedAt: v.optional(v.number()),
     endedAt: v.optional(v.number()),
     createdAt: v.number(),
@@ -102,6 +104,24 @@ export default defineSchema({
     .index("by_interview", ["interviewId"])
     .index("by_user", ["userId"])
     .index("by_user_date", ["userId", "createdAt"]),
+
+  designProblems: defineTable({
+    title: v.string(),
+    description: v.string(),
+    difficulty: v.union(
+      v.literal("easy"),
+      v.literal("medium"),
+      v.literal("hard"),
+    ),
+    requirements: v.object({
+      functional: v.array(v.string()),
+      nonFunctional: v.array(v.string()),
+    }),
+    expectedComponents: v.array(v.string()),
+    discussionPoints: v.array(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_difficulty", ["difficulty"]),
 
   problems: defineTable({
     title: v.string(),
