@@ -7,6 +7,13 @@ interface UseVoiceOptions {
   onProblemLoaded?: (problem: Problem) => void;
 }
 
+interface SolutionComparison {
+  userSolution: string;
+  optimalSolution: string;
+  timeComplexity?: string;
+  spaceComplexity?: string;
+}
+
 interface UseVoiceReturn {
   state: VoicePipelineState;
   micActive: boolean;
@@ -17,11 +24,16 @@ interface UseVoiceReturn {
   connected: boolean;
   hintLevel: number;
   totalHints: number;
+  questionCurrent: number;
+  questionTotal: number;
+  timeWarning: number | null;
+  solutionComparison: SolutionComparison | null;
   toggleMic: () => void;
   interrupt: () => void;
   sendCodeUpdate: (code: string, language: CodeLanguage) => void;
   sendCodeResult: (results: TestResult[], stdout: string, stderr: string, error?: string) => void;
   requestHint: () => void;
+  dismissSolution: () => void;
 }
 
 function buildWsUrl(interviewId?: string): string {
@@ -43,6 +55,10 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
   const [connected, setConnected] = useState(false);
   const [hintLevel, setHintLevel] = useState(0);
   const [totalHints, setTotalHints] = useState(0);
+  const [questionCurrent, setQuestionCurrent] = useState(0);
+  const [questionTotal, setQuestionTotal] = useState(0);
+  const [timeWarning, setTimeWarning] = useState<number | null>(null);
+  const [solutionComparison, setSolutionComparison] = useState<SolutionComparison | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -144,6 +160,24 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
       case "hint_given":
         setHintLevel(msg.level);
         setTotalHints(msg.totalHints);
+        break;
+
+      case "question_update":
+        setQuestionCurrent(msg.current);
+        setQuestionTotal(msg.total);
+        break;
+
+      case "time_warning":
+        setTimeWarning(msg.minutesLeft);
+        break;
+
+      case "solution_comparison":
+        setSolutionComparison({
+          userSolution: msg.userSolution,
+          optimalSolution: msg.optimalSolution,
+          timeComplexity: msg.timeComplexity,
+          spaceComplexity: msg.spaceComplexity,
+        });
         break;
     }
   }
@@ -303,6 +337,10 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
     send({ type: "hint_request" });
   }, []);
 
+  const dismissSolution = useCallback(() => {
+    setSolutionComparison(null);
+  }, []);
+
   return {
     state,
     micActive,
@@ -313,10 +351,15 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
     connected,
     hintLevel,
     totalHints,
+    questionCurrent,
+    questionTotal,
+    timeWarning,
+    solutionComparison,
     toggleMic,
     interrupt,
     sendCodeUpdate,
     sendCodeResult,
     requestHint,
+    dismissSolution,
   };
 }

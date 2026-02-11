@@ -16,6 +16,7 @@ import { CodeEditor } from "@/components/interview/CodeEditor";
 import { TestResultsPanel } from "@/components/interview/TestResultsPanel";
 import { VoiceBar } from "@/components/interview/VoiceBar";
 import { ResizableSplitter } from "@/components/interview/ResizableSplitter";
+import { SolutionComparisonPanel } from "@/components/interview/SolutionComparisonPanel";
 
 const stateLabels: Record<VoicePipelineState, string> = {
   idle: "Hazır",
@@ -97,11 +98,16 @@ export function InterviewRoomPage() {
     connected,
     hintLevel,
     totalHints,
+    questionCurrent,
+    questionTotal,
+    timeWarning,
+    solutionComparison,
     toggleMic,
     interrupt,
     sendCodeUpdate,
     sendCodeResult,
     requestHint,
+    dismissSolution,
   } = useVoice({ interviewId: id, onProblemLoaded: handleProblemLoaded });
 
   // Fallback: if problem not loaded via WS after 5 seconds, fetch from API
@@ -261,6 +267,9 @@ export function InterviewRoomPage() {
       formatTime={formatTime}
       onMicClick={handleMicClick}
       onEnd={handleEnd}
+      questionCurrent={questionCurrent}
+      questionTotal={questionTotal}
+      timeWarning={timeWarning}
     />;
   }
 
@@ -377,6 +386,17 @@ export function InterviewRoomPage() {
         hintLevel={hintLevel}
         totalHints={totalHints}
       />
+
+      {/* Solution comparison modal (practice mode) */}
+      {solutionComparison && (
+        <SolutionComparisonPanel
+          userSolution={solutionComparison.userSolution}
+          optimalSolution={solutionComparison.optimalSolution}
+          timeComplexity={solutionComparison.timeComplexity}
+          spaceComplexity={solutionComparison.spaceComplexity}
+          onDismiss={dismissSolution}
+        />
+      )}
     </div>
   );
 }
@@ -396,6 +416,9 @@ interface VoiceOnlyRoomProps {
   formatTime: (s: number) => string;
   onMicClick: () => void;
   onEnd: () => void;
+  questionCurrent: number;
+  questionTotal: number;
+  timeWarning: number | null;
 }
 
 function VoiceOnlyRoom({
@@ -411,6 +434,9 @@ function VoiceOnlyRoom({
   formatTime,
   onMicClick,
   onEnd,
+  questionCurrent,
+  questionTotal,
+  timeWarning,
 }: VoiceOnlyRoomProps) {
   const orbScale =
     state === "listening"
@@ -440,7 +466,13 @@ function VoiceOnlyRoom({
           />
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-sm font-mono text-text-muted tabular-nums">
+          {/* Question counter for phone-screen */}
+          {questionTotal > 0 && (
+            <span className="text-xs text-text-secondary px-2.5 py-1 rounded-md bg-surface-raised border border-border tabular-nums">
+              Soru {questionCurrent}/{questionTotal}
+            </span>
+          )}
+          <span className={`text-sm font-mono tabular-nums ${timeWarning ? "text-amber" : "text-text-muted"}`}>
             {formatTime(elapsed)}
           </span>
           <Button variant="danger" size="sm" onClick={onEnd}>
@@ -508,6 +540,16 @@ function VoiceOnlyRoom({
             {stateLabels[state]}
           </span>
         </div>
+
+        {timeWarning && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative z-10 mt-4 rounded-lg bg-amber/10 border border-amber/20 px-4 py-2 max-w-md"
+          >
+            <p className="text-sm text-amber">⏱ Kalan süre: ~{timeWarning} dakika</p>
+          </motion.div>
+        )}
 
         {error && (
           <div className="relative z-10 mt-4 rounded-lg bg-danger/10 border border-danger/20 px-4 py-2 max-w-md">
