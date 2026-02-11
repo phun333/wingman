@@ -81,7 +81,10 @@ app.get(
           typeof event.data === "string"
             ? event.data
             : event.data.toString();
-        session.handleMessage(data);
+        // handleMessage is async — fire and catch errors
+        session.handleMessage(data).catch((err) => {
+          console.error("WS message handler error:", err);
+        });
       },
 
       onClose() {

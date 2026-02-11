@@ -51,6 +51,8 @@ export class VoiceSession {
   private initialized = false;
   private currentCode: string = "";
   private currentCodeLanguage: CodeLanguage = "javascript";
+  private hintCount: number = 0;
+  private processing = false; // Guards against concurrent pipeline runs
 
   constructor(send: (msg: ServerMessage) => void) {
     this.send = send;
@@ -85,8 +87,8 @@ export class VoiceSession {
       );
       this.conversationHistory.push({ role: "system", content: systemPrompt });
 
-      // For live-coding interviews, load a random problem
-      if (this.interview.type === "live-coding") {
+      // For live-coding and practice interviews, load a random problem
+      if (this.interview.type === "live-coding" || this.interview.type === "practice") {
         try {
           const problem = await convex.query(api.problems.getRandom, {
             difficulty: this.interview.difficulty as any,
@@ -177,9 +179,9 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
         break;
 
       case "stop_listening":
-        if (this.state === "listening" && this.audioChunks.length > 0) {
+        if (this.state === "listening" && this.audioChunks.length > 0 && !this.processing) {
           await this.processAudio();
-        } else {
+        } else if (!this.processing) {
           this.setState("idle");
         }
         break;
@@ -194,19 +196,25 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
         break;
 
       case "code_result":
-        this.handleCodeResult(msg.results, msg.stdout, msg.stderr, msg.error);
+        await this.handleCodeResult(msg.results, msg.stdout, msg.stderr, msg.error);
+        break;
+
+      case "hint_request":
+        if (!this.processing) {
+          await this.handleHintRequest();
+        }
         break;
     }
   }
 
   // ─── Code Result → AI Analysis ───────────────────────
 
-  private handleCodeResult(
+  private async handleCodeResult(
     results: TestResult[],
     stdout: string,
     stderr: string,
     error?: string,
-  ): void {
+  ): Promise<void> {
     const passed = results.filter((r) => r.passed).length;
     const total = results.length;
 
@@ -224,11 +232,99 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
     // Add to conversation so AI can respond
     this.conversationHistory.push({ role: "user", content: summary });
     this.persistMessage("user", summary);
+
+    // Auto-trigger AI response to comment on the results
+    if (this.processing) return;
+    this.processing = true;
+    this.setState("processing");
+    this.abortController = new AbortController();
+    const { signal } = this.abortController;
+
+    try {
+      const aiResponse = await this.generateResponse(signal);
+      if (!aiResponse || signal.aborted) return;
+
+      this.conversationHistory.push({ role: "assistant", content: aiResponse });
+      this.persistMessage("assistant", aiResponse);
+
+      if (!signal.aborted) {
+        this.setState("speaking");
+        await this.synthesizeSpeech(aiResponse, signal);
+      }
+    } catch (err) {
+      if (!signal.aborted) {
+        const message = err instanceof Error ? err.message : "Code result response hatası";
+        this.send({ type: "error", message });
+      }
+    } finally {
+      this.processing = false;
+      if (!signal.aborted) {
+        this.send({ type: "ai_audio_done" });
+        this.setState("idle");
+      }
+      this.abortController = null;
+    }
+  }
+
+  // ─── Hint Request ────────────────────────────────────
+
+  private async handleHintRequest(): Promise<void> {
+    if (this.processing) return;
+    this.processing = true;
+    this.hintCount++;
+    const level = Math.min(this.hintCount, 3);
+
+    const hintLevelDescriptions: Record<number, string> = {
+      1: "Genel yaklaşım ipucu ver. Hangi veri yapısı veya algoritma kullanılabilir sadece onu söyle. Detaya girme.",
+      2: "Daha detaylı bir yönlendirme ver. Adımları kabaca açıkla ama kodu yazma.",
+      3: "Pseudo-code seviyesinde ipucu ver. Çözümün iskeletini göster ama tam kodu verme.",
+    };
+
+    const hintPrompt = `[SYSTEM: Kullanıcı ipucu istedi (${level}. ipucu, toplam ${this.hintCount} kez istendi). ${hintLevelDescriptions[level]} Kısa ve öz ol, 2-3 cümleyi geçme.]`;
+
+    // Notify client about hint level
+    this.send({ type: "hint_given", level, totalHints: this.hintCount });
+
+    // Inject hint request into conversation and trigger AI response
+    this.conversationHistory.push({ role: "user", content: hintPrompt });
+    this.persistMessage("user", `[İpucu istendi — Seviye ${level}]`);
+
+    // Process the hint through the pipeline (LLM → TTS)
+    this.setState("processing");
+    this.abortController = new AbortController();
+    const { signal } = this.abortController;
+
+    try {
+      const aiResponse = await this.generateResponse(signal);
+      if (!aiResponse || signal.aborted) return;
+
+      this.conversationHistory.push({ role: "assistant", content: aiResponse });
+      this.persistMessage("assistant", aiResponse);
+
+      if (!signal.aborted) {
+        this.setState("speaking");
+        await this.synthesizeSpeech(aiResponse, signal);
+      }
+    } catch (err) {
+      if (!signal.aborted) {
+        const message = err instanceof Error ? err.message : "Hint hatası";
+        this.send({ type: "error", message });
+      }
+    } finally {
+      this.processing = false;
+      if (!signal.aborted) {
+        this.send({ type: "ai_audio_done" });
+        this.setState("idle");
+      }
+      this.abortController = null;
+    }
   }
 
   // ─── Pipeline ────────────────────────────────────────
 
   private async processAudio(): Promise<void> {
+    if (this.processing) return;
+    this.processing = true;
     this.setState("processing");
     this.abortController = new AbortController();
     const { signal } = this.abortController;
@@ -236,7 +332,13 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
     try {
       // 1) STT
       const transcript = await this.transcribe(signal);
-      if (!transcript || signal.aborted) return;
+      if (!transcript || signal.aborted) {
+        // STT returned nothing (too short / noise) — go back to idle
+        if (!signal.aborted) {
+          this.setState("idle");
+        }
+        return;
+      }
 
       this.send({ type: "transcript", text: transcript, final: true });
 
@@ -267,6 +369,7 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
         this.send({ type: "error", message });
       }
     } finally {
+      this.processing = false;
       if (!signal.aborted) {
         this.send({ type: "ai_audio_done" });
         this.setState("idle");
@@ -480,8 +583,9 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
       this.abortController.abort();
       this.abortController = null;
     }
+    this.processing = false;
     this.send({ type: "ai_audio_done" });
-    this.setState("listening");
+    this.setState("idle");
     this.audioChunks = [];
   }
 

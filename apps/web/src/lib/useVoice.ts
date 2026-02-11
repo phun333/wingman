@@ -15,10 +15,13 @@ interface UseVoiceReturn {
   aiText: string;
   error: string | null;
   connected: boolean;
+  hintLevel: number;
+  totalHints: number;
   toggleMic: () => void;
   interrupt: () => void;
   sendCodeUpdate: (code: string, language: CodeLanguage) => void;
   sendCodeResult: (results: TestResult[], stdout: string, stderr: string, error?: string) => void;
+  requestHint: () => void;
 }
 
 function buildWsUrl(interviewId?: string): string {
@@ -38,6 +41,8 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
   const [aiText, setAiText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
+  const [hintLevel, setHintLevel] = useState(0);
+  const [totalHints, setTotalHints] = useState(0);
 
   const wsRef = useRef<WebSocket | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -46,37 +51,55 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
   const playerRef = useRef<AudioQueuePlayer>(new AudioQueuePlayer());
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const aiTextAccRef = useRef("");
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reconnectAttemptsRef = useRef(0);
+  const unmountedRef = useRef(false);
 
-  // ─── WebSocket ───────────────────────────────────────
+  // ─── WebSocket (with auto-reconnect) ─────────────────
 
   useEffect(() => {
-    const wsUrl = buildWsUrl(options.interviewId);
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
+    unmountedRef.current = false;
 
-    ws.onopen = () => {
-      setConnected(true);
-      setError(null);
-    };
+    function connect() {
+      if (unmountedRef.current) return;
 
-    ws.onmessage = (event) => {
-      const msg: ServerMessage = JSON.parse(event.data);
-      handleServerMessage(msg);
-    };
+      const wsUrl = buildWsUrl(options.interviewId);
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
 
-    ws.onclose = () => {
-      setConnected(false);
-    };
+      ws.onopen = () => {
+        setConnected(true);
+        setError(null);
+        reconnectAttemptsRef.current = 0;
+      };
 
-    ws.onerror = () => {
-      setError("WebSocket bağlantısı kurulamadı");
-      setConnected(false);
-    };
+      ws.onmessage = (event) => {
+        const msg: ServerMessage = JSON.parse(event.data);
+        handleServerMessage(msg);
+      };
 
+      ws.onclose = () => {
+        setConnected(false);
+        // Auto-reconnect with exponential backoff (max 10s, max 5 attempts)
+        if (!unmountedRef.current && reconnectAttemptsRef.current < 5) {
+          const delay = Math.min(1000 * 2 ** reconnectAttemptsRef.current, 10000);
+          reconnectAttemptsRef.current++;
+          reconnectTimerRef.current = setTimeout(connect, delay);
+        }
+      };
+
+      ws.onerror = () => {
+        setError("WebSocket bağlantısı kurulamadı");
+      };
+    }
+
+    connect();
     playerRef.current.init();
 
     return () => {
-      ws.close();
+      unmountedRef.current = true;
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+      wsRef.current?.close();
       stopMicStream();
       playerRef.current.destroy();
     };
@@ -116,6 +139,11 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
 
       case "problem_loaded":
         options.onProblemLoaded?.(msg.problem);
+        break;
+
+      case "hint_given":
+        setHintLevel(msg.level);
+        setTotalHints(msg.totalHints);
         break;
     }
   }
@@ -271,6 +299,10 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
     [],
   );
 
+  const requestHint = useCallback(() => {
+    send({ type: "hint_request" });
+  }, []);
+
   return {
     state,
     micActive,
@@ -279,9 +311,12 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
     aiText,
     error,
     connected,
+    hintLevel,
+    totalHints,
     toggleMic,
     interrupt,
     sendCodeUpdate,
     sendCodeResult,
+    requestHint,
   };
 }
