@@ -38,6 +38,7 @@ export async function createInterview(params: {
   difficulty: Difficulty;
   language?: string;
   questionCount?: number;
+  codeLanguage?: string;
 }): Promise<Interview> {
   return request<Interview>("/interviews", {
     method: "POST",
@@ -46,6 +47,7 @@ export async function createInterview(params: {
       difficulty: params.difficulty,
       language: params.language ?? "tr",
       questionCount: params.questionCount ?? 5,
+      codeLanguage: params.codeLanguage,
     }),
   });
 }

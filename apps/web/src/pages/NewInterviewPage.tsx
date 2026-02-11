@@ -55,10 +55,11 @@ export function NewInterviewPage() {
   const preselected = searchParams.get("type") as InterviewType | null;
 
   const [selectedType, setSelectedType] = useState<InterviewType | null>(
-    preselected,
+    preselected || "live-coding", // Default to live-coding for testing
   );
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
-  const [questionCount, setQuestionCount] = useState(5);
+  const [questionCount, setQuestionCount] = useState(1);
+  const [codeLanguage, setCodeLanguage] = useState<"javascript" | "typescript" | "python">("javascript");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,6 +75,7 @@ export function NewInterviewPage() {
         difficulty,
         language: "tr",
         questionCount,
+        codeLanguage: (selectedType === "live-coding" || selectedType === "practice") ? codeLanguage : undefined,
       });
 
       // Start the interview immediately
@@ -163,13 +165,48 @@ export function NewInterviewPage() {
         </div>
       </motion.div>
 
-      {/* Step 3 — Question count */}
+      {/* Step 3 — Code Language (for Live Coding and Practice) */}
+      {(selectedType === "live-coding" || selectedType === "practice") && (
+        <motion.div
+          key={`code-lang-${selectedType}`}
+          variants={fadeUp}
+          className="mt-8"
+          initial="hidden"
+          animate="visible"
+        >
+          <h2 className="text-sm font-medium text-text-muted uppercase tracking-wider mb-3">
+            Kod Dili
+          </h2>
+          <div className="flex gap-2">
+            {[
+              { id: "javascript" as const, label: "JavaScript", icon: "🟨" },
+              { id: "typescript" as const, label: "TypeScript", icon: "🔷" },
+              { id: "python" as const, label: "Python", icon: "🐍" },
+            ].map((lang) => (
+              <button
+                key={lang.id}
+                type="button"
+                onClick={() => setCodeLanguage(lang.id)}
+                className={`
+                  rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-150 cursor-pointer flex items-center gap-2
+                  ${codeLanguage === lang.id ? "border-amber bg-amber/10 text-amber" : "border-border-subtle bg-surface text-text-secondary hover:border-border"}
+                `}
+              >
+                <span>{lang.icon}</span>
+                {lang.label}
+              </button>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Step 4 — Question count */}
       <motion.div variants={fadeUp} className="mt-8">
         <h2 className="text-sm font-medium text-text-muted uppercase tracking-wider mb-3">
           Soru Sayısı
         </h2>
         <div className="flex gap-2">
-          {[3, 5, 7].map((n) => (
+          {[1, 3, 5, 7].map((n) => (
             <button
               key={n}
               type="button"
@@ -192,7 +229,7 @@ export function NewInterviewPage() {
             <div>
               <p className="text-sm text-text-secondary">
                 {selectedType
-                  ? `${types.find((t) => t.id === selectedType)?.title} · ${difficulties.find((d) => d.id === difficulty)?.label} · ${questionCount} Soru`
+                  ? `${types.find((t) => t.id === selectedType)?.title} · ${difficulties.find((d) => d.id === difficulty)?.label} · ${questionCount} Soru${selectedType === "live-coding" ? ` · ${codeLanguage.toUpperCase()}` : ""}`
                   : "Mülakat türü seçin"}
               </p>
             </div>
