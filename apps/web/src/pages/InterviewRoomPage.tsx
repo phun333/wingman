@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/Button";
 import { useVoice } from "@/lib/useVoice";
-import { getInterview, completeInterview, executeCode as executeCodeApi, getRandomProblem } from "@/lib/api";
+import { getInterview, completeInterview, executeCode as executeCodeApi, getRandomProblem, getProblem, startInterview } from "@/lib/api";
 import { typeLabels } from "@/lib/constants";
 import { Mic, Hand, Coffee, Clock } from "lucide-react";
 import type {
@@ -37,6 +37,7 @@ const languageLabels: Record<CodeLanguage, string> = {
 export function InterviewRoomPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [interview, setInterview] = useState<Interview | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -85,11 +86,23 @@ export function InterviewRoomPage() {
   // Handle problem loaded from WebSocket or fetch fallback
   const handleProblemLoaded = useCallback(
     (p: Problem) => {
-      console.log("handleProblemLoaded called with:", p);
+      const requestedProblemId = searchParams.get("problemId");
+      console.log("handleProblemLoaded called with:", p.title);
+      console.log("Requested problem ID:", requestedProblemId);
+      console.log("Loaded problem ID:", p._id);
+
+      // If a specific problem was requested but we got a different one from WebSocket,
+      // we should override it with the correct one
+      if (requestedProblemId && p._id !== requestedProblemId) {
+        console.log("WebSocket loaded wrong problem, will override with correct one");
+        // Don't set the problem yet, let the timeout handler load the correct one
+        return;
+      }
+
       setProblem(p);
       setProblemLoading(false);
     },
-    [],
+    [searchParams],
   );
 
   // Update code when problem or language changes
@@ -123,25 +136,47 @@ export function InterviewRoomPage() {
     sendCodeResult,
     requestHint,
     dismissSolution,
-  } = useVoice({ interviewId: id, onProblemLoaded: handleProblemLoaded });
+  } = useVoice({
+    interviewId: id,
+    problemId: searchParams.get("problemId") || undefined,
+    onProblemLoaded: handleProblemLoaded
+  });
 
   // Fallback: if problem not loaded via WS after 5 seconds, fetch from API
   useEffect(() => {
     if (!showCodeEditor || problem) return;
 
+    // Check if specific problem ID is requested via URL params
+    const requestedProblemId = searchParams.get("problemId");
+
     const timeout = setTimeout(async () => {
       if (!problem && interview) {
         try {
-          const p = await getRandomProblem({ difficulty: interview.difficulty });
+          console.log("Interview room loading problem. Problem ID from URL:", requestedProblemId);
+          let p: Problem;
+
+          if (requestedProblemId) {
+            // Load specific problem
+            console.log("Loading specific problem with ID:", requestedProblemId);
+            p = await getProblem(requestedProblemId);
+            console.log("Loaded specific problem:", p.title);
+          } else {
+            // Load random problem
+            console.log("Loading random problem with difficulty:", interview.difficulty);
+            p = await getRandomProblem({ difficulty: interview.difficulty });
+            console.log("Loaded random problem:", p.title);
+          }
+
           handleProblemLoaded(p);
-        } catch {
+        } catch (err) {
+          console.error("Problem loading failed:", err);
           setProblemLoading(false);
         }
       }
-    }, 5000);
+    }, requestedProblemId ? 1000 : 5000); // Faster loading for specific problems
 
     return () => clearTimeout(timeout);
-  }, [showCodeEditor, problem, interview, handleProblemLoaded]);
+  }, [showCodeEditor, problem, interview, handleProblemLoaded, searchParams]);
 
   // Debug: Log problem state changes
   useEffect(() => {
@@ -242,6 +277,18 @@ export function InterviewRoomPage() {
     }
   }, [id, navigate]);
 
+  // ─── Start interview ─────────────────────────────────
+
+  const handleStartInterview = useCallback(async () => {
+    if (!id || !interview) return;
+    try {
+      const updatedInterview = await startInterview(id);
+      setInterview(updatedInterview);
+    } catch (err) {
+      console.error("Failed to start interview:", err);
+    }
+  }, [id, interview]);
+
   // ─── Mic click ───────────────────────────────────────
 
   function handleMicClick() {
@@ -294,6 +341,7 @@ export function InterviewRoomPage() {
       questionStartTime={questionStartTime}
       recommendedSeconds={recommendedSeconds}
       timeWarning={timeWarning}
+      onStartInterview={handleStartInterview}
     />;
   }
 
@@ -353,12 +401,27 @@ export function InterviewRoomPage() {
       {/* Main content: Problem | Code Editor + Tests */}
       <div className="flex-1 overflow-hidden">
         <ResizableSplitter
-          defaultLeftPercent={35}
-          minLeftPercent={20}
-          maxLeftPercent={55}
+          defaultLeftPercent={45}
+          minLeftPercent={35}
+          maxLeftPercent={60}
           left={
-            <div className="h-full border-r border-border-subtle bg-surface">
-              <ProblemPanel problem={problem} loading={problemLoading} />
+            <div className="h-full border-r border-border-subtle bg-surface flex flex-col">
+              <ProblemPanel
+                problem={problem}
+                loading={problemLoading}
+                transcript={transcript}
+                aiText={aiText}
+                micActive={micActive}
+                state={state}
+                volume={volume}
+                onMicClick={handleMicClick}
+                connected={connected}
+                hintLevel={hintLevel}
+                totalHints={totalHints}
+                onRequestHint={requestHint}
+                interviewStatus={interview?.status}
+                onStartInterview={handleStartInterview}
+              />
             </div>
           }
           right={
@@ -403,16 +466,6 @@ export function InterviewRoomPage() {
         />
       )}
 
-      {/* AI Chat with latency tracking and mic control */}
-      <AIChat
-        transcript={transcript}
-        aiText={aiText}
-        micActive={micActive}
-        state={state}
-        volume={volume}
-        onMicClick={handleMicClick}
-        connected={connected}
-      />
     </div>
   );
 }
@@ -437,6 +490,7 @@ interface VoiceOnlyRoomProps {
   questionStartTime: number;
   recommendedSeconds: number;
   timeWarning: number | null;
+  onStartInterview: () => void;
 }
 
 function VoiceOnlyRoom({
@@ -457,6 +511,7 @@ function VoiceOnlyRoom({
   questionStartTime,
   recommendedSeconds,
   timeWarning,
+  onStartInterview,
 }: VoiceOnlyRoomProps) {
   // Per-question elapsed timer
   const [questionElapsed, setQuestionElapsed] = useState(0);
@@ -557,6 +612,8 @@ function VoiceOnlyRoom({
           volume={volume}
           onMicClick={onMicClick}
           connected={connected}
+          interviewStatus={interview?.status}
+          onStartInterview={onStartInterview}
         />
 
         {timeWarning && (

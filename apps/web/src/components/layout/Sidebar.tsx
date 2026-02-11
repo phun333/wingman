@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Play, History, TrendingUp, Settings } from "lucide-react";
+import { LayoutDashboard, Play, History, TrendingUp, Settings, Code } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 interface NavItem {
@@ -12,6 +12,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/interview/new", label: "Yeni Mülakat", icon: Play },
+  { to: "/questions", label: "Sorular", icon: Code },
   { to: "/history", label: "Geçmiş", icon: History },
   { to: "/progress", label: "İlerleme", icon: TrendingUp },
   { to: "/settings", label: "Profil & Ayarlar", icon: Settings },

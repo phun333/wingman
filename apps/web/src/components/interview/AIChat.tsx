@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Mic, Bot, User, Clock, MicOff, VolumeX, Square } from "lucide-react";
+import { Mic, Bot, User, Clock, MicOff, VolumeX, Square, Play } from "lucide-react";
+import Markdown from "react-markdown";
 
 interface Message {
   id: string;
@@ -21,6 +22,8 @@ interface AIChatProps {
   onMute?: () => void;
   onStop?: () => void;
   isMuted?: boolean;
+  interviewStatus?: "created" | "in-progress" | "completed" | "evaluated";
+  onStartInterview?: () => void;
 }
 
 export function AIChat({
@@ -33,7 +36,9 @@ export function AIChat({
   connected,
   onMute,
   onStop,
-  isMuted
+  isMuted,
+  interviewStatus,
+  onStartInterview
 }: AIChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentUserStart, setCurrentUserStart] = useState<number | null>(null);
@@ -135,9 +140,15 @@ export function AIChat({
                 )}
 
                 <div className={`flex-1 ${msg.type === "ai" ? "" : "text-right"}`}>
-                  <p className={`text-sm ${msg.type === "ai" ? "text-text" : "text-text-secondary"}`}>
-                    {msg.text}
-                  </p>
+                  {msg.type === "ai" ? (
+                    <div className="text-sm text-text prose prose-sm prose-invert max-w-none">
+                      <Markdown>{msg.text}</Markdown>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-text-secondary">
+                      {msg.text}
+                    </p>
+                  )}
                   {msg.latency && (
                     <span className="text-xs text-text-muted mt-0.5 flex items-center gap-1 ${msg.type === 'ai' ? '' : 'justify-end'}">
                       <Clock size={10} />
@@ -315,6 +326,30 @@ export function AIChat({
               <Square size={12} />
             </motion.button>
           )}
+        </div>
+      )}
+
+      {/* Interview Start Button - Right Side */}
+      {interviewStatus === "created" && onStartInterview && (
+        <div className="fixed bottom-4 right-4">
+          <motion.button
+            onClick={onStartInterview}
+            className="
+              w-16 h-16 rounded-full flex items-center justify-center
+              bg-gradient-to-br from-green-500 to-green-600
+              shadow-lg shadow-green-500/25
+              text-white font-medium
+              hover:shadow-xl hover:shadow-green-500/30
+              transition-all duration-200
+            "
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            title="Mülakatı Başlat"
+          >
+            <Play size={24} fill="currentColor" />
+          </motion.button>
         </div>
       )}
     </div>

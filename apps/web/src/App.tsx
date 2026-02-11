@@ -5,6 +5,7 @@ import { LoginPage } from "@/pages/LoginPage";
 import { RegisterPage } from "@/pages/RegisterPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { NewInterviewPage } from "@/pages/NewInterviewPage";
+import { QuestionsPage } from "@/pages/QuestionsPage";
 import { InterviewRoomPage } from "@/pages/InterviewRoomPage";
 import { HistoryPage } from "@/pages/HistoryPage";
 import { ReportPage } from "@/pages/ReportPage";
@@ -63,6 +64,7 @@ export function App() {
       >
         <Route index element={<DashboardPage />} />
         <Route path="interview/new" element={<NewInterviewPage />} />
+        <Route path="questions" element={<QuestionsPage />} />
         <Route path="history" element={<HistoryPage />} />
         <Route path="progress" element={<ProgressPage />} />
         <Route path="settings" element={<SettingsPage />} />
