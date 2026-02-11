@@ -56,6 +56,53 @@ export default defineSchema({
     .index("by_interview", ["interviewId"])
     .index("by_interview_timestamp", ["interviewId", "timestamp"]),
 
+  interviewResults: defineTable({
+    interviewId: v.id("interviews"),
+    userId: v.id("users"),
+
+    // Genel skor
+    overallScore: v.number(), // 0-100
+    hireRecommendation: v.union(
+      v.literal("strong-hire"),
+      v.literal("hire"),
+      v.literal("lean-hire"),
+      v.literal("no-hire"),
+    ),
+
+    // Kategori skorları
+    categoryScores: v.object({
+      problemSolving: v.number(),
+      communication: v.number(),
+      codeQuality: v.optional(v.number()),
+      systemThinking: v.optional(v.number()),
+      analyticalThinking: v.number(),
+    }),
+
+    // Kod analizi (Live Coding)
+    codeAnalysis: v.optional(
+      v.object({
+        timeComplexity: v.string(),
+        spaceComplexity: v.string(),
+        userSolution: v.string(),
+        optimalSolution: v.string(),
+        optimizationSuggestions: v.array(v.string()),
+      }),
+    ),
+
+    // Güçlü ve zayıf yönler
+    strengths: v.array(v.string()),
+    weaknesses: v.array(v.string()),
+
+    // Genel yorum
+    summary: v.string(),
+    nextSteps: v.array(v.string()),
+
+    createdAt: v.number(),
+  })
+    .index("by_interview", ["interviewId"])
+    .index("by_user", ["userId"])
+    .index("by_user_date", ["userId", "createdAt"]),
+
   problems: defineTable({
     title: v.string(),
     description: v.string(),

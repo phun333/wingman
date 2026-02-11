@@ -88,6 +88,56 @@ export interface Problem {
   createdAt: number;
 }
 
+// ─── Interview Result / Report ───────────────────────────
+
+export type HireRecommendation =
+  | "strong-hire"
+  | "hire"
+  | "lean-hire"
+  | "no-hire";
+
+export interface CategoryScores {
+  problemSolving: number;
+  communication: number;
+  codeQuality?: number;
+  systemThinking?: number;
+  analyticalThinking: number;
+}
+
+export interface CodeAnalysis {
+  timeComplexity: string;
+  spaceComplexity: string;
+  userSolution: string;
+  optimalSolution: string;
+  optimizationSuggestions: string[];
+}
+
+export interface InterviewResult {
+  _id: string;
+  interviewId: string;
+  userId: string;
+  overallScore: number;
+  hireRecommendation: HireRecommendation;
+  categoryScores: CategoryScores;
+  codeAnalysis?: CodeAnalysis;
+  strengths: string[];
+  weaknesses: string[];
+  summary: string;
+  nextSteps: string[];
+  createdAt: number;
+}
+
+export interface UserProgress {
+  totalEvaluated: number;
+  averageScore: number;
+  highestScore: number;
+  thisMonth: number;
+  streak: number;
+  topStrengths?: { text: string; count: number }[];
+  topWeaknesses?: { text: string; count: number }[];
+  results: InterviewResult[];
+}
+
 // ─── Code Execution ──────────────────────────────────────
 
 export interface TestResult {

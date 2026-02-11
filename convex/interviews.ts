@@ -106,6 +106,18 @@ export const setProblem = mutation({
   },
 });
 
+// ─── Evaluate (set status to evaluated) ──────────────────
+
+export const evaluate = mutation({
+  args: { id: v.id("interviews") },
+  handler: async (ctx, args) => {
+    const interview = await ctx.db.get(args.id);
+    if (!interview) throw new Error("Interview not found");
+    await ctx.db.patch(args.id, { status: "evaluated" });
+    return await ctx.db.get(args.id);
+  },
+});
+
 // ─── Get by ID ───────────────────────────────────────────
 
 export const getById = query({
