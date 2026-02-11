@@ -59,6 +59,7 @@ app.get(
 
     return {
       onOpen(_event, ws) {
+        console.log(`[WS] Connected: ${interviewId || 'free mode'}`);
         const send = (msg: ServerMessage) => {
           ws.send(JSON.stringify(msg));
         };
@@ -66,8 +67,13 @@ app.get(
 
         // Initialize with interview data or free mode
         if (interviewId) {
+          console.log(`[WS] Initializing session for interview: ${interviewId}`);
           session.init(interviewId).then(() => {
+            console.log(`[WS] Session initialized successfully`);
             send({ type: "state_change", state: "idle" });
+          }).catch((err) => {
+            console.error(`[WS] Failed to init session:`, err);
+            send({ type: "error", message: "Session init failed" });
           });
         } else {
           session.initFreeMode();

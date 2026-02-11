@@ -15,9 +15,11 @@ export default defineConfig({
     proxy: {
       "/api/auth": "http://127.0.0.1:3211",
       "/api": "http://localhost:3001",
-      "/ws": {
+      "/ws/voice": {
         target: "ws://localhost:3001",
         ws: true,
+        changeOrigin: true,
+        rewriteWsOrigin: true,
       },
     },
   },

@@ -150,10 +150,12 @@ export class VoiceSession {
 
       // For live-coding and practice interviews, load a random problem
       if (this.interview.type === "live-coding" || this.interview.type === "practice") {
+        console.log(`Loading problem for ${this.interview.type}, difficulty: ${this.interview.difficulty}`);
         try {
           const problem = await convex.query(api.problems.getRandom, {
             difficulty: this.interview.difficulty as any,
           });
+          console.log("Problem loaded:", problem?._id);
           if (problem) {
             this.send({ type: "problem_loaded", problem: problem as any });
             // Store problem info for solution comparison
@@ -762,8 +764,9 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
       if (!trimmed) continue;
 
       try {
-        const stream = await fal.stream(`${ENV.TTS_ENDPOINT}/stream` as any, {
+        const stream = await fal.stream(ENV.TTS_ENDPOINT as any, {
           input: { input: trimmed, speed: this.config.speed },
+          path: "/stream",
         });
 
         for await (const event of stream as AsyncIterable<{

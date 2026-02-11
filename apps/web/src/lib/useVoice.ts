@@ -41,7 +41,8 @@ interface UseVoiceReturn {
 }
 
 function buildWsUrl(interviewId?: string): string {
-  const base = `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/ws/voice`;
+  // Development için doğrudan API portuna bağlan
+  const base = `ws://localhost:3001/ws/voice`;
   return interviewId ? `${base}?interviewId=${interviewId}` : base;
 }
 
@@ -121,7 +122,11 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
     return () => {
       unmountedRef.current = true;
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
-      wsRef.current?.close();
+      // Close WebSocket properly
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.close();
+      }
+      wsRef.current = null;
       stopMicStream();
       playerRef.current.destroy();
     };
@@ -160,6 +165,7 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
         break;
 
       case "problem_loaded":
+        console.log("Problem received from WebSocket:", msg.problem);
         options.onProblemLoaded?.(msg.problem);
         break;
 
