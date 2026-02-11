@@ -27,6 +27,8 @@ interface UseVoiceReturn {
   totalHints: number;
   questionCurrent: number;
   questionTotal: number;
+  questionStartTime: number;
+  recommendedSeconds: number;
   timeWarning: number | null;
   solutionComparison: SolutionComparison | null;
   toggleMic: () => void;
@@ -59,6 +61,8 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
   const [totalHints, setTotalHints] = useState(0);
   const [questionCurrent, setQuestionCurrent] = useState(0);
   const [questionTotal, setQuestionTotal] = useState(0);
+  const [questionStartTime, setQuestionStartTime] = useState(0);
+  const [recommendedSeconds, setRecommendedSeconds] = useState(0);
   const [timeWarning, setTimeWarning] = useState<number | null>(null);
   const [solutionComparison, setSolutionComparison] = useState<SolutionComparison | null>(null);
 
@@ -171,6 +175,8 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
       case "question_update":
         setQuestionCurrent(msg.current);
         setQuestionTotal(msg.total);
+        setQuestionStartTime(msg.questionStartTime);
+        setRecommendedSeconds(msg.recommendedSeconds);
         break;
 
       case "time_warning":
@@ -363,6 +369,8 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
     totalHints,
     questionCurrent,
     questionTotal,
+    questionStartTime,
+    recommendedSeconds,
     timeWarning,
     solutionComparison,
     toggleMic,

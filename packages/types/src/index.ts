@@ -219,6 +219,6 @@ export type ServerMessage =
   | { type: "problem_loaded"; problem: Problem }
   | { type: "design_problem_loaded"; problem: DesignProblem }
   | { type: "hint_given"; level: number; totalHints: number }
-  | { type: "question_update"; current: number; total: number }
+  | { type: "question_update"; current: number; total: number; questionStartTime: number; recommendedSeconds: number }
   | { type: "time_warning"; minutesLeft: number }
   | { type: "solution_comparison"; userSolution: string; optimalSolution: string; timeComplexity?: string; spaceComplexity?: string };

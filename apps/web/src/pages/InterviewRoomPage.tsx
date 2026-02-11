@@ -102,6 +102,8 @@ export function InterviewRoomPage() {
     totalHints,
     questionCurrent,
     questionTotal,
+    questionStartTime,
+    recommendedSeconds,
     timeWarning,
     solutionComparison,
     toggleMic,
@@ -277,6 +279,8 @@ export function InterviewRoomPage() {
       onEnd={handleEnd}
       questionCurrent={questionCurrent}
       questionTotal={questionTotal}
+      questionStartTime={questionStartTime}
+      recommendedSeconds={recommendedSeconds}
       timeWarning={timeWarning}
     />;
   }
@@ -426,6 +430,8 @@ interface VoiceOnlyRoomProps {
   onEnd: () => void;
   questionCurrent: number;
   questionTotal: number;
+  questionStartTime: number;
+  recommendedSeconds: number;
   timeWarning: number | null;
 }
 
@@ -444,8 +450,29 @@ function VoiceOnlyRoom({
   onEnd,
   questionCurrent,
   questionTotal,
+  questionStartTime,
+  recommendedSeconds,
   timeWarning,
 }: VoiceOnlyRoomProps) {
+  // Per-question elapsed timer
+  const [questionElapsed, setQuestionElapsed] = useState(0);
+
+  useEffect(() => {
+    if (!questionStartTime || !recommendedSeconds) {
+      setQuestionElapsed(0);
+      return;
+    }
+    setQuestionElapsed(0);
+    const interval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - questionStartTime) / 1000);
+      setQuestionElapsed(elapsed);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [questionStartTime, recommendedSeconds]);
+
+  const questionTimePercent = recommendedSeconds > 0 ? Math.min(questionElapsed / recommendedSeconds, 1) : 0;
+  const questionOvertime = questionElapsed > recommendedSeconds && recommendedSeconds > 0;
+
   const orbScale =
     state === "listening"
       ? 1 + Math.min(volume * 8, 0.2)
@@ -474,11 +501,36 @@ function VoiceOnlyRoom({
           />
         </div>
         <div className="flex items-center gap-4">
-          {/* Question counter for phone-screen */}
+          {/* Question counter + per-question timer for phone-screen */}
           {questionTotal > 0 && (
-            <span className="text-xs text-text-secondary px-2.5 py-1 rounded-md bg-surface-raised border border-border tabular-nums">
-              Soru {questionCurrent}/{questionTotal}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-text-secondary px-2.5 py-1 rounded-md bg-surface-raised border border-border tabular-nums">
+                Soru {questionCurrent}/{questionTotal}
+              </span>
+              {recommendedSeconds > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <div className="w-16 h-1.5 rounded-full bg-surface-raised overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-1000 ${
+                        questionOvertime
+                          ? "bg-danger"
+                          : questionTimePercent > 0.75
+                            ? "bg-amber"
+                            : "bg-success"
+                      }`}
+                      style={{ width: `${Math.min(questionTimePercent * 100, 100)}%` }}
+                    />
+                  </div>
+                  <span
+                    className={`text-[10px] font-mono tabular-nums ${
+                      questionOvertime ? "text-danger" : questionTimePercent > 0.75 ? "text-amber" : "text-text-muted"
+                    }`}
+                  >
+                    {formatTime(questionElapsed)}/{formatTime(recommendedSeconds)}
+                  </span>
+                </div>
+              )}
+            </div>
           )}
           <span className={`text-sm font-mono tabular-nums ${timeWarning ? "text-amber" : "text-text-muted"}`}>
             {formatTime(elapsed)}

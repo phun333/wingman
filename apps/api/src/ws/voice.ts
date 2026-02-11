@@ -59,6 +59,7 @@ export class VoiceSession {
   // Question tracking (phone-screen)
   private currentQuestion: number = 0;
   private totalQuestions: number = 5;
+  private recommendedSecondsPerQuestion: number = 300; // default 5 min
 
   // Time limit tracking
   private timeLimitMs: number = 0; // 0 = no limit
@@ -201,7 +202,17 @@ export class VoiceSession {
       // Send initial question counter for phone-screen
       if (this.interview.type === "phone-screen") {
         this.currentQuestion = 1;
-        this.send({ type: "question_update", current: this.currentQuestion, total: this.totalQuestions });
+        // Recommended seconds per question based on total time / question count
+        const totalMinutes: Record<string, number> = { easy: 15, medium: 25, hard: 35 };
+        const totalMin = totalMinutes[this.interview.difficulty] ?? 25;
+        this.recommendedSecondsPerQuestion = Math.floor((totalMin * 60) / this.totalQuestions);
+        this.send({
+          type: "question_update",
+          current: this.currentQuestion,
+          total: this.totalQuestions,
+          questionStartTime: Date.now(),
+          recommendedSeconds: this.recommendedSecondsPerQuestion,
+        });
       }
 
       // Start time limit timers
@@ -493,6 +504,8 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
         type: "question_update",
         current: Math.min(this.currentQuestion, this.totalQuestions),
         total: this.totalQuestions,
+        questionStartTime: Date.now(),
+        recommendedSeconds: this.recommendedSecondsPerQuestion,
       });
     }
 
