@@ -35,6 +35,9 @@ interviewRoutes.post(
       difficulty: z.enum(["easy", "medium", "hard"]),
       language: z.string().default("tr"),
       questionCount: z.number().min(1).max(10).default(5),
+      jobPostingId: z.string().optional(),
+      resumeId: z.string().optional(),
+      memoryEnabled: z.boolean().optional(),
     }),
   ),
   async (c) => {
@@ -47,6 +50,9 @@ interviewRoutes.post(
       difficulty: body.difficulty,
       language: body.language,
       questionCount: body.questionCount,
+      jobPostingId: body.jobPostingId as any,
+      resumeId: body.resumeId as any,
+      memoryEnabled: body.memoryEnabled,
     });
 
     return c.json(interview, 201);

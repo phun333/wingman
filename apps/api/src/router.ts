@@ -9,6 +9,9 @@ import { problemRoutes } from "./routes/problems";
 import { designProblemRoutes } from "./routes/design-problems";
 import { codeRoutes } from "./routes/code";
 import { reportRoutes } from "./routes/reports";
+import { jobRoutes } from "./routes/jobs";
+import { resumeRoutes } from "./routes/resume";
+import { profileRoutes } from "./routes/profile";
 
 export const apiRoutes = new Hono();
 
@@ -41,6 +44,24 @@ apiRoutes.route("/code", codeRoutes);
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 apiRoutes.route("/reports", reportRoutes);
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  Job Postings (Faz 6)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+apiRoutes.route("/jobs", jobRoutes);
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  Resume (Faz 6)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+apiRoutes.route("/resume", resumeRoutes);
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  Profile (Faz 6)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+apiRoutes.route("/profile", profileRoutes);
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  Users
