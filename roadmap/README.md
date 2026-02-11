@@ -91,8 +91,8 @@ FAZ 1  ████████████████████ 100%  ✅ Ta
 FAZ 9  ████████████████████ 100%  ✅ Tamamlandı
 FAZ 2  ████████████████████ 100%  ✅ Tamamlandı
 FAZ 3  ████████████████████ 100%  ✅ Tamamlandı
-FAZ 5  ██████████████████░░  90%  🟡 Kısmi eksikler
-FAZ 4  ██████████████████░░  90%  🟢 Whiteboard tamamlandı
+FAZ 5  ████████████████████ 100%  ✅ Tamamlandı
+FAZ 4  ████████████████████ 100%  ✅ Tamamlandı
 FAZ 7  ████████████████████ 100%  ✅ Tamamlandı
 FAZ 6  ░░░░░░░░░░░░░░░░░░░░   0%  ❌ Yapılmadı
 FAZ 8  ░░░░░░░░░░░░░░░░░░░░   0%  ❌ Yapılmadı
@@ -109,8 +109,8 @@ FAZ 10 ░░░░░░░░░░░░░░░░░░░░   0%  ❌ Ya
 | **2** | Oturum Yönetimi | ✅ %100 | interviews CRUD (create/start/complete), messages persist, Convex'te interviews+messages tabloları, auth middleware, conversation history reload (reconnect), system prompt'lar (4 tür × 3 zorluk), problems tablosu+seed, getUserStats | — |
 | **3** | Live Coding | ✅ %100 | Monaco editor, ResizableSplitter, ProblemPanel, TestResultsPanel, sandbox (node:vm JS + subprocess Python), test case runner, code_update/code_result WS mesajları, AI kod analizi, dil seçimi (JS/TS/Python), starter code | — |
 | **7** | Raporlama | ✅ %100 | interviewResults tablosu+CRUD, LLM ile rapor oluşturma (report-generator service), ReportPage (skor kartı, radar chart, kategori skorları, güçlü/zayıf yön, kod analizi, transkript), ProgressPage (line chart, radar chart, istatistik kartları, mülakat geçmişi), kümülatif analiz (topStrengths/topWeaknesses), recharts entegrasyonu | — |
-| **5** | Phone Screen & Practice | 🟡 %90 | VoiceOnlyRoom (ses arayüzü, orb animasyonu), phone-screen prompt, practice prompt, practice modunda kod editörü, hint butonu+kademeli ipucu sistemi (3 seviye), soft timer, soru sayacı (Soru X/Y), zaman limiti + AI geçiş (time_warning), çözüm karşılaştırması (SolutionComparisonPanel) | Soru başına süre göstergesi, optimal solution side-by-side diff view (şu an basit panel) |
-| **4** | System Design | 🟢 %90 | tldraw whiteboard canvas, 10 custom shape (DB/Cache/Queue/LB/Gateway/Server/CDN/Client/Storage/Auth), ComponentPalette (kategorize sürükle-bırak), whiteboard→LLM serialize (bileşenler+bağlantılar+veri akışı), whiteboard state persist (Convex), DesignProblemPanel (gereksinimler+tartışma noktaları), SystemDesignRoom layout (panel+whiteboard+ses), design problem seed data (7 soru: Easy→Hard), AI whiteboard-aware prompt, WS whiteboard_update mesajı | tldraw snapshot→PNG/SVG export (rapor için), label inline editing |
+| **5** | Phone Screen & Practice | ✅ %100 | VoiceOnlyRoom (ses arayüzü, orb animasyonu), phone-screen prompt, practice prompt, practice modunda kod editörü, hint butonu+kademeli ipucu sistemi (3 seviye), soft timer, soru sayacı (Soru X/Y), zaman limiti + AI geçiş (time_warning), çözüm karşılaştırması (SolutionComparisonPanel), **soru başına süre göstergesi (progress bar + countdown)**, **side-by-side diff view (diff kütüphanesi, diff/yan-yana toggle)** | — |
+| **4** | System Design | ✅ %100 | tldraw whiteboard canvas, 10 custom shape (DB/Cache/Queue/LB/Gateway/Server/CDN/Client/Storage/Auth), ComponentPalette (kategorize sürükle-bırak), whiteboard→LLM serialize (bileşenler+bağlantılar+veri akışı), whiteboard state persist (Convex), DesignProblemPanel (gereksinimler+tartışma noktaları), SystemDesignRoom layout (panel+whiteboard+ses), design problem seed data (7 soru: Easy→Hard), AI whiteboard-aware prompt, WS whiteboard_update mesajı, **tldraw snapshot→PNG/SVG export (indirme + dataURL)**, **label inline editing (çift tıkla düzenle)** | — |
 | **6** | Kişiselleştirme | ❌ %0 | — | Job posting parse (URL→LLM analiz), resume upload (PDF→metin), kullanıcı profili sayfası, mülakat config detayları (süre limiti, alt seçenekler), userMemory tablosu, AI davranış uyarlaması |
 | **8** | Enterprise Panel | ❌ %0 | — | organizations/positions/candidates tabloları, rol yönetimi, pozisyon oluşturma, davet linki akışı, recruiter dashboard, aday listesi+detay, karşılaştırma, funnel chart, dönüşüm oranları |
 | **10** | Production | ❌ %0 | — | Sentence-level TTS pipelining, rate limiting, sandbox güvenlik hardening, structured logging, health checks, error tracking, Fly.io/Railway deploy, Vercel/Cloudflare deploy, GitHub Actions CI/CD, code splitting, caching, scaling |
@@ -194,4 +194,6 @@ convex/
 Şimdi  ──► FAZ 6   Kişiselleştirme (job parse, resume, memory)
        ──► FAZ 8   Enterprise panel
        ──► FAZ 10  Production & deploy
+
+> ✅ FAZ 4 & 5 eksikleri kapatıldı (10 Şubat 2026)
 ```
