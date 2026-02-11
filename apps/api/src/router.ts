@@ -6,6 +6,7 @@ import { api } from "../../../convex/_generated/api";
 import { ENV } from "@ffh/env";
 import { interviewRoutes } from "./routes/interviews";
 import { problemRoutes } from "./routes/problems";
+import { designProblemRoutes } from "./routes/design-problems";
 import { codeRoutes } from "./routes/code";
 import { reportRoutes } from "./routes/reports";
 
@@ -22,6 +23,12 @@ apiRoutes.route("/interviews", interviewRoutes);
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 apiRoutes.route("/problems", problemRoutes);
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  Design problem routes
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+apiRoutes.route("/design-problems", designProblemRoutes);
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  Code execution routes

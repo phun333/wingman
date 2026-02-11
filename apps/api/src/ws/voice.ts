@@ -12,6 +12,7 @@ import type {
   Difficulty,
   CodeLanguage,
   TestResult,
+  WhiteboardState,
 } from "@ffh/types";
 
 // ─── fal.ai config ──────────────────────────────────────
@@ -53,6 +54,7 @@ export class VoiceSession {
   private currentCodeLanguage: CodeLanguage = "javascript";
   private hintCount: number = 0;
   private processing = false; // Guards against concurrent pipeline runs
+  private currentWhiteboardState: WhiteboardState | null = null;
 
   // Question tracking (phone-screen)
   private currentQuestion: number = 0;
@@ -109,6 +111,41 @@ export class VoiceSession {
         this.interview.language,
       );
       this.conversationHistory.push({ role: "system", content: systemPrompt });
+
+      // For system-design interviews, load a design problem
+      if (this.interview.type === "system-design") {
+        try {
+          const designProblem = await convex.query(api.designProblems.getRandom, {
+            difficulty: this.interview.difficulty as any,
+          });
+          if (designProblem) {
+            this.send({ type: "design_problem_loaded", problem: designProblem as any });
+            // Add design problem context to conversation
+            const reqText = [
+              "Fonksiyonel Gereksinimler:",
+              ...designProblem.requirements.functional.map((r: string) => `  - ${r}`),
+              "Non-Fonksiyonel Gereksinimler:",
+              ...designProblem.requirements.nonFunctional.map((r: string) => `  - ${r}`),
+            ].join("\n");
+
+            this.conversationHistory.push({
+              role: "system",
+              content: `[Mülakata atanan system design problemi]\nBaşlık: ${designProblem.title}\nZorluk: ${designProblem.difficulty}\nAçıklama: ${designProblem.description}\n\n${reqText}\n\nBu problemi adaya sor. Problemi kısaca sesli olarak açıkla, gereksinimleri paylaş ve adayın whiteboard üzerinde tasarım yapmasını bekle. Whiteboard'daki değişiklikleri takip edip yorumlayacaksın.`,
+            });
+            // Link design problem to interview
+            try {
+              await convex.mutation(api.interviews.setDesignProblem, {
+                id: interviewId as any,
+                designProblemId: designProblem._id,
+              });
+            } catch {
+              // Non-fatal
+            }
+          }
+        } catch (err) {
+          console.error("Failed to load design problem:", err);
+        }
+      }
 
       // For live-coding and practice interviews, load a random problem
       if (this.interview.type === "live-coding" || this.interview.type === "practice") {
@@ -264,6 +301,28 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
           await this.handleHintRequest();
         }
         break;
+
+      case "whiteboard_update":
+        this.handleWhiteboardUpdate(msg.state);
+        break;
+    }
+  }
+
+  // ─── Whiteboard Update ────────────────────────────────
+
+  private handleWhiteboardUpdate(state: WhiteboardState): void {
+    this.currentWhiteboardState = state;
+
+    // Persist whiteboard state to Convex periodically
+    if (this.interview) {
+      convex
+        .mutation(api.interviews.saveWhiteboardState, {
+          id: this.interview.id as any,
+          whiteboardState: JSON.stringify(state),
+        })
+        .catch(() => {
+          // Non-fatal
+        });
     }
   }
 
@@ -598,6 +657,20 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
         messages.splice(lastUserIdx, 0, codeContext);
       } else {
         messages.push(codeContext);
+      }
+    }
+
+    // Inject current whiteboard state for system-design interviews
+    if (this.currentWhiteboardState) {
+      const wbContext: ChatMessage = {
+        role: "system",
+        content: `[Adayın şu anki whiteboard tasarımı]\n${this.currentWhiteboardState.textRepresentation}`,
+      };
+      const lastUserIdx = messages.findLastIndex((m) => m.role === "user");
+      if (lastUserIdx >= 0) {
+        messages.splice(lastUserIdx, 0, wbContext);
+      } else {
+        messages.push(wbContext);
       }
     }
 
