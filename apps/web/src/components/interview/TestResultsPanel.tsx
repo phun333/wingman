@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from "motion/react";
+import { Play, CheckCircle2, XCircle, Clock, AlertTriangle, Terminal } from "lucide-react";
 import type { CodeExecutionResult } from "@ffh/types";
 
 interface TestResultsPanelProps {
@@ -51,7 +52,10 @@ export function TestResultsPanel({ result, running, onRun }: TestResultsPanelPro
               Çalışıyor…
             </>
           ) : (
-            <>▶ Çalıştır</>
+            <>
+              <Play size={12} strokeWidth={2.5} />
+              Çalıştır
+            </>
           )}
         </button>
       </div>
@@ -104,7 +108,11 @@ export function TestResultsPanel({ result, running, onRun }: TestResultsPanelPro
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-1">
-                    <span>{r.passed ? "✅" : "❌"}</span>
+                    {r.passed ? (
+                      <CheckCircle2 size={14} className="text-success" />
+                    ) : (
+                      <XCircle size={14} className="text-danger" />
+                    )}
                     <span className="text-text font-sans font-medium">
                       Test {i + 1}
                     </span>
@@ -127,16 +135,23 @@ export function TestResultsPanel({ result, running, onRun }: TestResultsPanelPro
 
               {/* Execution info */}
               <div className="flex items-center gap-3 text-xs text-text-muted pt-1">
-                <span>⏱ {result.executionTimeMs}ms</span>
+                <span className="flex items-center gap-1">
+                  <Clock size={11} />
+                  {result.executionTimeMs}ms
+                </span>
                 {result.error && (
-                  <span className="text-danger">⚠ {result.error}</span>
+                  <span className="flex items-center gap-1 text-danger">
+                    <AlertTriangle size={11} />
+                    {result.error}
+                  </span>
                 )}
               </div>
 
               {/* Console output */}
               {(result.stdout || result.stderr) && (
                 <div className="rounded-lg border border-border-subtle bg-surface-raised p-2.5">
-                  <p className="text-xs font-medium text-text-muted mb-1">
+                  <p className="text-xs font-medium text-text-muted mb-1 flex items-center gap-1.5">
+                    <Terminal size={11} />
                     Konsol Çıktısı
                   </p>
                   {result.stdout && (

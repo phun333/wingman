@@ -5,12 +5,30 @@ import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { listInterviews, getInterviewStats } from "@/lib/api";
+import { typeLabels, statusLabels, difficultyLabels, formatDate, formatDuration } from "@/lib/constants";
+import {
+  Code2,
+  Waypoints,
+  Phone,
+  Dumbbell,
+  Play,
+  Circle,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { Interview, InterviewStats } from "@ffh/types";
 
-const interviewTypes = [
+const interviewTypes: {
+  id: string;
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  color: string;
+  bgColor: string;
+  borderColor: string;
+}[] = [
   {
     id: "live-coding",
-    icon: "⌨",
+    icon: Code2,
     title: "Live Coding",
     description: "Kod yazma becerilerini gerçek zamanlı test et",
     color: "text-info",
@@ -19,7 +37,7 @@ const interviewTypes = [
   },
   {
     id: "system-design",
-    icon: "◎",
+    icon: Waypoints,
     title: "System Design",
     description: "Büyük ölçekli sistem tasarımı soruları",
     color: "text-amber",
@@ -28,7 +46,7 @@ const interviewTypes = [
   },
   {
     id: "phone-screen",
-    icon: "☎",
+    icon: Phone,
     title: "Phone Screen",
     description: "Klasik telefon mülakat simülasyonu",
     color: "text-success",
@@ -37,28 +55,14 @@ const interviewTypes = [
   },
   {
     id: "practice",
-    icon: "◈",
+    icon: Dumbbell,
     title: "Practice",
     description: "Serbest pratik yaparak kendini geliştir",
     color: "text-text-secondary",
     bgColor: "bg-surface-raised",
     borderColor: "border-border",
   },
-] as const;
-
-const typeLabels: Record<string, string> = {
-  "live-coding": "Live Coding",
-  "system-design": "System Design",
-  "phone-screen": "Phone Screen",
-  practice: "Practice",
-};
-
-const statusLabels: Record<string, { label: string; variant: "success" | "amber" | "danger" | "default" }> = {
-  created: { label: "Oluşturuldu", variant: "default" },
-  "in-progress": { label: "Devam Ediyor", variant: "amber" },
-  completed: { label: "Tamamlandı", variant: "success" },
-  evaluated: { label: "Değerlendirildi", variant: "success" },
-};
+];
 
 const stagger = {
   hidden: {},
@@ -69,24 +73,6 @@ const fadeUp = {
   hidden: { opacity: 0, y: 16 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
 };
-
-function formatDate(ts: number): string {
-  return new Intl.DateTimeFormat("tr-TR", {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(ts));
-}
-
-function formatDuration(start?: number, end?: number): string {
-  if (!start) return "—";
-  const endTs = end ?? Date.now();
-  const seconds = Math.floor((endTs - start) / 1000);
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}dk ${s}s`;
-}
 
 export function DashboardPage() {
   const { user } = useAuth();
@@ -151,27 +137,28 @@ export function DashboardPage() {
           Hızlı Başlat
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {interviewTypes.map((type) => (
-            <Link key={type.id} to={`/interview/new?type=${type.id}`}>
-              <Card hover className="flex items-start gap-4 h-full">
-                <div
-                  className={`h-10 w-10 rounded-lg ${type.bgColor} border ${type.borderColor} flex items-center justify-center flex-shrink-0`}
-                >
-                  <span className={`text-lg ${type.color}`} aria-hidden="true">
-                    {type.icon}
-                  </span>
-                </div>
-                <div className="min-w-0">
-                  <h3 className="font-display font-semibold text-text">
-                    {type.title}
-                  </h3>
-                  <p className="mt-0.5 text-sm text-text-secondary text-pretty">
-                    {type.description}
-                  </p>
-                </div>
-              </Card>
-            </Link>
-          ))}
+          {interviewTypes.map((type) => {
+            const IconComponent = type.icon;
+            return (
+              <Link key={type.id} to={`/interview/new?type=${type.id}`}>
+                <Card hover className="flex items-start gap-4 h-full">
+                  <div
+                    className={`h-10 w-10 rounded-lg ${type.bgColor} border ${type.borderColor} flex items-center justify-center flex-shrink-0`}
+                  >
+                    <IconComponent size={18} className={type.color} strokeWidth={1.8} />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-display font-semibold text-text">
+                      {type.title}
+                    </h3>
+                    <p className="mt-0.5 text-sm text-text-secondary text-pretty">
+                      {type.description}
+                    </p>
+                  </div>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       </motion.div>
 
@@ -188,9 +175,7 @@ export function DashboardPage() {
         ) : interviews.length === 0 ? (
           <Card className="flex flex-col items-center justify-center py-12 text-center">
             <div className="h-12 w-12 rounded-full bg-surface-raised border border-border flex items-center justify-center mb-4">
-              <span className="text-xl text-text-muted" aria-hidden="true">
-                ○
-              </span>
+              <Circle size={20} className="text-text-muted" strokeWidth={1.5} />
             </div>
             <p className="text-text-secondary text-sm">
               Henüz mülakat yapmadın
@@ -202,7 +187,7 @@ export function DashboardPage() {
               to="/interview/new"
               className="mt-4 inline-flex items-center gap-2 rounded-lg bg-amber/10 border border-amber/20 px-4 py-2 text-sm font-medium text-amber hover:bg-amber/15 transition-colors duration-150"
             >
-              <span aria-hidden="true">▶</span>
+              <Play size={14} />
               İlk Mülakatını Başlat
             </Link>
           </Card>
@@ -210,6 +195,7 @@ export function DashboardPage() {
           <div className="space-y-2">
             {interviews.map((interview) => {
               const statusInfo = statusLabels[interview.status] ?? { label: interview.status, variant: "default" as const };
+              const diffInfo = difficultyLabels[interview.difficulty];
               return (
                 <Link key={interview._id} to={
                   interview.status === "completed" || interview.status === "evaluated"
@@ -228,15 +214,11 @@ export function DashboardPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`text-xs px-2 py-0.5 rounded-md border ${
-                        interview.difficulty === "easy"
-                          ? "text-success border-success/30 bg-success/10"
-                          : interview.difficulty === "medium"
-                            ? "text-amber border-amber/30 bg-amber/10"
-                            : "text-danger border-danger/30 bg-danger/10"
-                      }`}>
-                        {interview.difficulty === "easy" ? "Kolay" : interview.difficulty === "medium" ? "Orta" : "Zor"}
-                      </span>
+                      {diffInfo && (
+                        <span className={`text-xs px-2 py-0.5 rounded-md border ${diffInfo.classes}`}>
+                          {diffInfo.label}
+                        </span>
+                      )}
                       <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
                     </div>
                   </Card>

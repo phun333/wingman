@@ -1,4 +1,5 @@
 import { motion } from "motion/react";
+import { Mic, Hand, Lightbulb } from "lucide-react";
 import type { VoicePipelineState } from "@ffh/types";
 
 const stateLabels: Record<VoicePipelineState, string> = {
@@ -74,9 +75,11 @@ export function VoiceBar({
                   : "Mikrofonu aç"
             }
           >
-            <span className="text-base" aria-hidden="true">
-              {state === "speaking" || state === "processing" ? "✋" : "🎙"}
-            </span>
+            {state === "speaking" || state === "processing" ? (
+              <Hand size={16} strokeWidth={2} />
+            ) : (
+              <Mic size={16} strokeWidth={2} />
+            )}
           </button>
         </div>
 
@@ -95,7 +98,7 @@ export function VoiceBar({
               aria-label="İpucu iste"
               title={`İpucu iste (${totalHints} kullanıldı)`}
             >
-              <span className="text-base" aria-hidden="true">💡</span>
+              <Lightbulb size={16} strokeWidth={2} />
               <span className="text-xs font-medium">İpucu</span>
               {totalHints > 0 && (
                 <span className="text-[10px] bg-amber/20 text-amber px-1.5 py-0.5 rounded-full font-mono">

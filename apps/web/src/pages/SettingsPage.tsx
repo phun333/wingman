@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
+import { User, FileText, Briefcase, Brain } from "lucide-react";
 import {
   getProfile,
   updateProfile,
@@ -208,7 +209,7 @@ export function SettingsPage() {
       <motion.div variants={fadeUp}>
         <Card>
           <h2 className="font-display font-semibold text-text mb-4">
-            👤 Profil Bilgileri
+            <User size={16} className="inline mr-1.5" /> Profil Bilgileri
           </h2>
 
           <div className="space-y-4">
@@ -292,7 +293,7 @@ export function SettingsPage() {
       <motion.div variants={fadeUp}>
         <Card>
           <h2 className="font-display font-semibold text-text mb-4">
-            📄 Özgeçmiş
+            <FileText size={16} className="inline mr-1.5" /> Özgeçmiş
           </h2>
 
           {/* Existing resumes */}
@@ -376,7 +377,7 @@ export function SettingsPage() {
       <motion.div variants={fadeUp}>
         <Card>
           <h2 className="font-display font-semibold text-text mb-4">
-            💼 İş İlanları
+            <Briefcase size={16} className="inline mr-1.5" /> İş İlanları
           </h2>
 
           {/* Existing jobs */}
@@ -476,7 +477,7 @@ export function SettingsPage() {
       <motion.div variants={fadeUp}>
         <Card>
           <h2 className="font-display font-semibold text-text mb-4">
-            🧠 Performans Hafızası
+            <Brain size={16} className="inline mr-1.5" /> Performans Hafızası
           </h2>
 
           {profile?.memory && profile.memory.length > 0 ? (

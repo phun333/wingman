@@ -1,3 +1,4 @@
+import { Building2, Lightbulb } from "lucide-react";
 import type { DesignProblem } from "@ffh/types";
 
 interface DesignProblemPanelProps {
@@ -21,7 +22,7 @@ export function DesignProblemPanel({ problem, loading }: DesignProblemPanelProps
     return (
       <div className="h-full flex items-center justify-center p-6">
         <div className="text-center">
-          <span className="text-4xl">🏗️</span>
+          <Building2 size={36} className="text-text-muted mx-auto" strokeWidth={1.2} />
           <p className="mt-3 text-sm text-text-muted">
             AI mülakatçı size bir sistem tasarımı sorusu soracak.
           </p>
@@ -38,7 +39,7 @@ export function DesignProblemPanel({ problem, loading }: DesignProblemPanelProps
       {/* Header */}
       <div className="sticky top-0 bg-surface/95 backdrop-blur-sm border-b border-border-subtle px-5 py-4 z-10">
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-lg">🏗️</span>
+          <Building2 size={18} className="text-amber" strokeWidth={1.8} />
           <h2 className="font-display font-bold text-text text-base">
             {problem.title}
           </h2>
@@ -100,8 +101,9 @@ export function DesignProblemPanel({ problem, loading }: DesignProblemPanelProps
 
         {/* Hint: Discussion Points (collapsed by default) */}
         <details className="group">
-          <summary className="text-xs font-medium text-text-muted uppercase tracking-wider cursor-pointer hover:text-text-secondary transition-colors select-none">
-            💡 Tartışma Noktaları
+          <summary className="text-xs font-medium text-text-muted uppercase tracking-wider cursor-pointer hover:text-text-secondary transition-colors select-none flex items-center gap-1.5">
+            <Lightbulb size={12} />
+            Tartışma Noktaları
             <span className="ml-1 text-text-muted/50 group-open:hidden">(göster)</span>
           </summary>
           <ul className="mt-2 space-y-1.5">

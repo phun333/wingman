@@ -5,6 +5,19 @@ import {
   useEditor,
   type TLBaseShape,
 } from "tldraw";
+import {
+  Database,
+  Zap,
+  Mail,
+  Scale,
+  Globe,
+  Server,
+  Cloud,
+  User,
+  HardDrive,
+  Lock,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 // ─── Shape Type Definitions ──────────────────────────────
 
@@ -18,93 +31,104 @@ type DesignShapeProps = {
 
 interface ShapeConfig {
   type: string;
-  icon: string;
+  icon: LucideIcon;
   defaultLabel: string;
   bgColor: string;
   borderColor: string;
   iconBg: string;
+  iconColor: string;
 }
 
 const SHAPE_CONFIGS: ShapeConfig[] = [
   {
     type: "design-database",
-    icon: "🗄️",
+    icon: Database,
     defaultLabel: "Database",
     bgColor: "rgba(59, 130, 246, 0.08)",
     borderColor: "rgba(59, 130, 246, 0.4)",
     iconBg: "rgba(59, 130, 246, 0.15)",
+    iconColor: "#3b82f6",
   },
   {
     type: "design-cache",
-    icon: "⚡",
+    icon: Zap,
     defaultLabel: "Cache",
     bgColor: "rgba(245, 158, 11, 0.08)",
     borderColor: "rgba(245, 158, 11, 0.4)",
     iconBg: "rgba(245, 158, 11, 0.15)",
+    iconColor: "#f59e0b",
   },
   {
     type: "design-queue",
-    icon: "📨",
+    icon: Mail,
     defaultLabel: "Message Queue",
     bgColor: "rgba(168, 85, 247, 0.08)",
     borderColor: "rgba(168, 85, 247, 0.4)",
     iconBg: "rgba(168, 85, 247, 0.15)",
+    iconColor: "#a855f7",
   },
   {
     type: "design-loadbalancer",
-    icon: "⚖️",
+    icon: Scale,
     defaultLabel: "Load Balancer",
     bgColor: "rgba(34, 197, 94, 0.08)",
     borderColor: "rgba(34, 197, 94, 0.4)",
     iconBg: "rgba(34, 197, 94, 0.15)",
+    iconColor: "#22c55e",
   },
   {
     type: "design-gateway",
-    icon: "🌐",
+    icon: Globe,
     defaultLabel: "API Gateway",
     bgColor: "rgba(6, 182, 212, 0.08)",
     borderColor: "rgba(6, 182, 212, 0.4)",
     iconBg: "rgba(6, 182, 212, 0.15)",
+    iconColor: "#06b6d4",
   },
   {
     type: "design-server",
-    icon: "🖥️",
+    icon: Server,
     defaultLabel: "Service",
     bgColor: "rgba(107, 114, 128, 0.08)",
     borderColor: "rgba(107, 114, 128, 0.4)",
     iconBg: "rgba(107, 114, 128, 0.15)",
+    iconColor: "#6b7280",
   },
   {
     type: "design-cdn",
-    icon: "☁️",
+    icon: Cloud,
     defaultLabel: "CDN",
     bgColor: "rgba(236, 72, 153, 0.08)",
     borderColor: "rgba(236, 72, 153, 0.4)",
     iconBg: "rgba(236, 72, 153, 0.15)",
+    iconColor: "#ec4899",
   },
   {
     type: "design-client",
-    icon: "👤",
+    icon: User,
     defaultLabel: "Client",
     bgColor: "rgba(16, 185, 129, 0.08)",
     borderColor: "rgba(16, 185, 129, 0.4)",
     iconBg: "rgba(16, 185, 129, 0.15)",
+    iconColor: "#10b981",
   },
   {
     type: "design-storage",
-    icon: "📦",
+    icon: HardDrive,
     defaultLabel: "Storage",
     bgColor: "rgba(249, 115, 22, 0.08)",
     borderColor: "rgba(249, 115, 22, 0.4)",
     iconBg: "rgba(249, 115, 22, 0.15)",
+    iconColor: "#f97316",
   },
   {
     type: "design-auth",
-    icon: "🔒",
+    icon: Lock,
     defaultLabel: "Auth Service",
     bgColor: "rgba(239, 68, 68, 0.08)",
     borderColor: "rgba(239, 68, 68, 0.4)",
     iconBg: "rgba(239, 68, 68, 0.15)",
+    iconColor: "#ef4444",
   },
 ];
 
@@ -137,7 +161,6 @@ function InlineEditableLabel({
     setEditing(false);
     const trimmed = value.trim();
     if (trimmed && trimmed !== label) {
-      // Use type assertion to bypass tldraw's strict generic type system for custom shapes
       (editor as any).updateShape({
         id: shapeId,
         type: (editor as any).getShape(shapeId)?.type,
@@ -215,6 +238,8 @@ function DesignShapeComponent({
   shape: TLBaseShape<string, DesignShapeProps>;
   config: ShapeConfig;
 }) {
+  const IconComponent = config.icon;
+
   return (
     <HTMLContainer
       id={shape.id}
@@ -240,7 +265,7 @@ function DesignShapeComponent({
           cursor: "pointer",
           userSelect: "none",
           fontFamily:
-            'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+            '"DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
         }}
       >
         <div
@@ -252,10 +277,9 @@ function DesignShapeComponent({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 20,
           }}
         >
-          {config.icon}
+          <IconComponent size={20} color={config.iconColor} strokeWidth={1.8} />
         </div>
         <InlineEditableLabel shapeId={shape.id} label={shape.props.label} />
       </div>
@@ -266,8 +290,6 @@ function DesignShapeComponent({
 // ─── Create BaseBoxShapeUtil for each design component type ──
 
 function createDesignShapeUtil(config: ShapeConfig) {
-  // We need to use 'any' for the generic because tldraw expects
-  // exact shape type literals, not dynamic strings
   const Util = class extends BaseBoxShapeUtil<any> {
     static override type = config.type as any;
 

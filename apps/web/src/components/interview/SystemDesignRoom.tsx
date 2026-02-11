@@ -8,6 +8,7 @@ import { WhiteboardCanvas } from "./whiteboard/WhiteboardCanvas";
 import { DesignProblemPanel } from "./whiteboard/DesignProblemPanel";
 import { ResizableSplitter } from "./ResizableSplitter";
 import { downloadWhiteboardPng, downloadWhiteboardSvg } from "@/lib/whiteboard-export";
+import { Mic, Hand, Download, Image, FileCode2, Bot, MessageCircle, Clock } from "lucide-react";
 import type {
   VoicePipelineState,
   Interview,
@@ -181,18 +182,18 @@ export function SystemDesignRoom({ interviewId }: SystemDesignRoomProps) {
         </div>
         <div className="flex items-center gap-3">
           {timeWarning && (
-            <span className="text-xs text-amber px-2 py-0.5 rounded-md bg-amber/10 border border-amber/20">
-              ⏱ ~{timeWarning} dk kaldı
+            <span className="text-xs text-amber px-2 py-0.5 rounded-md bg-amber/10 border border-amber/20 flex items-center gap-1">
+              <Clock size={11} /> ~{timeWarning} dk kaldı
             </span>
           )}
           {/* Export button */}
           <div className="relative">
             <button
               onClick={() => setShowExportMenu((v) => !v)}
-              className="text-xs text-text-muted hover:text-text px-2 py-1 rounded-md bg-surface-raised border border-border hover:border-border-subtle transition-colors cursor-pointer"
+              className="text-xs text-text-muted hover:text-text px-2 py-1 rounded-md bg-surface-raised border border-border hover:border-border-subtle transition-colors cursor-pointer flex items-center gap-1.5"
               title="Whiteboard'u dışa aktar"
             >
-              📥 Export
+              <Download size={12} /> Export
             </button>
             {showExportMenu && (
               <>
@@ -200,15 +201,15 @@ export function SystemDesignRoom({ interviewId }: SystemDesignRoomProps) {
                 <div className="absolute right-0 top-full mt-1 z-50 bg-surface border border-border rounded-lg shadow-xl py-1 min-w-[140px]">
                   <button
                     onClick={handleExportPng}
-                    className="w-full text-left px-3 py-2 text-xs text-text-secondary hover:bg-surface-raised hover:text-text transition-colors cursor-pointer"
+                    className="w-full text-left px-3 py-2 text-xs text-text-secondary hover:bg-surface-raised hover:text-text transition-colors cursor-pointer flex items-center gap-2"
                   >
-                    🖼️ PNG olarak indir
+                    <Image size={12} /> PNG olarak indir
                   </button>
                   <button
                     onClick={handleExportSvg}
-                    className="w-full text-left px-3 py-2 text-xs text-text-secondary hover:bg-surface-raised hover:text-text transition-colors cursor-pointer"
+                    className="w-full text-left px-3 py-2 text-xs text-text-secondary hover:bg-surface-raised hover:text-text transition-colors cursor-pointer flex items-center gap-2"
                   >
-                    📐 SVG olarak indir
+                    <FileCode2 size={12} /> SVG olarak indir
                   </button>
                 </div>
               </>
@@ -280,9 +281,11 @@ export function SystemDesignRoom({ interviewId }: SystemDesignRoomProps) {
                 }
               `}
             >
-              <span className="text-lg" aria-hidden="true">
-                {state === "speaking" || state === "processing" ? "✋" : "🎙"}
-              </span>
+              {state === "speaking" || state === "processing" ? (
+                <Hand size={18} strokeWidth={2} />
+              ) : (
+                <Mic size={18} strokeWidth={2} />
+              )}
             </button>
           </div>
 
@@ -309,9 +312,9 @@ export function SystemDesignRoom({ interviewId }: SystemDesignRoomProps) {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="text-sm text-text-secondary truncate"
+                  className="text-sm text-text-secondary truncate flex items-center gap-1.5"
                 >
-                  🤖 {aiText}
+                  <Bot size={13} className="text-amber shrink-0" /> {aiText}
                 </motion.p>
               )}
               {!aiText && transcript && (
@@ -320,9 +323,9 @@ export function SystemDesignRoom({ interviewId }: SystemDesignRoomProps) {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="text-sm text-text-muted truncate"
+                  className="text-sm text-text-muted truncate flex items-center gap-1.5"
                 >
-                  🗣 {transcript}
+                  <MessageCircle size={13} className="text-info shrink-0" /> {transcript}
                 </motion.p>
               )}
             </AnimatePresence>

@@ -1,4 +1,5 @@
 import { useAuth } from "@/lib/auth";
+import { LogOut } from "lucide-react";
 
 export function Topbar() {
   const { user, logout } = useAuth();
@@ -22,11 +23,11 @@ export function Topbar() {
         </span>
         <button
           onClick={logout}
-          className="flex items-center justify-center h-8 w-8 rounded-lg bg-surface-raised border border-border text-text-muted hover:text-text hover:border-amber/30 transition-colors duration-150 text-xs cursor-pointer"
+          className="flex items-center justify-center h-8 w-8 rounded-lg bg-surface-raised border border-border text-text-muted hover:text-text hover:border-amber/30 transition-colors duration-150 cursor-pointer"
           aria-label="Çıkış yap"
           title="Çıkış yap"
         >
-          ⏻
+          <LogOut size={14} strokeWidth={2} />
         </button>
       </div>
     </header>

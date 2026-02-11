@@ -1,6 +1,7 @@
 import { type Editor, createShapeId } from "tldraw";
 import { SHAPE_CONFIGS } from "./design-shapes";
 import { useState } from "react";
+import { Puzzle, X } from "lucide-react";
 
 interface ComponentPaletteProps {
   editor: Editor | null;
@@ -67,7 +68,7 @@ export function ComponentPalette({ editor }: ComponentPaletteProps) {
         className="absolute top-3 left-3 z-50 flex items-center gap-1.5 rounded-lg bg-surface/95 backdrop-blur-sm border border-border px-3 py-2 text-xs text-text-secondary hover:text-text hover:border-amber/40 transition-all cursor-pointer shadow-lg"
         title="Bileşen Paletini Aç"
       >
-        <span>🧩</span>
+        <Puzzle size={14} />
         <span>Bileşenler</span>
       </button>
     );
@@ -82,10 +83,10 @@ export function ComponentPalette({ editor }: ComponentPaletteProps) {
         </span>
         <button
           onClick={() => setCollapsed(true)}
-          className="text-text-muted hover:text-text text-sm cursor-pointer p-0.5"
+          className="text-text-muted hover:text-text cursor-pointer p-0.5"
           title="Küçült"
         >
-          ✕
+          <X size={14} />
         </button>
       </div>
 
@@ -100,6 +101,7 @@ export function ComponentPalette({ editor }: ComponentPaletteProps) {
               {category.types.map((shapeType) => {
                 const config = SHAPE_CONFIGS.find((c) => c.type === shapeType);
                 if (!config) return null;
+                const IconComponent = config.icon;
                 return (
                   <button
                     key={shapeType}
@@ -107,10 +109,10 @@ export function ComponentPalette({ editor }: ComponentPaletteProps) {
                     className="w-full flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-all cursor-pointer hover:bg-surface-raised group border border-transparent hover:border-border-subtle"
                   >
                     <span
-                      className="w-7 h-7 rounded-md flex items-center justify-center text-sm shrink-0"
+                      className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
                       style={{ backgroundColor: config.iconBg }}
                     >
-                      {config.icon}
+                      <IconComponent size={16} color={config.iconColor} strokeWidth={1.8} />
                     </span>
                     <span className="text-xs text-text-secondary group-hover:text-text font-medium truncate">
                       {config.defaultLabel}
