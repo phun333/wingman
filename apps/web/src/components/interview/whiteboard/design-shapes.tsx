@@ -1,6 +1,8 @@
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
   BaseBoxShapeUtil,
   HTMLContainer,
+  useEditor,
   type TLBaseShape,
 } from "tldraw";
 
@@ -106,6 +108,104 @@ const SHAPE_CONFIGS: ShapeConfig[] = [
   },
 ];
 
+// ─── Inline Editable Label Component ─────────────────────
+
+function InlineEditableLabel({
+  shapeId,
+  label,
+}: {
+  shapeId: string;
+  label: string;
+}) {
+  const editor = useEditor();
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(label);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setValue(label);
+  }, [label]);
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
+
+  const commitEdit = useCallback(() => {
+    setEditing(false);
+    const trimmed = value.trim();
+    if (trimmed && trimmed !== label) {
+      // Use type assertion to bypass tldraw's strict generic type system for custom shapes
+      (editor as any).updateShape({
+        id: shapeId,
+        type: (editor as any).getShape(shapeId)?.type,
+        props: { label: trimmed },
+      });
+    } else {
+      setValue(label);
+    }
+  }, [editor, shapeId, label, value]);
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={commitEdit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") commitEdit();
+          if (e.key === "Escape") {
+            setValue(label);
+            setEditing(false);
+          }
+          e.stopPropagation();
+        }}
+        onPointerDown={(e) => e.stopPropagation()}
+        style={{
+          fontSize: 13,
+          fontWeight: 600,
+          color: "#e0e0e0",
+          textAlign: "center",
+          lineHeight: 1.2,
+          maxWidth: "100%",
+          width: "100%",
+          background: "rgba(255,255,255,0.08)",
+          border: "1px solid rgba(255,255,255,0.2)",
+          borderRadius: 6,
+          padding: "2px 6px",
+          outline: "none",
+          fontFamily: "inherit",
+        }}
+      />
+    );
+  }
+
+  return (
+    <span
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        setEditing(true);
+      }}
+      style={{
+        fontSize: 13,
+        fontWeight: 600,
+        color: "#e0e0e0",
+        textAlign: "center",
+        lineHeight: 1.2,
+        wordBreak: "break-word",
+        maxWidth: "100%",
+        cursor: "text",
+      }}
+      title="Çift tıkla düzenle"
+    >
+      {label}
+    </span>
+  );
+}
+
 // ─── Generic Design Shape Component ──────────────────────
 
 function DesignShapeComponent({
@@ -157,19 +257,7 @@ function DesignShapeComponent({
         >
           {config.icon}
         </div>
-        <span
-          style={{
-            fontSize: 13,
-            fontWeight: 600,
-            color: "#e0e0e0",
-            textAlign: "center",
-            lineHeight: 1.2,
-            wordBreak: "break-word",
-            maxWidth: "100%",
-          }}
-        >
-          {shape.props.label}
-        </span>
+        <InlineEditableLabel shapeId={shape.id} label={shape.props.label} />
       </div>
     </HTMLContainer>
   );

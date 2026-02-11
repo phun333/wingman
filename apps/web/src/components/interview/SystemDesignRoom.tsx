@@ -7,6 +7,7 @@ import { getInterview, completeInterview } from "@/lib/api";
 import { WhiteboardCanvas } from "./whiteboard/WhiteboardCanvas";
 import { DesignProblemPanel } from "./whiteboard/DesignProblemPanel";
 import { ResizableSplitter } from "./ResizableSplitter";
+import { downloadWhiteboardPng, downloadWhiteboardSvg } from "@/lib/whiteboard-export";
 import type {
   VoicePipelineState,
   Interview,
@@ -105,6 +106,21 @@ export function SystemDesignRoom({ interviewId }: SystemDesignRoomProps) {
     editorRef.current = editor;
   }, []);
 
+  // Export dropdown
+  const [showExportMenu, setShowExportMenu] = useState(false);
+
+  const handleExportPng = useCallback(async () => {
+    if (!editorRef.current) return;
+    setShowExportMenu(false);
+    await downloadWhiteboardPng(editorRef.current, `system-design-${interviewId}.png`);
+  }, [interviewId]);
+
+  const handleExportSvg = useCallback(async () => {
+    if (!editorRef.current) return;
+    setShowExportMenu(false);
+    await downloadWhiteboardSvg(editorRef.current, `system-design-${interviewId}.svg`);
+  }, [interviewId]);
+
   // End interview
   const handleEnd = useCallback(async () => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -169,6 +185,35 @@ export function SystemDesignRoom({ interviewId }: SystemDesignRoomProps) {
               ⏱ ~{timeWarning} dk kaldı
             </span>
           )}
+          {/* Export button */}
+          <div className="relative">
+            <button
+              onClick={() => setShowExportMenu((v) => !v)}
+              className="text-xs text-text-muted hover:text-text px-2 py-1 rounded-md bg-surface-raised border border-border hover:border-border-subtle transition-colors cursor-pointer"
+              title="Whiteboard'u dışa aktar"
+            >
+              📥 Export
+            </button>
+            {showExportMenu && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowExportMenu(false)} />
+                <div className="absolute right-0 top-full mt-1 z-50 bg-surface border border-border rounded-lg shadow-xl py-1 min-w-[140px]">
+                  <button
+                    onClick={handleExportPng}
+                    className="w-full text-left px-3 py-2 text-xs text-text-secondary hover:bg-surface-raised hover:text-text transition-colors cursor-pointer"
+                  >
+                    🖼️ PNG olarak indir
+                  </button>
+                  <button
+                    onClick={handleExportSvg}
+                    className="w-full text-left px-3 py-2 text-xs text-text-secondary hover:bg-surface-raised hover:text-text transition-colors cursor-pointer"
+                  >
+                    📐 SVG olarak indir
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
           <span className="text-sm font-mono text-text-muted tabular-nums">
             {formatTime(elapsed)}
           </span>
