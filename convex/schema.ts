@@ -36,6 +36,9 @@ export default defineSchema({
     finalCode: v.optional(v.string()),
     codeLanguage: v.optional(v.string()),
     whiteboardState: v.optional(v.string()),
+    jobPostingId: v.optional(v.id("jobPostings")),
+    resumeId: v.optional(v.id("resumes")),
+    memoryEnabled: v.optional(v.boolean()),
     startedAt: v.optional(v.number()),
     endedAt: v.optional(v.number()),
     createdAt: v.number(),
@@ -153,4 +156,60 @@ export default defineSchema({
   })
     .index("by_difficulty", ["difficulty"])
     .index("by_category", ["category"]),
+
+  // ─── Faz 6: Kişiselleştirme ────────────────────────────
+
+  jobPostings: defineTable({
+    userId: v.id("users"),
+    url: v.string(),
+    title: v.string(),
+    company: v.optional(v.string()),
+    requirements: v.array(v.string()),
+    skills: v.array(v.string()),
+    level: v.optional(v.string()),
+    rawContent: v.string(),
+    parsedAt: v.number(),
+  }).index("by_user", ["userId"]),
+
+  resumes: defineTable({
+    userId: v.id("users"),
+    fileName: v.string(),
+    name: v.optional(v.string()),
+    title: v.optional(v.string()),
+    yearsOfExperience: v.optional(v.number()),
+    skills: v.array(v.string()),
+    experience: v.array(
+      v.object({
+        company: v.string(),
+        role: v.string(),
+        duration: v.string(),
+        highlights: v.array(v.string()),
+      }),
+    ),
+    education: v.array(
+      v.object({
+        school: v.string(),
+        degree: v.string(),
+      }),
+    ),
+    rawText: v.string(),
+    parsedAt: v.number(),
+  }).index("by_user", ["userId"]),
+
+  userProfiles: defineTable({
+    userId: v.id("users"),
+    interests: v.array(v.string()),
+    goals: v.optional(v.string()),
+    preferredLanguage: v.optional(v.string()),
+    updatedAt: v.number(),
+  }).index("by_user", ["userId"]),
+
+  userMemory: defineTable({
+    userId: v.id("users"),
+    key: v.string(),
+    value: v.string(), // JSON string
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_key", ["userId", "key"]),
 });

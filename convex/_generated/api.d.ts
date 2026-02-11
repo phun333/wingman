@@ -13,9 +13,13 @@ import type * as designProblems from "../designProblems.js";
 import type * as http from "../http.js";
 import type * as interviewResults from "../interviewResults.js";
 import type * as interviews from "../interviews.js";
+import type * as jobPostings from "../jobPostings.js";
 import type * as messages from "../messages.js";
 import type * as problems from "../problems.js";
+import type * as resumes from "../resumes.js";
 import type * as seed from "../seed.js";
+import type * as userMemory from "../userMemory.js";
+import type * as userProfiles from "../userProfiles.js";
 import type * as users from "../users.js";
 
 import type {
@@ -30,9 +34,13 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   interviewResults: typeof interviewResults;
   interviews: typeof interviews;
+  jobPostings: typeof jobPostings;
   messages: typeof messages;
   problems: typeof problems;
+  resumes: typeof resumes;
   seed: typeof seed;
+  userMemory: typeof userMemory;
+  userProfiles: typeof userProfiles;
   users: typeof users;
 }>;
 
