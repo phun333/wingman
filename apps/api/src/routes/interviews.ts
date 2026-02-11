@@ -14,6 +14,19 @@ export const interviewRoutes = new Hono<AuthEnv>();
 // Apply auth middleware to all interview routes
 interviewRoutes.use("*", authMiddleware);
 
+// Helper to get or create Convex user from auth context
+async function getConvexUser(c: any) {
+  const authId = c.get("userId");
+  const userName = c.get("userName");
+  const userEmail = c.get("userEmail");
+
+  return await convex.mutation(api.users.getOrCreateByAuthId, {
+    authId: authId,
+    email: userEmail,
+    name: userName,
+  });
+}
+
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  POST /interviews — Create
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -35,18 +48,20 @@ interviewRoutes.post(
       difficulty: z.enum(["easy", "medium", "hard"]),
       language: z.string().default("tr"),
       questionCount: z.number().min(1).max(10).default(5),
+      codeLanguage: z.enum(["javascript", "typescript", "python"]).optional(),
     }),
   ),
   async (c) => {
-    const userId = c.get("userId");
     const body = c.req.valid("json");
+    const convexUser = await getConvexUser(c);
 
     const interview = await convex.mutation(api.interviews.create, {
-      userId: userId as any,
+      userId: convexUser._id,
       type: body.type,
       difficulty: body.difficulty,
       language: body.language,
       questionCount: body.questionCount,
+      config: body.codeLanguage ? { codeLanguage: body.codeLanguage } : undefined,
     });
 
     return c.json(interview, 201);
@@ -68,11 +83,11 @@ interviewRoutes.get(
     },
   }),
   async (c) => {
-    const userId = c.get("userId");
+    const convexUser = await getConvexUser(c);
     const limit = Number(c.req.query("limit") ?? "20");
 
     const interviews = await convex.query(api.interviews.listByUser, {
-      userId: userId as any,
+      userId: convexUser._id,
       limit,
     });
 
@@ -95,10 +110,10 @@ interviewRoutes.get(
     },
   }),
   async (c) => {
-    const userId = c.get("userId");
+    const convexUser = await getConvexUser(c);
 
     const stats = await convex.query(api.interviews.getUserStats, {
-      userId: userId as any,
+      userId: convexUser._id,
     });
 
     return c.json(stats);
@@ -122,7 +137,7 @@ interviewRoutes.get(
     },
   }),
   async (c) => {
-    const userId = c.get("userId");
+    const convexUser = await getConvexUser(c);
     const id = c.req.param("id");
 
     try {
@@ -131,7 +146,7 @@ interviewRoutes.get(
       });
 
       // Auth check: user can only see their own interviews
-      if (interview.userId !== userId) {
+      if (interview.userId !== convexUser._id) {
         return c.json({ error: "Forbidden" }, 403);
       }
 
@@ -158,13 +173,13 @@ interviewRoutes.patch(
     },
   }),
   async (c) => {
-    const userId = c.get("userId");
+    const convexUser = await getConvexUser(c);
     const id = c.req.param("id");
 
     try {
       // Verify ownership
       const interview = await convex.query(api.interviews.getById, { id: id as any });
-      if (interview.userId !== userId) {
+      if (interview.userId !== convexUser._id) {
         return c.json({ error: "Forbidden" }, 403);
       }
 
@@ -193,12 +208,12 @@ interviewRoutes.patch(
     },
   }),
   async (c) => {
-    const userId = c.get("userId");
+    const convexUser = await getConvexUser(c);
     const id = c.req.param("id");
 
     try {
       const interview = await convex.query(api.interviews.getById, { id: id as any });
-      if (interview.userId !== userId) {
+      if (interview.userId !== convexUser._id) {
         return c.json({ error: "Forbidden" }, 403);
       }
 
@@ -228,12 +243,12 @@ interviewRoutes.get(
     },
   }),
   async (c) => {
-    const userId = c.get("userId");
+    const convexUser = await getConvexUser(c);
     const id = c.req.param("id");
 
     try {
       const interview = await convex.query(api.interviews.getById, { id: id as any });
-      if (interview.userId !== userId) {
+      if (interview.userId !== convexUser._id) {
         return c.json({ error: "Forbidden" }, 403);
       }
 
