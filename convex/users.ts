@@ -66,3 +66,46 @@ export const remove = mutation({
     return { deleted: true };
   },
 });
+
+// Get or create user by auth ID
+export const getOrCreateByAuthId = mutation({
+  args: {
+    authId: v.string(),
+    email: v.string(),
+    name: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // First try to find by authId
+    let user = await ctx.db.query("users")
+      .withIndex("by_auth_id", (q) => q.eq("authId", args.authId))
+      .first();
+
+    if (!user) {
+      // Try to find by email
+      user = await ctx.db.query("users")
+        .withIndex("by_email", (q) => q.eq("email", args.email))
+        .first();
+
+      if (user) {
+        // User exists but without authId, update it
+        await ctx.db.patch(user._id, {
+          authId: args.authId,
+          updatedAt: Date.now(),
+        });
+        user = await ctx.db.get(user._id);
+      } else {
+        // Create new user
+        const id = await ctx.db.insert("users", {
+          email: args.email,
+          name: args.name,
+          authId: args.authId,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
+        user = await ctx.db.get(id);
+      }
+    }
+
+    return user;
+  },
+});

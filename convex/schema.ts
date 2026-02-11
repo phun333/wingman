@@ -5,9 +5,12 @@ export default defineSchema({
   users: defineTable({
     email: v.string(),
     name: v.string(),
+    authId: v.optional(v.string()), // Better-auth user ID
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index("by_email", ["email"]),
+  })
+    .index("by_email", ["email"])
+    .index("by_auth_id", ["authId"]),
 
   interviews: defineTable({
     userId: v.id("users"),
