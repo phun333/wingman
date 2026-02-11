@@ -1,6 +1,8 @@
 import type {
   Interview,
   InterviewStats,
+  InterviewResult,
+  UserProgress,
   Message,
   InterviewType,
   Difficulty,
@@ -99,6 +101,23 @@ export async function getRandomProblem(params?: {
 
 export async function getProblem(id: string): Promise<Problem> {
   return request<Problem>(`/problems/${id}`);
+}
+
+// ─── Reports ─────────────────────────────────────────────
+
+export async function generateReport(interviewId: string): Promise<{ resultId: string }> {
+  return request<{ resultId: string }>("/reports/generate", {
+    method: "POST",
+    body: JSON.stringify({ interviewId }),
+  });
+}
+
+export async function getReport(interviewId: string): Promise<InterviewResult> {
+  return request<InterviewResult>(`/reports/interview/${interviewId}`);
+}
+
+export async function getUserProgress(): Promise<UserProgress> {
+  return request<UserProgress>("/reports/progress");
 }
 
 // ─── Code Execution ──────────────────────────────────────

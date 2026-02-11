@@ -16,8 +16,10 @@
     "motion": "^12.12.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-is": "^19.2.4",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.6.1",
+    "recharts": "^3.7.0",
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
