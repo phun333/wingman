@@ -106,6 +106,35 @@ export const setProblem = mutation({
   },
 });
 
+// ─── Set Design Problem ──────────────────────────────────
+
+export const setDesignProblem = mutation({
+  args: {
+    id: v.id("interviews"),
+    designProblemId: v.id("designProblems"),
+  },
+  handler: async (ctx, args) => {
+    const interview = await ctx.db.get(args.id);
+    if (!interview) throw new Error("Interview not found");
+    await ctx.db.patch(args.id, { designProblemId: args.designProblemId });
+    return await ctx.db.get(args.id);
+  },
+});
+
+// ─── Save Whiteboard State ───────────────────────────────
+
+export const saveWhiteboardState = mutation({
+  args: {
+    id: v.id("interviews"),
+    whiteboardState: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const interview = await ctx.db.get(args.id);
+    if (!interview) throw new Error("Interview not found");
+    await ctx.db.patch(args.id, { whiteboardState: args.whiteboardState });
+  },
+});
+
 // ─── Evaluate (set status to evaluated) ──────────────────
 
 export const evaluate = mutation({
