@@ -55,7 +55,9 @@ app.get(
   "/ws/voice",
   upgradeWebSocket((c) => {
     let session: VoiceSession | null = null;
-    const interviewId = new URL(c.req.url).searchParams.get("interviewId");
+    const url = new URL(c.req.url);
+    const interviewId = url.searchParams.get("interviewId");
+    const problemId = url.searchParams.get("problemId");
 
     return {
       onOpen(_event, ws) {
@@ -67,8 +69,8 @@ app.get(
 
         // Initialize with interview data or free mode
         if (interviewId) {
-          console.log(`[WS] Initializing session for interview: ${interviewId}`);
-          session.init(interviewId).then(() => {
+          console.log(`[WS] Initializing session for interview: ${interviewId}, problemId: ${problemId || 'random'}`);
+          session.init(interviewId, problemId || undefined).then(() => {
             console.log(`[WS] Session initialized successfully`);
             send({ type: "state_change", state: "idle" });
           }).catch((err) => {

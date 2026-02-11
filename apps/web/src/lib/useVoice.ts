@@ -4,6 +4,7 @@ import { AudioQueuePlayer, decodePCM16, createVolumeMeter } from "./audio";
 
 interface UseVoiceOptions {
   interviewId?: string;
+  problemId?: string;
   onProblemLoaded?: (problem: Problem) => void;
   onDesignProblemLoaded?: (problem: DesignProblem) => void;
 }
@@ -40,15 +41,21 @@ interface UseVoiceReturn {
   dismissSolution: () => void;
 }
 
-function buildWsUrl(interviewId?: string): string {
+function buildWsUrl(interviewId?: string, problemId?: string): string {
   // Development için doğrudan API portuna bağlan
   const base = `ws://localhost:3001/ws/voice`;
-  return interviewId ? `${base}?interviewId=${interviewId}` : base;
+  const params = new URLSearchParams();
+  if (interviewId) params.set("interviewId", interviewId);
+  if (problemId) params.set("problemId", problemId);
+  return params.toString() ? `${base}?${params.toString()}` : base;
 }
 
 // VAD: silence threshold and duration
-const VAD_THRESHOLD = 0.01;
-const VAD_SILENCE_MS = 800;
+// Optimized to reduce keyboard noise and false triggers
+const VAD_THRESHOLD = 0.08; // Higher threshold to ignore keyboard/background noise
+const VAD_SILENCE_MS = 1500; // Wait 1.5 seconds of silence before stopping (was 800ms)
+const VAD_MIN_SPEECH_MS = 600; // Minimum 600ms of continuous speech to trigger interruption
+const VAD_SPEECH_CONFIDENCE_MS = 100; // Need 100ms of continuous audio above threshold to start speech detection
 
 export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
   const [state, setState] = useState<VoicePipelineState>("idle");
@@ -73,6 +80,9 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
   const volumeMeterRef = useRef<{ stop: () => void } | null>(null);
   const playerRef = useRef<AudioQueuePlayer>(new AudioQueuePlayer());
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const speechStartTimeRef = useRef<number | null>(null);
+  const speechConfidenceTimeRef = useRef<number | null>(null);
+  const consecutiveSilenceRef = useRef(0);
   const aiTextAccRef = useRef("");
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectAttemptsRef = useRef(0);
@@ -86,7 +96,7 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
     function connect() {
       if (unmountedRef.current) return;
 
-      const wsUrl = buildWsUrl(options.interviewId);
+      const wsUrl = buildWsUrl(options.interviewId, options.problemId);
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
@@ -131,7 +141,7 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
       playerRef.current.destroy();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [options.interviewId]);
+  }, [options.interviewId, options.problemId]);
 
   function handleServerMessage(msg: ServerMessage): void {
     switch (msg.type) {
@@ -295,22 +305,64 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
     clearSilenceTimer();
   }
 
-  // ─── VAD (simple RMS threshold) ──────────────────────
+  // ─── VAD (improved with confidence checking) ─────────
 
   function handleVAD(rms: number): void {
     if (rms > VAD_THRESHOLD) {
-      // Voice detected — clear silence timer
+      // Reset consecutive silence counter
+      consecutiveSilenceRef.current = 0;
+
+      // Clear silence timer if it exists
       clearSilenceTimer();
+
+      // Check if we need confidence before starting speech detection
+      if (!speechConfidenceTimeRef.current) {
+        speechConfidenceTimeRef.current = Date.now();
+      } else {
+        const confidenceDuration = Date.now() - speechConfidenceTimeRef.current;
+
+        // Only start tracking speech after confidence threshold
+        if (confidenceDuration >= VAD_SPEECH_CONFIDENCE_MS && !speechStartTimeRef.current) {
+          speechStartTimeRef.current = Date.now();
+        }
+      }
+
+      // VAD Interruption: Only if confident speech is detected
+      if ((state === "speaking" || state === "processing") && speechStartTimeRef.current) {
+        const speechDuration = Date.now() - speechStartTimeRef.current;
+        if (speechDuration >= VAD_MIN_SPEECH_MS) {
+          send({ type: "interrupt" });
+          playerRef.current.flush();
+          aiTextAccRef.current = "";
+          setAiText("");
+          // Start recording immediately to capture user's speech
+          if (!recorderRef.current && mediaStreamRef.current) {
+            startRecording(mediaStreamRef.current);
+            send({ type: "start_listening" });
+          }
+        }
+      }
     } else {
-      // Silence — start timer if not already running
-      if (!silenceTimerRef.current && recorderRef.current) {
+      // Silence detected
+      consecutiveSilenceRef.current++;
+
+      // Reset confidence if we have multiple silence samples
+      if (consecutiveSilenceRef.current > 5) {
+        speechConfidenceTimeRef.current = null;
+        speechStartTimeRef.current = null;
+      }
+
+      // Only start silence timer if we were actually speaking
+      if (!silenceTimerRef.current && recorderRef.current && speechStartTimeRef.current) {
         silenceTimerRef.current = setTimeout(() => {
           // Silence exceeded threshold — stop and send
           stopRecording();
           send({ type: "stop_listening" });
 
-          // Wait for AI to finish, then re-enable recording
-          // Recording restarts when state goes back to idle
+          // Reset all speech tracking
+          speechStartTimeRef.current = null;
+          speechConfidenceTimeRef.current = null;
+          consecutiveSilenceRef.current = 0;
         }, VAD_SILENCE_MS);
       }
     }

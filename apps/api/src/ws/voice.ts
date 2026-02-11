@@ -3,6 +3,9 @@ import { ENV } from "@ffh/env";
 import { convex } from "@ffh/db";
 import { api } from "../../../../convex/_generated/api";
 import { getSystemPrompt } from "../prompts";
+import { getClientIP, getGeolocationFromIP, formatLocation, getCountryFlag } from "../services/geolocation";
+import { optimizeForTTS } from "../prompts/pronunciation-guide";
+import { getProblemIntro } from "../services/problem-intros";
 import type {
   ClientMessage,
   ServerMessage,
@@ -48,6 +51,10 @@ export class VoiceSession {
   private state: VoicePipelineState = "idle";
   private audioChunks: string[] = [];
   private conversationHistory: ChatMessage[] = [];
+  private userLocation: string = "Unknown";
+  private userCountry: string = "Unknown";
+  private userIP: string = "Unknown";
+  private isFirstInteraction: boolean = true;
   private config: SessionConfig = { language: "tr", speed: 1.0 };
   private abortController: AbortController | null = null;
   private send: (msg: ServerMessage) => void;
@@ -71,7 +78,7 @@ export class VoiceSession {
   private timeUpTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Problem reference for solution comparison
-  private currentProblem: { optimalSolution?: string; timeComplexity?: string; spaceComplexity?: string } | null = null;
+  private currentProblem: { title?: string; slug?: string; optimalSolution?: string; timeComplexity?: string; spaceComplexity?: string } | null = null;
 
   constructor(send: (msg: ServerMessage) => void) {
     this.send = send;
@@ -80,7 +87,7 @@ export class VoiceSession {
   /**
    * Initialize with interview data — loads config, prompt, and history from Convex.
    */
-  async init(interviewId: string): Promise<void> {
+  async init(interviewId: string, problemId?: string): Promise<void> {
     if (this.initialized) return;
 
     try {
@@ -157,18 +164,30 @@ export class VoiceSession {
         }
       }
 
-      // For live-coding and practice interviews, load a random problem
+      // For live-coding and practice interviews, load a specific or random problem
       if (this.interview.type === "live-coding" || this.interview.type === "practice") {
-        console.log(`Loading problem for ${this.interview.type}, difficulty: ${this.interview.difficulty}`);
+        console.log(`Loading problem for ${this.interview.type}, difficulty: ${this.interview.difficulty}, problemId: ${problemId || 'random'}`);
         try {
-          const problem = await convex.query(api.problems.getRandom, {
-            difficulty: this.interview.difficulty as any,
-          });
-          console.log("Problem loaded:", problem?._id);
+          let problem;
+          if (problemId) {
+            // Load specific problem by ID
+            problem = await convex.query(api.problems.getById, {
+              id: problemId as any,
+            });
+            console.log("Specific problem loaded:", problem?._id);
+          } else {
+            // Load random problem by difficulty
+            problem = await convex.query(api.problems.getRandom, {
+              difficulty: this.interview.difficulty as any,
+            });
+            console.log("Random problem loaded:", problem?._id);
+          }
           if (problem) {
             this.send({ type: "problem_loaded", problem: problem as any });
             // Store problem info for solution comparison
             this.currentProblem = {
+              title: problem.title,
+              slug: problem.slug || problem.title.toLowerCase().replace(/\s+/g, '-'),
               optimalSolution: problem.optimalSolution ?? undefined,
               timeComplexity: problem.timeComplexity ?? undefined,
               spaceComplexity: problem.spaceComplexity ?? undefined,
@@ -289,6 +308,46 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
       case "start_listening":
         this.audioChunks = [];
         this.setState("listening");
+
+        // İlk mikrofon açıldığında intro sesini çal (live-coding ve practice için)
+        console.log(`[start_listening] isFirstInteraction: ${this.isFirstInteraction}, type: ${this.interview.type}`);
+        if (this.isFirstInteraction && (this.interview.type === "live-coding" || this.interview.type === "practice")) {
+          console.log("[start_listening] Playing pre-generated intro audio...");
+          this.isFirstInteraction = false;
+
+          // Check if problem is loaded
+          if (this.currentProblem?.slug) {
+            const problemSlug = this.currentProblem.slug;
+            console.log("[start_listening] Using problem slug:", problemSlug);
+
+            const introText = getProblemIntro(problemSlug);
+            console.log("[start_listening] Intro text:", introText.substring(0, 100) + "...");
+
+            // Send the intro text to the client immediately
+            this.send({ type: "ai_text", text: introText });
+
+            // Generate TTS audio
+            this.generateIntroAudio(introText);
+          } else {
+            // If problem not loaded yet, wait a bit and retry
+            console.log("[start_listening] Problem not loaded yet, waiting...");
+            setTimeout(() => {
+              if (this.currentProblem?.slug) {
+                const problemSlug = this.currentProblem.slug;
+                const introText = getProblemIntro(problemSlug);
+                this.send({ type: "ai_text", text: introText });
+                this.generateIntroAudio(introText);
+              } else {
+                // Fallback to LLM
+                this.conversationHistory.push({
+                  role: "user",
+                  content: "[SYSTEM: Kullanıcı hazır, problemi açıklamaya başla]",
+                });
+                this.processWithLLM();
+              }
+            }, 500); // Wait 500ms for problem to load
+          }
+        }
         break;
 
       case "audio_chunk":
@@ -883,8 +942,11 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
     text: string,
     signal: AbortSignal,
   ): Promise<void> {
+    // TTS için telaffuz optimizasyonu uygula (sadece Türkçe için)
+    const optimizedText = this.interview.language === "tr" ? optimizeForTTS(text) : text;
+
     // Split into sentences for lower latency
-    const sentences = text.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [text];
+    const sentences = optimizedText.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [optimizedText];
 
     for (const sentence of sentences) {
       if (signal.aborted) return;
@@ -922,6 +984,9 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
     text: string,
     signal: AbortSignal,
   ): Promise<void> {
+    // TTS için telaffuz optimizasyonu uygula (sadece Türkçe için)
+    const optimizedText = this.interview.language === "tr" ? optimizeForTTS(text) : text;
+
     const response = await fetch(
       `https://fal.run/${ENV.TTS_ENDPOINT}/audio/speech`,
       {
@@ -931,7 +996,7 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          input: text,
+          input: optimizedText,
           response_format: "pcm",
           speed: this.config.speed,
         }),
@@ -978,6 +1043,46 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
     if (this.timeUpTimer) {
       clearTimeout(this.timeUpTimer);
       this.timeUpTimer = null;
+    }
+  }
+
+  /**
+   * Generate and stream intro audio for problems
+   */
+  private async generateIntroAudio(text: string): Promise<void> {
+    try {
+      this.setState("speaking");
+
+      // Stream TTS audio
+      const stream = await fal.stream(ENV.TTS_ENDPOINT as any, {
+        input: { input: text, speed: this.config.speed },
+        path: "/stream",
+      });
+
+      for await (const event of stream as AsyncIterable<{
+        audio?: string;
+        done?: boolean;
+        error?: { message: string };
+      }>) {
+        if (event.audio) {
+          this.send({ type: "ai_audio", data: event.audio });
+        }
+        if (event.error) {
+          this.send({ type: "error", message: event.error.message });
+        }
+        if (event.done) {
+          this.setState("idle");
+        }
+      }
+    } catch (error) {
+      console.error("Error generating intro audio:", error);
+      this.setState("idle");
+      // Fallback to LLM if TTS fails
+      this.conversationHistory.push({
+        role: "user",
+        content: "[SYSTEM: Kullanıcı hazır, problemi açıklamaya başla]",
+      });
+      this.processWithLLM();
     }
   }
 }
