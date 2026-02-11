@@ -92,7 +92,11 @@ export function HistoryPage() {
               const statusInfo = statusLabels[interview.status] ?? { label: interview.status, variant: "default" as const };
               return (
                 <motion.div key={interview._id} variants={fadeUp}>
-                  <Link to={`/interview/${interview._id}`}>
+                  <Link to={
+                    interview.status === "completed" || interview.status === "evaluated"
+                      ? `/interview/${interview._id}/report`
+                      : `/interview/${interview._id}`
+                  }>
                     <Card hover className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div className="min-w-0">
@@ -115,6 +119,9 @@ export function HistoryPage() {
                           {interview.difficulty === "easy" ? "Kolay" : interview.difficulty === "medium" ? "Orta" : "Zor"}
                         </span>
                         <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+                        {(interview.status === "completed" || interview.status === "evaluated") && (
+                          <span className="text-xs text-amber">📊</span>
+                        )}
                       </div>
                     </Card>
                   </Link>

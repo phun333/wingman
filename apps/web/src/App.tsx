@@ -7,6 +7,8 @@ import { DashboardPage } from "@/pages/DashboardPage";
 import { NewInterviewPage } from "@/pages/NewInterviewPage";
 import { InterviewRoomPage } from "@/pages/InterviewRoomPage";
 import { HistoryPage } from "@/pages/HistoryPage";
+import { ReportPage } from "@/pages/ReportPage";
+import { ProgressPage } from "@/pages/ProgressPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -61,12 +63,21 @@ export function App() {
         <Route index element={<DashboardPage />} />
         <Route path="interview/new" element={<NewInterviewPage />} />
         <Route path="history" element={<HistoryPage />} />
+        <Route path="progress" element={<ProgressPage />} />
       </Route>
       <Route
         path="/interview/:id"
         element={
           <ProtectedRoute>
             <InterviewRoomPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/interview/:id/report"
+        element={
+          <ProtectedRoute>
+            <ReportPage />
           </ProtectedRoute>
         }
       />

@@ -212,8 +212,8 @@ export function DashboardPage() {
               const statusInfo = statusLabels[interview.status] ?? { label: interview.status, variant: "default" as const };
               return (
                 <Link key={interview._id} to={
-                  interview.status === "in-progress"
-                    ? `/interview/${interview._id}`
+                  interview.status === "completed" || interview.status === "evaluated"
+                    ? `/interview/${interview._id}/report`
                     : `/interview/${interview._id}`
                 }>
                   <Card hover className="flex items-center justify-between">

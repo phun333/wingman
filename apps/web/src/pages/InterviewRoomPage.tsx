@@ -213,8 +213,11 @@ export function InterviewRoomPage() {
       } catch {
         // Interview may already be completed
       }
+      // Navigate to report page instead of dashboard
+      navigate(`/interview/${id}/report`);
+    } else {
+      navigate("/");
     }
-    navigate("/");
   }, [id, navigate]);
 
   // ─── Mic click ───────────────────────────────────────
