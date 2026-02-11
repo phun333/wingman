@@ -4,35 +4,37 @@ import { motion } from "motion/react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { createInterview, startInterview } from "@/lib/api";
+import { Code2, Waypoints, Phone, Dumbbell } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { InterviewType, Difficulty } from "@ffh/types";
 
 const types: {
   id: InterviewType;
-  icon: string;
+  icon: LucideIcon;
   title: string;
   desc: string;
 }[] = [
   {
     id: "live-coding",
-    icon: "⌨",
+    icon: Code2,
     title: "Live Coding",
     desc: "Algoritmik problemleri gerçek zamanlı çöz",
   },
   {
     id: "system-design",
-    icon: "◎",
+    icon: Waypoints,
     title: "System Design",
     desc: "Büyük ölçekli sistemler tasarla",
   },
   {
     id: "phone-screen",
-    icon: "☎",
+    icon: Phone,
     title: "Phone Screen",
     desc: "Teknik telefon mülakatı simülasyonu",
   },
   {
     id: "practice",
-    icon: "◈",
+    icon: Dumbbell,
     title: "Practice",
     desc: "Serbest pratik, stressiz ortam",
   },
@@ -109,35 +111,40 @@ export function NewInterviewPage() {
           Mülakat Türü
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {types.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setSelectedType(t.id)}
-              className={`
-                text-left rounded-xl border p-4 transition-all duration-150 cursor-pointer
-                ${
-                  selectedType === t.id
-                    ? "border-amber bg-amber/5 glow-amber-sm"
-                    : "border-border-subtle bg-surface hover:border-border"
-                }
-              `}
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-xl" aria-hidden="true">
-                  {t.icon}
-                </span>
-                <div>
-                  <p className="font-display font-semibold text-text">
-                    {t.title}
-                  </p>
-                  <p className="text-xs text-text-secondary mt-0.5">
-                    {t.desc}
-                  </p>
+          {types.map((t) => {
+            const IconComponent = t.icon;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setSelectedType(t.id)}
+                className={`
+                  text-left rounded-xl border p-4 transition-all duration-150 cursor-pointer
+                  ${
+                    selectedType === t.id
+                      ? "border-amber bg-amber/5 glow-amber-sm"
+                      : "border-border-subtle bg-surface hover:border-border"
+                  }
+                `}
+              >
+                <div className="flex items-center gap-3">
+                  <IconComponent
+                    size={20}
+                    strokeWidth={1.8}
+                    className={selectedType === t.id ? "text-amber" : "text-text-secondary"}
+                  />
+                  <div>
+                    <p className="font-display font-semibold text-text">
+                      {t.title}
+                    </p>
+                    <p className="text-xs text-text-secondary mt-0.5">
+                      {t.desc}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </div>
       </motion.div>
 
