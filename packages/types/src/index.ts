@@ -115,7 +115,8 @@ export type ClientMessage =
   | { type: "interrupt" }
   | { type: "config"; language?: string; speed?: number }
   | { type: "code_update"; code: string; language: CodeLanguage }
-  | { type: "code_result"; results: TestResult[]; stdout: string; stderr: string; error?: string };
+  | { type: "code_result"; results: TestResult[]; stdout: string; stderr: string; error?: string }
+  | { type: "hint_request" };
 
 /** Server → Client */
 export type ServerMessage =
@@ -125,4 +126,5 @@ export type ServerMessage =
   | { type: "ai_audio_done" }
   | { type: "state_change"; state: VoicePipelineState }
   | { type: "error"; message: string }
-  | { type: "problem_loaded"; problem: Problem };
+  | { type: "problem_loaded"; problem: Problem }
+  | { type: "hint_given"; level: number; totalHints: number };

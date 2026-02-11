@@ -56,6 +56,8 @@ export function InterviewRoomPage() {
   const codeUpdateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isLiveCoding = interview?.type === "live-coding";
+  const isPractice = interview?.type === "practice";
+  const showCodeEditor = isLiveCoding || isPractice;
 
   // Load interview data
   useEffect(() => {
@@ -63,8 +65,8 @@ export function InterviewRoomPage() {
     getInterview(id)
       .then((iv) => {
         setInterview(iv);
-        // If live-coding but no problem loaded via WS, fetch one
-        if (iv.type === "live-coding") {
+        // If live-coding or practice, prepare to load a problem
+        if (iv.type === "live-coding" || iv.type === "practice") {
           setProblemLoading(true);
         }
       })
@@ -93,15 +95,18 @@ export function InterviewRoomPage() {
     aiText,
     error,
     connected,
+    hintLevel,
+    totalHints,
     toggleMic,
     interrupt,
     sendCodeUpdate,
     sendCodeResult,
+    requestHint,
   } = useVoice({ interviewId: id, onProblemLoaded: handleProblemLoaded });
 
   // Fallback: if problem not loaded via WS after 5 seconds, fetch from API
   useEffect(() => {
-    if (!isLiveCoding || problem) return;
+    if (!showCodeEditor || problem) return;
 
     const timeout = setTimeout(async () => {
       if (!problem && interview) {
@@ -115,7 +120,7 @@ export function InterviewRoomPage() {
     }, 5000);
 
     return () => clearTimeout(timeout);
-  }, [isLiveCoding, problem, interview, handleProblemLoaded]);
+  }, [showCodeEditor, problem, interview, handleProblemLoaded]);
 
   // Timer
   const [elapsed, setElapsed] = useState(0);
@@ -237,9 +242,9 @@ export function InterviewRoomPage() {
     );
   }
 
-  // ─── Voice-only mode (non-live-coding) ───────────────
+  // ─── Voice-only mode (non-code interviews) ───────────
 
-  if (!isLiveCoding) {
+  if (!showCodeEditor) {
     return <VoiceOnlyRoom
       interview={interview}
       state={state}
@@ -294,9 +299,17 @@ export function InterviewRoomPage() {
             ))}
           </select>
 
-          <span className="text-sm font-mono text-text-muted tabular-nums">
-            {formatTime(elapsed)}
-          </span>
+          {/* Practice mode: softer timer, no pressure */}
+          {!isPractice && (
+            <span className="text-sm font-mono text-text-muted tabular-nums">
+              {formatTime(elapsed)}
+            </span>
+          )}
+          {isPractice && (
+            <span className="text-xs text-text-muted/50 font-mono tabular-nums" title="Süre sınırı yok — rahatça çalış">
+              ☕ {formatTime(elapsed)}
+            </span>
+          )}
           <Button variant="danger" size="sm" onClick={handleEnd}>
             Bitir
           </Button>
@@ -356,6 +369,10 @@ export function InterviewRoomPage() {
         aiText={aiText}
         error={error}
         onMicClick={handleMicClick}
+        showHint={isPractice}
+        onHintRequest={requestHint}
+        hintLevel={hintLevel}
+        totalHints={totalHints}
       />
     </div>
   );

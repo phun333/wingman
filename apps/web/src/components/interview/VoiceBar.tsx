@@ -17,6 +17,11 @@ interface VoiceBarProps {
   aiText: string;
   error: string | null;
   onMicClick: () => void;
+  /** Practice mode: show hint button */
+  showHint?: boolean;
+  onHintRequest?: () => void;
+  hintLevel?: number;
+  totalHints?: number;
 }
 
 export function VoiceBar({
@@ -28,6 +33,10 @@ export function VoiceBar({
   aiText,
   error,
   onMicClick,
+  showHint,
+  onHintRequest,
+  hintLevel = 0,
+  totalHints = 0,
 }: VoiceBarProps) {
   return (
     <div className="border-t border-border-subtle bg-surface/80 backdrop-blur-sm px-4 py-3">
@@ -70,6 +79,32 @@ export function VoiceBar({
             </span>
           </button>
         </div>
+
+        {/* Hint button (practice mode) */}
+        {showHint && (
+          <div className="flex-shrink-0">
+            <button
+              onClick={onHintRequest}
+              disabled={!connected || state === "processing" || state === "speaking"}
+              className={`
+                relative h-10 px-3 rounded-full flex items-center justify-center gap-1.5
+                border-2 transition-all duration-200 cursor-pointer
+                disabled:opacity-40 disabled:cursor-not-allowed
+                border-amber/40 bg-amber/10 text-amber hover:bg-amber/20 hover:border-amber/60
+              `}
+              aria-label="İpucu iste"
+              title={`İpucu iste (${totalHints} kullanıldı)`}
+            >
+              <span className="text-base" aria-hidden="true">💡</span>
+              <span className="text-xs font-medium">İpucu</span>
+              {totalHints > 0 && (
+                <span className="text-[10px] bg-amber/20 text-amber px-1.5 py-0.5 rounded-full font-mono">
+                  {totalHints}
+                </span>
+              )}
+            </button>
+          </div>
+        )}
 
         {/* Status */}
         <div className="flex items-center gap-2 min-w-0">
