@@ -310,5 +310,85 @@ export async function generateReport(interviewId: string): Promise<string> {
     // non-fatal — interview might already be in a different state
   }
 
+  // 7. Update user memory with cumulative data (Faz 6)
+  try {
+    await updateUserMemory(interview.userId, report);
+  } catch {
+    // non-fatal
+  }
+
   return result!._id;
+}
+
+// ─── Update User Memory after report ─────────────────────
+
+async function updateUserMemory(
+  userId: string,
+  report: LLMReportOutput,
+): Promise<void> {
+  // Get existing memory
+  const existingMemory = await convex.query(api.userMemory.getAllByUser, {
+    userId: userId as any,
+  });
+
+  const getEntry = (key: string): string | null => {
+    const entry = existingMemory.find((e) => e.key === key);
+    return entry?.value ?? null;
+  };
+
+  // Update weak topics
+  const existingWeak: string[] = (() => {
+    try {
+      return JSON.parse(getEntry("weak_topics") ?? "[]");
+    } catch {
+      return [];
+    }
+  })();
+  const newWeak = [...new Set([...existingWeak, ...report.weaknesses])].slice(0, 10);
+  await convex.mutation(api.userMemory.upsert, {
+    userId: userId as any,
+    key: "weak_topics",
+    value: JSON.stringify(newWeak),
+  });
+
+  // Update strong topics
+  const existingStrong: string[] = (() => {
+    try {
+      return JSON.parse(getEntry("strong_topics") ?? "[]");
+    } catch {
+      return [];
+    }
+  })();
+  const newStrong = [...new Set([...existingStrong, ...report.strengths])].slice(0, 10);
+  await convex.mutation(api.userMemory.upsert, {
+    userId: userId as any,
+    key: "strong_topics",
+    value: JSON.stringify(newStrong),
+  });
+
+  // Update average score (running average)
+  const existingAvg = Number(getEntry("avg_score") ?? "0");
+  const existingTotal = Number(getEntry("total_interviews") ?? "0");
+  const newTotal = existingTotal + 1;
+  const newAvg = Math.round(
+    (existingAvg * existingTotal + report.overallScore) / newTotal,
+  );
+  await convex.mutation(api.userMemory.upsert, {
+    userId: userId as any,
+    key: "avg_score",
+    value: JSON.stringify(newAvg),
+  });
+  await convex.mutation(api.userMemory.upsert, {
+    userId: userId as any,
+    key: "total_interviews",
+    value: JSON.stringify(newTotal),
+  });
+
+  // Update improvement notes
+  const note = `Mülakat #${newTotal}: Skor ${report.overallScore}/100, ${report.hireRecommendation}`;
+  await convex.mutation(api.userMemory.upsert, {
+    userId: userId as any,
+    key: "improvement_notes",
+    value: JSON.stringify(note),
+  });
 }
