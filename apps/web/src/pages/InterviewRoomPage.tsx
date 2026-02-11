@@ -15,6 +15,7 @@ import { ProblemPanel } from "@/components/interview/ProblemPanel";
 import { CodeEditor } from "@/components/interview/CodeEditor";
 import { TestResultsPanel } from "@/components/interview/TestResultsPanel";
 import { VoiceBar } from "@/components/interview/VoiceBar";
+import { VoiceAssistant } from "@/components/interview/VoiceAssistant";
 import { ResizableSplitter } from "@/components/interview/ResizableSplitter";
 import { SolutionComparisonPanel } from "@/components/interview/SolutionComparisonPanel";
 import { SystemDesignRoom } from "@/components/interview/SystemDesignRoom";
@@ -70,7 +71,17 @@ export function InterviewRoomPage() {
         setInterview(iv);
         // If live-coding or practice, prepare to load a problem
         if (iv.type === "live-coding" || iv.type === "practice") {
-          setProblemLoading(true);
+          // Only set loading if we don't have a problem yet
+          setProblem((currentProblem) => {
+            if (!currentProblem) {
+              setProblemLoading(true);
+            }
+            return currentProblem;
+          });
+          // Set code language from interview if available
+          if (iv.codeLanguage) {
+            setCodeLanguage(iv.codeLanguage);
+          }
         }
       })
       .catch((err) => {
@@ -81,14 +92,21 @@ export function InterviewRoomPage() {
   // Handle problem loaded from WebSocket or fetch fallback
   const handleProblemLoaded = useCallback(
     (p: Problem) => {
+      console.log("handleProblemLoaded called with:", p);
       setProblem(p);
       setProblemLoading(false);
-      // Load starter code
-      const starter = p.starterCode?.[codeLanguage] ?? "";
-      setCode(starter);
     },
-    [codeLanguage],
+    [],
   );
+
+  // Update code when problem or language changes
+  useEffect(() => {
+    if (problem && codeLanguage) {
+      const starter = problem.starterCode?.[codeLanguage] ?? "";
+      console.log("Updating starter code for", codeLanguage, ":", starter);
+      setCode(starter);
+    }
+  }, [problem, codeLanguage]);
 
   const {
     state,
@@ -131,6 +149,12 @@ export function InterviewRoomPage() {
 
     return () => clearTimeout(timeout);
   }, [showCodeEditor, problem, interview, handleProblemLoaded]);
+
+  // Debug: Log problem state changes
+  useEffect(() => {
+    console.log("Problem state updated:", problem);
+    console.log("ProblemLoading state:", problemLoading);
+  }, [problem, problemLoading]);
 
   // Timer
   const [elapsed, setElapsed] = useState(0);
@@ -543,63 +567,14 @@ function VoiceOnlyRoom({
 
       {/* Main area */}
       <div className="flex-1 flex flex-col items-center justify-center relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none">
-          <div
-            className={`
-              absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-              rounded-full blur-[150px] transition-all duration-1000
-              ${state === "speaking" ? "h-[600px] w-[600px] bg-info/8" : ""}
-              ${state === "listening" ? "h-[500px] w-[500px] bg-success/6" : ""}
-              ${state === "processing" ? "h-[550px] w-[550px] bg-amber/6" : ""}
-              ${state === "idle" ? "h-[400px] w-[400px] bg-surface-raised/50" : ""}
-            `}
-          />
-        </div>
-
-        <motion.div
-          animate={
-            state === "speaking"
-              ? { scale: [1, 1.08, 1] }
-              : state === "processing"
-                ? { scale: [1, 1.04, 1] }
-                : { scale: orbScale }
-          }
-          transition={
-            state === "speaking"
-              ? { duration: 1.2, repeat: Infinity, ease: "easeInOut" }
-              : state === "processing"
-                ? { duration: 2, repeat: Infinity, ease: "easeInOut" }
-                : { duration: 0.1 }
-          }
-          className="relative z-10"
-        >
-          <div
-            className={`
-              h-32 w-32 rounded-full border-2 flex items-center justify-center
-              transition-all duration-500
-              ${state === "idle" ? "border-border bg-surface-raised" : ""}
-              ${state === "listening" ? "border-success/40 bg-success/5 shadow-[0_0_40px_rgba(34,197,94,0.15)]" : ""}
-              ${state === "processing" ? "border-amber/40 bg-amber/5 glow-amber" : ""}
-              ${state === "speaking" ? "border-info/40 bg-info/5 shadow-[0_0_40px_rgba(59,130,246,0.2)]" : ""}
-            `}
-          >
-            <span className="font-display text-5xl font-bold text-amber/80">F</span>
-          </div>
-        </motion.div>
-
-        <div className="relative z-10 mt-6 flex items-center gap-2">
-          <span
-            className={`h-2 w-2 rounded-full
-              ${state === "idle" ? "bg-text-muted" : ""}
-              ${state === "listening" ? "bg-success animate-pulse" : ""}
-              ${state === "processing" ? "bg-amber animate-pulse" : ""}
-              ${state === "speaking" ? "bg-info animate-pulse" : ""}
-            `}
-          />
-          <span className="text-sm text-text-secondary">
-            {stateLabels[state]}
-          </span>
-        </div>
+        {/* Voice Assistant */}
+        <VoiceAssistant
+          isListening={state === "listening"}
+          isSpeaking={state === "speaking"}
+          audioLevel={volume}
+          onStart={onMicClick}
+          onStop={onMicClick}
+        />
 
         {timeWarning && (
           <motion.div
