@@ -5,18 +5,16 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { User, FileText, Briefcase, Brain } from "lucide-react";
+import { Link } from "react-router-dom";
 import {
   getProfile,
   updateProfile,
   uploadResumeFile,
   uploadResumeText,
   deleteResume,
-  parseJobPosting,
-  listJobPostings,
-  deleteJobPosting,
   type ProfileData,
 } from "@/lib/api";
-import type { JobPosting, Resume } from "@ffh/types";
+
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
@@ -42,13 +40,6 @@ export function SettingsPage() {
   const [resumeText, setResumeText] = useState("");
   const [uploadingResume, setUploadingResume] = useState(false);
   const [resumeError, setResumeError] = useState<string | null>(null);
-
-  // Job Posting
-  const [jobUrl, setJobUrl] = useState("");
-  const [jobRawText, setJobRawText] = useState("");
-  const [parsingJob, setParsingJob] = useState(false);
-  const [jobError, setJobError] = useState<string | null>(null);
-  const [useManualJobText, setUseManualJobText] = useState(false);
 
   const loadProfile = useCallback(async () => {
     try {
@@ -140,37 +131,6 @@ export function SettingsPage() {
     }
   }
 
-  // ─── Job Posting Parse ─────────────────────────────────
-
-  async function handleParseJob() {
-    if (!jobUrl && !jobRawText) return;
-
-    setParsingJob(true);
-    setJobError(null);
-    try {
-      await parseJobPosting({
-        url: jobUrl || undefined,
-        rawText: useManualJobText ? jobRawText || undefined : undefined,
-      });
-      setJobUrl("");
-      setJobRawText("");
-      await loadProfile();
-    } catch (err) {
-      setJobError(err instanceof Error ? err.message : "Analiz başarısız");
-    } finally {
-      setParsingJob(false);
-    }
-  }
-
-  async function handleDeleteJob(id: string) {
-    try {
-      await deleteJobPosting(id);
-      await loadProfile();
-    } catch {
-      // ignore
-    }
-  }
-
   // ─── Memory ────────────────────────────────────────────
 
   function getMemoryValue(key: string): string | null {
@@ -250,7 +210,7 @@ export function SettingsPage() {
                   </span>
                 ))}
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
                 <Input
                   value={newInterest}
                   onChange={(e) => setNewInterest(e.target.value)}
@@ -262,7 +222,7 @@ export function SettingsPage() {
                     }
                   }}
                 />
-                <Button size="sm" variant="secondary" onClick={addInterest}>
+                <Button size="sm" variant="secondary" onClick={addInterest} className="!h-7 !px-2.5 !text-xs">
                   Ekle
                 </Button>
               </div>
@@ -373,102 +333,29 @@ export function SettingsPage() {
         </Card>
       </motion.div>
 
-      {/* ─── Job Postings Section ─── */}
+      {/* ─── Job Postings Link ─── */}
       <motion.div variants={fadeUp}>
         <Card>
-          <h2 className="font-display font-semibold text-text mb-4">
-            <Briefcase size={16} className="inline mr-1.5" /> İş İlanları
-          </h2>
-
-          {/* Existing jobs */}
-          {profile?.jobPostings && profile.jobPostings.length > 0 && (
-            <div className="space-y-2 mb-4">
-              {profile.jobPostings.map((job) => (
-                <div
-                  key={job._id}
-                  className="flex items-center justify-between rounded-lg border border-border-subtle bg-surface-raised px-3 py-2"
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-text truncate">
-                      {job.title}
-                      {job.company && (
-                        <span className="text-text-secondary ml-2">@ {job.company}</span>
-                      )}
-                    </p>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {job.level && <Badge variant="amber">{job.level}</Badge>}
-                      {job.skills.slice(0, 5).map((s) => (
-                        <Badge key={s} variant="default">{s}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteJob(job._id)}
-                    className="text-danger/60 hover:text-danger text-xs ml-3 cursor-pointer"
-                  >
-                    Sil
-                  </button>
-                </div>
-              ))}
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-display font-semibold text-text mb-1">
+                <Briefcase size={16} className="inline mr-1.5" /> İş İlanları
+              </h2>
+              <p className="text-sm text-text-secondary">
+                İş ilanlarını ve mülakat yol haritanı ayrı sayfadan yönet
+                {profile?.jobPostings && profile.jobPostings.length > 0 && (
+                  <span className="text-amber ml-1">
+                    ({profile.jobPostings.length} ilan kayıtlı)
+                  </span>
+                )}
+              </p>
             </div>
-          )}
-
-          {/* Add new */}
-          <div className="space-y-3">
-            {!useManualJobText ? (
-              <>
-                <div>
-                  <label className="block text-xs text-text-muted uppercase tracking-wider mb-1">
-                    İlan URL'si
-                  </label>
-                  <Input
-                    value={jobUrl}
-                    onChange={(e) => setJobUrl(e.target.value)}
-                    placeholder="https://linkedin.com/jobs/..."
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setUseManualJobText(true)}
-                  className="text-xs text-text-muted hover:text-amber transition-colors cursor-pointer"
-                >
-                  URL çalışmıyor mu? İlan metnini yapıştır →
-                </button>
-              </>
-            ) : (
-              <>
-                <div>
-                  <label className="block text-xs text-text-muted uppercase tracking-wider mb-1">
-                    İlan Metni
-                  </label>
-                  <textarea
-                    value={jobRawText}
-                    onChange={(e) => setJobRawText(e.target.value)}
-                    placeholder="İş ilanı metnini buraya yapıştırın..."
-                    rows={5}
-                    className="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-amber/50 transition-colors resize-none"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setUseManualJobText(false)}
-                  className="text-xs text-text-muted hover:text-amber transition-colors cursor-pointer"
-                >
-                  ← URL ile ekle
-                </button>
-              </>
-            )}
-            <Button
-              size="sm"
-              onClick={handleParseJob}
-              disabled={parsingJob || (!jobUrl && !jobRawText)}
+            <Link
+              to="/jobs"
+              className="inline-flex items-center gap-2 rounded-lg bg-amber/10 border border-amber/20 px-4 py-2 text-sm font-medium text-amber hover:bg-amber/15 transition-colors"
             >
-              {parsingJob ? "Analiz ediliyor…" : "İlanı Analiz Et"}
-            </Button>
-            {jobError && (
-              <p className="text-sm text-danger">{jobError}</p>
-            )}
+              İlanlara Git →
+            </Link>
           </div>
         </Card>
       </motion.div>

@@ -44,46 +44,24 @@ jobRoutes.post(
 
     let content = rawText ?? "";
 
-    // If URL provided, fetch and extract text
+    // If URL provided, fetch and extract text using Jina Reader API
     if (url && !rawText) {
       try {
-        const res = await fetch(url, {
-          headers: {
-            "User-Agent":
-              "Mozilla/5.0 (compatible; WingmanBot/1.0)",
-            Accept: "text/html,application/xhtml+xml,*/*",
-          },
-          signal: AbortSignal.timeout(10_000),
-        });
-
-        if (!res.ok) {
+        // Try Jina Reader first — free, no API key, handles JS-rendered pages (LinkedIn etc.)
+        content = await scrapeWithJinaReader(url);
+      } catch (jinaErr) {
+        console.warn("Jina Reader failed, falling back to basic fetch:", jinaErr);
+        // Fallback: basic fetch + HTML stripping
+        try {
+          content = await scrapeWithBasicFetch(url);
+        } catch (fetchErr) {
           return c.json(
-            { error: `URL fetch failed: ${res.status}` },
+            {
+              error: `URL'den içerik alınamadı: ${fetchErr instanceof Error ? fetchErr.message : "unknown"}`,
+            },
             400,
           );
         }
-
-        const html = await res.text();
-        // Basic HTML → text extraction
-        content = html
-          .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
-          .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
-          .replace(/<[^>]+>/g, " ")
-          .replace(/&nbsp;/gi, " ")
-          .replace(/&amp;/gi, "&")
-          .replace(/&lt;/gi, "<")
-          .replace(/&gt;/gi, ">")
-          .replace(/&#\d+;/g, "")
-          .replace(/\s+/g, " ")
-          .trim()
-          .slice(0, 15_000); // LLM context limit
-      } catch (err) {
-        return c.json(
-          {
-            error: `URL fetch error: ${err instanceof Error ? err.message : "unknown"}`,
-          },
-          400,
-        );
       }
     }
 
@@ -286,6 +264,74 @@ jobRoutes.delete(
     }
   },
 );
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  URL Scraping — Jina Reader (primary) + Basic Fetch (fallback)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+/**
+ * Scrape URL using Jina Reader API (free, no API key needed).
+ * Converts any web page to clean markdown — handles JS-rendered pages,
+ * LinkedIn, Amazon, etc.
+ * Docs: https://r.jina.ai
+ */
+async function scrapeWithJinaReader(url: string): Promise<string> {
+  const jinaUrl = `https://r.jina.ai/${url}`;
+
+  const res = await fetch(jinaUrl, {
+    method: "GET",
+    headers: {
+      Accept: "text/markdown",
+      "X-Return-Format": "markdown",
+      "X-No-Cache": "true",
+    },
+    signal: AbortSignal.timeout(30_000), // Jina renders JS, may take longer
+  });
+
+  if (!res.ok) {
+    throw new Error(`Jina Reader failed: ${res.status}`);
+  }
+
+  const markdown = await res.text();
+
+  if (!markdown || markdown.length < 50) {
+    throw new Error("Jina Reader returned empty/short content");
+  }
+
+  // Trim to LLM context limit
+  return markdown.slice(0, 15_000);
+}
+
+/**
+ * Fallback: basic fetch + HTML tag stripping.
+ */
+async function scrapeWithBasicFetch(url: string): Promise<string> {
+  const res = await fetch(url, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (compatible; WingmanBot/1.0)",
+      Accept: "text/html,application/xhtml+xml,*/*",
+    },
+    signal: AbortSignal.timeout(10_000),
+  });
+
+  if (!res.ok) {
+    throw new Error(`URL fetch failed: ${res.status}`);
+  }
+
+  const html = await res.text();
+  return html
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&#\d+;/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 15_000);
+}
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  LLM — Analyze job posting content
