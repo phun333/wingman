@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { api } from "./_generated/api";
 
 // ─── Create ──────────────────────────────────────────────
 
@@ -19,6 +20,13 @@ export const create = mutation({
       ...args,
       parsedAt: Date.now(),
     });
+
+    // Automatically create interview path for this job
+    await ctx.scheduler.runAfter(0, api.jobInterviewPaths.createForJob, {
+      userId: args.userId,
+      jobPostingId: id,
+    });
+
     return await ctx.db.get(id);
   },
 });

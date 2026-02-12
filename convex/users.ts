@@ -18,6 +18,24 @@ export const getById = query({
   },
 });
 
+export const getByAuthId = query({
+  args: { authId: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db.query("users")
+      .withIndex("by_auth_id", (q) => q.eq("authId", args.authId))
+      .first();
+  },
+});
+
+export const getByEmail = query({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db.query("users")
+      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .first();
+  },
+});
+
 export const me = query({
   args: {},
   handler: async (ctx) => {
@@ -29,16 +47,18 @@ export const create = mutation({
   args: {
     email: v.string(),
     name: v.string(),
+    authId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
     const id = await ctx.db.insert("users", {
       email: args.email,
       name: args.name,
+      authId: args.authId,
       createdAt: now,
       updatedAt: now,
     });
-    return await ctx.db.get(id);
+    return id;
   },
 });
 
@@ -47,6 +67,7 @@ export const update = mutation({
     id: v.id("users"),
     email: v.optional(v.string()),
     name: v.optional(v.string()),
+    authId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { id, ...fields } = args;

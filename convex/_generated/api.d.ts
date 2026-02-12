@@ -13,6 +13,7 @@ import type * as designProblems from "../designProblems.js";
 import type * as http from "../http.js";
 import type * as interviewResults from "../interviewResults.js";
 import type * as interviews from "../interviews.js";
+import type * as jobInterviewPaths from "../jobInterviewPaths.js";
 import type * as jobPostings from "../jobPostings.js";
 import type * as messages from "../messages.js";
 import type * as problems from "../problems.js";
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   interviewResults: typeof interviewResults;
   interviews: typeof interviews;
+  jobInterviewPaths: typeof jobInterviewPaths;
   jobPostings: typeof jobPostings;
   messages: typeof messages;
   problems: typeof problems;
