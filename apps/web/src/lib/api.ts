@@ -229,3 +229,33 @@ export async function updateProfile(params: {
     body: JSON.stringify(params),
   });
 }
+
+// ─── Job Interview Paths ────────────────────────────────
+
+export async function getJobPaths(): Promise<any[]> {
+  return request<any[]>("/jobs/paths");
+}
+
+export async function getJobPath(pathId: string): Promise<any> {
+  return request<any>(`/jobs/paths/${pathId}`);
+}
+
+export async function updateQuestionProgress(
+  pathId: string,
+  categoryIndex: number,
+  questionIndex: number,
+  data: {
+    completed: boolean;
+    interviewId?: string;
+    score?: number;
+  }
+): Promise<any> {
+  return request<any>(`/jobs/paths/${pathId}/progress`, {
+    method: "PUT",
+    body: JSON.stringify({
+      categoryIndex,
+      questionIndex,
+      ...data,
+    }),
+  });
+}

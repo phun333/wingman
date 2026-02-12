@@ -13,6 +13,7 @@
     "@ffh/env": "workspace:*",
     "@ffh/types": "workspace:*",
     "@monaco-editor/react": "^4.7.0",
+    "clsx": "^2.1.1",
     "diff": "^8.0.3",
     "lucide-react": "^0.563.0",
     "motion": "^12.12.2",
@@ -23,6 +24,7 @@
     "react-router-dom": "^7.6.1",
     "recharts": "^3.7.0",
     "remark-gfm": "^4.0.1",
+    "tailwind-merge": "^3.4.0",
     "tldraw": "^4.3.1"
   },
   "devDependencies": {
