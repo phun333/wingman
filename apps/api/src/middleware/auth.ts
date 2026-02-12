@@ -1,5 +1,7 @@
 import { createMiddleware } from "hono/factory";
 import { ENV } from "@ffh/env";
+import { convex } from "@ffh/db";
+import { api } from "../../../../convex/_generated/api";
 
 /**
  * Auth middleware — better-auth session cookie'sini doğrular.
@@ -36,16 +38,27 @@ export const authMiddleware = createMiddleware<{
       return c.json({ error: "Unauthorized — no user" }, 401);
     }
 
-    // better-auth convex plugin user ID'yi convexUserId olarak set ediyor olabilir
-    // yoksa user.id kullan
-    const userId = data.user.convexUserId ?? data.user.id;
+    // Better-auth user ID'si (authId)
+    const authId = data.user.id;
 
-    c.set("userId", userId);
-    c.set("userName", data.user.name);
-    c.set("userEmail", data.user.email);
+    // Convex'te user'ı bul veya oluştur
+    const convexUser = await convex.mutation(api.users.getOrCreateByAuthId, {
+      authId: authId,
+      email: data.user.email,
+      name: data.user.name,
+    });
+
+    if (!convexUser) {
+      return c.json({ error: "User not found in database" }, 401);
+    }
+
+    c.set("userId", convexUser._id);
+    c.set("userName", convexUser.name);
+    c.set("userEmail", convexUser.email);
 
     await next();
-  } catch {
+  } catch (error) {
+    console.error("Auth middleware error:", error);
     return c.json({ error: "Unauthorized — session check failed" }, 401);
   }
 });

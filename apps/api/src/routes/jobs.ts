@@ -141,6 +141,101 @@ jobRoutes.get(
   },
 );
 
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  GET /jobs/paths — List user's interview paths
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+jobRoutes.get(
+  "/paths",
+  describeRoute({
+    tags: ["Jobs"],
+    summary: "List user's job-specific interview paths",
+    responses: {
+      200: { description: "List of interview paths" },
+      401: { description: "Unauthorized" },
+    },
+  }),
+  async (c) => {
+    const userId = c.get("userId");
+    const paths = await convex.query(api.jobInterviewPaths.listByUser, {
+      userId: userId as any,
+    });
+    return c.json(paths);
+  },
+);
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  GET /jobs/paths/:id — Get specific path
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+jobRoutes.get(
+  "/paths/:id",
+  describeRoute({
+    tags: ["Jobs"],
+    summary: "Get specific interview path",
+    responses: {
+      200: { description: "Interview path details" },
+      404: { description: "Not found" },
+    },
+  }),
+  async (c) => {
+    const id = c.req.param("id");
+    try {
+      const path = await convex.query(api.jobInterviewPaths.getById, {
+        id: id as any,
+      });
+      if (!path) {
+        return c.json({ error: "Path not found" }, 404);
+      }
+      return c.json(path);
+    } catch {
+      return c.json({ error: "Path not found" }, 404);
+    }
+  },
+);
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  PUT /jobs/paths/:id/progress — Update question progress
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+jobRoutes.put(
+  "/paths/:id/progress",
+  describeRoute({
+    tags: ["Jobs"],
+    summary: "Update question completion progress",
+    responses: {
+      200: { description: "Progress updated" },
+      400: { description: "Invalid request" },
+    },
+  }),
+  validator(
+    "json",
+    z.object({
+      categoryIndex: z.number(),
+      questionIndex: z.number(),
+      completed: z.boolean(),
+      interviewId: z.string().optional(),
+      score: z.number().optional(),
+    }),
+  ),
+  async (c) => {
+    const pathId = c.req.param("id");
+    const body = c.req.valid("json");
+
+    try {
+      const updated = await convex.mutation(api.jobInterviewPaths.updateQuestionProgress, {
+        pathId: pathId as any,
+        ...body,
+      });
+      return c.json(updated);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Update failed";
+      return c.json({ error: message }, 400);
+    }
+  },
+);
+
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  GET /jobs/:id — Get by ID
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -171,7 +266,6 @@ jobRoutes.get(
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  DELETE /jobs/:id
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 jobRoutes.delete(
   "/:id",
   describeRoute({
