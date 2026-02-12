@@ -50,7 +50,7 @@ jobRoutes.post(
         const res = await fetch(url, {
           headers: {
             "User-Agent":
-              "Mozilla/5.0 (compatible; FreyaBot/1.0)",
+              "Mozilla/5.0 (compatible; WingmanBot/1.0)",
             Accept: "text/html,application/xhtml+xml,*/*",
           },
           signal: AbortSignal.timeout(10_000),
@@ -308,7 +308,7 @@ async function analyzeJobPosting(content: string): Promise<ParsedJob> {
         Authorization: `Bearer ${ENV.OPENROUTER_API_KEY}`,
         "Content-Type": "application/json",
         "HTTP-Referer": ENV.SITE_URL,
-        "X-Title": "Freya AI Interview",
+        "X-Title": "Wingman AI Interview",
       },
       body: JSON.stringify({
         model: ENV.OPENROUTER_MODEL,

@@ -164,7 +164,7 @@ async function callLLMForReport(
         Authorization: `Bearer ${ENV.OPENROUTER_API_KEY}`,
         "Content-Type": "application/json",
         "HTTP-Referer": ENV.SITE_URL,
-        "X-Title": "Freya AI Interview",
+        "X-Title": "Wingman AI Interview",
       },
       body: JSON.stringify({
         model: ENV.OPENROUTER_MODEL,

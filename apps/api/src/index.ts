@@ -29,7 +29,7 @@ app.get(
       info: {
         title: "FFH API",
         version: "0.1.0",
-        description: "Freya Fal Hackathon API",
+        description: "Wingman AI Interview API",
       },
       tags: [
         { name: "Users", description: "User management" },

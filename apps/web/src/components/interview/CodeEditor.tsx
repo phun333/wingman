@@ -21,7 +21,7 @@ export function CodeEditor({ language, value, onChange }: CodeEditorProps) {
     editorRef.current = editor;
 
     // Configure editor theme
-    monaco.editor.defineTheme("freya-dark", {
+    monaco.editor.defineTheme("wingman-dark", {
       base: "vs-dark",
       inherit: true,
       rules: [
@@ -50,7 +50,7 @@ export function CodeEditor({ language, value, onChange }: CodeEditorProps) {
       },
     });
 
-    monaco.editor.setTheme("freya-dark");
+    monaco.editor.setTheme("wingman-dark");
 
     // Focus editor
     editor.focus();
@@ -69,7 +69,7 @@ export function CodeEditor({ language, value, onChange }: CodeEditorProps) {
       value={value}
       onChange={handleChange}
       onMount={handleMount}
-      theme="freya-dark"
+      theme="wingman-dark"
       options={{
         fontFamily: "'JetBrains Mono', monospace",
         fontSize: 14,

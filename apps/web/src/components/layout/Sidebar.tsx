@@ -24,10 +24,10 @@ export function Sidebar() {
       {/* Brand */}
       <div className="flex items-center gap-3 px-6 h-16 border-b border-border-subtle">
         <div className="h-8 w-8 rounded-lg bg-amber/20 flex items-center justify-center glow-amber-sm">
-          <span className="text-amber font-display font-bold text-sm">F</span>
+          <span className="text-amber font-display font-bold text-sm">W</span>
         </div>
         <span className="font-display text-lg font-bold tracking-tight text-text">
-          Freya
+          Wingman
         </span>
       </div>
 
@@ -57,7 +57,7 @@ export function Sidebar() {
       {/* Footer */}
       <div className="px-4 py-4 border-t border-border-subtle">
         <p className="text-xs text-text-muted text-center">
-          Freya AI &middot; v0.1
+          Wingman AI &middot; v0.1
         </p>
       </div>
     </aside>

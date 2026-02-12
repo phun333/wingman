@@ -9,9 +9,9 @@ export function Topbar() {
       {/* Mobile brand */}
       <div className="flex items-center gap-3 lg:hidden">
         <div className="h-7 w-7 rounded-md bg-amber/20 flex items-center justify-center">
-          <span className="text-amber font-display font-bold text-xs">F</span>
+          <span className="text-amber font-display font-bold text-xs">W</span>
         </div>
-        <span className="font-display font-bold text-text">Freya</span>
+        <span className="font-display font-bold text-text">Wingman</span>
       </div>
 
       <div className="hidden lg:block" />

@@ -1,6 +1,6 @@
 /**
  * Teknik terimlerin Türkçe telaffuz rehberi
- * Bu rehber, Freya TTS'in İngilizce terimleri doğru telaffuz etmesi için kullanılır
+ * Bu rehber, TTS motorunun İngilizce terimleri doğru telaffuz etmesi için kullanılır
  */
 
 export const pronunciationGuide = {

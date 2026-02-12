@@ -53,7 +53,7 @@ describe("Health & Docs", () => {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 describe("Users CRUD", () => {
-  const email = `test-${Date.now()}@freya.ai`;
+  const email = `test-${Date.now()}@wingman.ai`;
   let userId: string;
 
   it("POST /api/users → create user", async () => {

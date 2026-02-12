@@ -278,7 +278,7 @@ apiRoutes.post(
         Authorization: `Bearer ${ENV.OPENROUTER_API_KEY}`,
         "Content-Type": "application/json",
         "HTTP-Referer": ENV.SITE_URL,
-        "X-Title": "Freya Fal Hackathon",
+        "X-Title": "Wingman AI Interview",
       },
       body: JSON.stringify({
         model: model || ENV.OPENROUTER_MODEL,

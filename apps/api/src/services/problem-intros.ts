@@ -63,7 +63,7 @@ export function getProblemIntro(problemSlug: string): string {
 }
 
 /**
- * Generate intro audio for a problem using Freya TTS
+ * Generate intro audio for a problem using fal.ai TTS
  */
 export async function generateIntroAudio(
   problemSlug: string,
@@ -72,7 +72,7 @@ export async function generateIntroAudio(
   const text = getProblemIntro(problemSlug);
 
   try {
-    // Use Freya TTS to generate audio
+    // Use fal.ai TTS to generate audio
     const result = await falClient.subscribe("freya-mypsdi253hbk/freya-tts", {
       input: {
         input: text,

@@ -283,7 +283,7 @@ export class VoiceSession {
 
     this.conversationHistory.push({
       role: "system",
-      content: `Sen Freya adında deneyimli bir teknik mülakatçısın. Türkçe konuşuyorsun. 
+      content: `Sen Wingman adında deneyimli bir teknik mülakatçısın. Türkçe konuşuyorsun. 
 Adayı profesyonel ama samimi bir şekilde karşıla. Sorularını net ve anlaşılır sor.
 Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2-3 cümleyi geçmesin.`,
     });
@@ -884,7 +884,7 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
           Authorization: `Bearer ${ENV.OPENROUTER_API_KEY}`,
           "Content-Type": "application/json",
           "HTTP-Referer": ENV.SITE_URL,
-          "X-Title": "Freya AI Interview",
+          "X-Title": "Wingman AI Interview",
         },
         body: JSON.stringify({
           model: ENV.OPENROUTER_MODEL,

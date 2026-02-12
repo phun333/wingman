@@ -2,7 +2,7 @@
 
 /**
  * Base64-encoded PCM16 verisini Float32Array'e çevirir.
- * Freya TTS streaming, 16-bit signed int, mono, 16kHz döner.
+ * fal.ai TTS streaming, 16-bit signed int, mono, 16kHz döner.
  */
 export function decodePCM16(base64: string): Float32Array {
   const binaryStr = atob(base64);

@@ -54,7 +54,7 @@ export function LoginPage() {
             <span className="text-amber">Platformu</span>
           </h1>
           <p className="mt-4 text-text-secondary max-w-sm mx-auto text-pretty">
-            Freya ile gerçekçi teknik mülakatlar yapın.
+            Wingman ile gerçekçi teknik mülakatlar yapın.
             Sesli AI mülakatçınız sizi bekliyor.
           </p>
         </motion.div>
@@ -82,9 +82,9 @@ export function LoginPage() {
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-3 mb-10">
             <div className="h-10 w-10 rounded-xl bg-amber/15 border border-amber/20 flex items-center justify-center glow-amber-sm">
-              <span className="font-display text-xl font-bold text-amber">F</span>
+              <span className="font-display text-xl font-bold text-amber">W</span>
             </div>
-            <span className="font-display text-2xl font-bold text-text">Freya</span>
+            <span className="font-display text-2xl font-bold text-text">Wingman</span>
           </div>
 
           <h2 className="font-display text-2xl font-bold text-text">

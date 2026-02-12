@@ -643,7 +643,7 @@ export function ReportPage() {
                             }`}
                           >
                             <p className="text-xs text-text-muted mb-1">
-                              {m.role === "user" ? "Sen" : "Freya"}
+                              {m.role === "user" ? "Sen" : "Wingman"}
                             </p>
                             <p className="leading-relaxed">{m.content}</p>
                           </div>

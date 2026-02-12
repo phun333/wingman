@@ -83,9 +83,9 @@ export function RegisterPage() {
         >
           <div className="lg:hidden flex items-center gap-3 mb-10">
             <div className="h-10 w-10 rounded-xl bg-amber/15 border border-amber/20 flex items-center justify-center glow-amber-sm">
-              <span className="font-display text-xl font-bold text-amber">F</span>
+              <span className="font-display text-xl font-bold text-amber">W</span>
             </div>
-            <span className="font-display text-2xl font-bold text-text">Freya</span>
+            <span className="font-display text-2xl font-bold text-text">Wingman</span>
           </div>
 
           <h2 className="font-display text-2xl font-bold text-text">
