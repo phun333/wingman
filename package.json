@@ -13,7 +13,7 @@
     "dev:convex": "bunx convex dev",
     "build": "bun run --filter '*' build",
     "test": "bun test",
-    "typecheck": "tsgo -p apps/api --noEmit && tsgo -p apps/web --noEmit",
+    "typecheck": "tsgo -p apps/api --noEmit && tsgo -p apps/web --noEmit && tsgo -p convex --noEmit && tsgo -p packages/db --noEmit && tsgo -p packages/env --noEmit && tsgo -p packages/types --noEmit",
     "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules"
   },
   "workspaces": [
