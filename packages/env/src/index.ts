@@ -42,4 +42,7 @@ export const ENV = {
   // OpenRouter
   OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY!,
   OPENROUTER_MODEL: process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash",
+
+  // Hyperbrowser
+  HYPERBROWSER_API_KEY: process.env.HYPERBROWSER_API_KEY || "",
 } as const;

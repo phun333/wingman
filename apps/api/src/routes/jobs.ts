@@ -5,6 +5,7 @@ import { convex } from "@ffh/db";
 import { api } from "../../../../convex/_generated/api";
 import { authMiddleware } from "../middleware/auth";
 import { ENV } from "@ffh/env";
+import Hyperbrowser from "@hyperbrowser/sdk";
 
 type AuthEnv = {
   Variables: { userId: string; userName: string; userEmail: string };
@@ -44,42 +45,67 @@ jobRoutes.post(
 
     let content = rawText ?? "";
 
-    // If URL provided, fetch and extract text using Jina Reader API
+    // Scrape strategies in order: Jina Reader → Hyperbrowser → Basic Fetch
+    const scrapers = [
+      { name: "Jina Reader", fn: () => scrapeWithJinaReader(url!) },
+      { name: "Hyperbrowser", fn: () => scrapeWithHyperbrowser(url!) },
+      { name: "Basic Fetch", fn: () => scrapeWithBasicFetch(url!) },
+    ];
+
     if (url && !rawText) {
-      try {
-        // Try Jina Reader first — free, no API key, handles JS-rendered pages (LinkedIn etc.)
-        content = await scrapeWithJinaReader(url);
-      } catch (jinaErr) {
-        console.warn("Jina Reader failed, falling back to basic fetch:", jinaErr);
-        // Fallback: basic fetch + HTML stripping
+      for (const scraper of scrapers) {
         try {
-          content = await scrapeWithBasicFetch(url);
-        } catch (fetchErr) {
-          return c.json(
-            {
-              error: `URL'den içerik alınamadı: ${fetchErr instanceof Error ? fetchErr.message : "unknown"}`,
-            },
-            400,
-          );
+          const scraped = await scraper.fn();
+          console.log(`[DEBUG] ${scraper.name} scraped content length:`, scraped.length);
+          console.log(`[DEBUG] ${scraper.name} first 2000 chars:`, scraped.slice(0, 2000));
+
+          // Skip junk content (Cloudflare block pages, error pages, etc.)
+          if (scraped.length < 50) {
+            console.warn(`[DEBUG] ${scraper.name}: content too short, trying next...`);
+            continue;
+          }
+
+          // Quick LLM analysis to see if content is usable
+          const testParsed = await analyzeJobPosting(scraped);
+          if (testParsed.title) {
+            console.log(`[DEBUG] ${scraper.name}: got valid title "${testParsed.title}", using this content`);
+            content = scraped;
+            break;
+          }
+
+          console.warn(`[DEBUG] ${scraper.name}: LLM returned no title, trying next scraper...`);
+          // Keep this content as fallback if nothing better comes
+          if (!content || scraped.length > content.length) {
+            content = scraped;
+          }
+        } catch (err) {
+          console.warn(`[DEBUG] ${scraper.name} failed:`, err);
         }
+      }
+
+      if (!content || content.length < 50) {
+        console.error("[DEBUG] All scrapers failed. Content length:", content.length);
+        return c.json(
+          { error: "URL'den içerik alınamadı. Lütfen ilan metnini manuel yapıştırın." },
+          400,
+        );
       }
     }
 
     if (!content || content.length < 50) {
-      return c.json(
-        { error: "İlan içeriği çok kısa veya okunamadı" },
-        400,
-      );
+      return c.json({ error: "İlan içeriği çok kısa veya okunamadı" }, 400);
     }
 
-    // LLM ile analiz
+    console.log("[DEBUG] Final content length sent to LLM:", content.length);
+
+    // LLM ile analiz (loop'ta zaten denenmiş olabilir, ama rawText için de gerekli)
     try {
       const parsed = await analyzeJobPosting(content);
 
       const job = await convex.mutation(api.jobPostings.create, {
         userId: userId as any,
         url: url ?? "",
-        title: parsed.title,
+        title: parsed.title || "Bilinmeyen Pozisyon",
         company: parsed.company,
         requirements: parsed.requirements,
         skills: parsed.skills,
@@ -303,6 +329,44 @@ async function scrapeWithJinaReader(url: string): Promise<string> {
 }
 
 /**
+ * Scrape URL using Patchright (patched Playwright) — bypasses Cloudflare & anti-bot.
+ * Launches a real headless Chromium, waits for page to load, extracts text.
+ */
+/**
+ * Scrape URL using Hyperbrowser — cloud browser with stealth & anti-bot bypass.
+ * No local browser needed, handles Cloudflare/JS-rendered pages.
+ */
+async function scrapeWithHyperbrowser(url: string): Promise<string> {
+  const apiKey = ENV.HYPERBROWSER_API_KEY;
+  if (!apiKey) throw new Error("HYPERBROWSER_API_KEY not set");
+
+  console.log("[DEBUG] Hyperbrowser: starting scrape for", url);
+  const client = new Hyperbrowser({ apiKey });
+
+  const result = await client.scrape.startAndWait({
+    url,
+    sessionOptions: {
+      useStealth: true,
+      acceptCookies: true,
+    },
+    scrapeOptions: {
+      formats: ["markdown"],
+      onlyMainContent: true,
+      waitFor: 3000,
+    },
+  });
+
+  const content = result.data?.markdown ?? "";
+  console.log("[DEBUG] Hyperbrowser: scraped content length:", content.length);
+
+  if (!content || content.length < 50) {
+    throw new Error("Hyperbrowser: page content too short");
+  }
+
+  return content.slice(0, 15_000);
+}
+
+/**
  * Fallback: basic fetch + HTML tag stripping.
  */
 async function scrapeWithBasicFetch(url: string): Promise<string> {
@@ -392,6 +456,7 @@ Yanıtını SADECE geçerli JSON olarak ver, başka hiçbir şey ekleme. Markdow
   };
 
   const raw = result.choices?.[0]?.message?.content;
+  console.log("[DEBUG] LLM raw response:", raw);
   if (!raw) throw new Error("LLM returned empty response");
 
   let cleaned = raw.trim();
@@ -400,10 +465,11 @@ Yanıtını SADECE geçerli JSON olarak ver, başka hiçbir şey ekleme. Markdow
   }
 
   const parsed = JSON.parse(cleaned) as ParsedJob;
+  console.log("[DEBUG] Parsed job result:", JSON.stringify(parsed, null, 2));
 
-  // Ensure defaults
-  return {
-    title: parsed.title || "Bilinmeyen Pozisyon",
+  // Ensure defaults (title intentionally kept as empty string so caller can detect failure)
+  const finalResult = {
+    title: parsed.title || "",
     company: parsed.company || undefined,
     requirements: Array.isArray(parsed.requirements)
       ? parsed.requirements
@@ -411,4 +477,7 @@ Yanıtını SADECE geçerli JSON olarak ver, başka hiçbir şey ekleme. Markdow
     skills: Array.isArray(parsed.skills) ? parsed.skills : [],
     level: parsed.level || undefined,
   };
+  console.log("[DEBUG] Final result:", JSON.stringify(finalResult, null, 2));
+
+  return finalResult;
 }
