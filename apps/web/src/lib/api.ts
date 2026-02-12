@@ -81,8 +81,24 @@ export async function startInterview(id: string): Promise<Interview> {
   return request<Interview>(`/interviews/${id}/start`, { method: "PATCH" });
 }
 
-export async function completeInterview(id: string): Promise<Interview> {
-  return request<Interview>(`/interviews/${id}/complete`, { method: "PATCH" });
+export async function completeInterview(
+  id: string,
+  data?: { finalCode?: string; codeLanguage?: string },
+): Promise<Interview> {
+  return request<Interview>(`/interviews/${id}/complete`, {
+    method: "PATCH",
+    body: JSON.stringify(data ?? {}),
+  });
+}
+
+export async function abandonInterview(
+  id: string,
+  data?: { finalCode?: string; codeLanguage?: string },
+): Promise<Interview> {
+  return request<Interview>(`/interviews/${id}/abandon`, {
+    method: "PATCH",
+    body: JSON.stringify(data ?? {}),
+  });
 }
 
 export async function getInterviewMessages(id: string): Promise<Message[]> {

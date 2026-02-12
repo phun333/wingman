@@ -26,6 +26,7 @@ export const statusLabels: Record<
   created: { label: "Oluşturuldu", variant: "default" },
   "in-progress": { label: "Devam Ediyor", variant: "amber" },
   completed: { label: "Tamamlandı", variant: "success" },
+  abandoned: { label: "Yarıda Bırakıldı", variant: "danger" },
   evaluated: { label: "Değerlendirildi", variant: "success" },
 };
 

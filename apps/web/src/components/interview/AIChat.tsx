@@ -22,7 +22,7 @@ interface AIChatProps {
   onMute?: () => void;
   onStop?: () => void;
   isMuted?: boolean;
-  interviewStatus?: "created" | "in-progress" | "completed" | "evaluated";
+  interviewStatus?: "created" | "in-progress" | "completed" | "abandoned" | "evaluated";
   onStartInterview?: () => void;
 }
 

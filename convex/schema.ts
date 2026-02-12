@@ -24,6 +24,7 @@ export default defineSchema({
       v.literal("created"),
       v.literal("in-progress"),
       v.literal("completed"),
+      v.literal("abandoned"),
       v.literal("evaluated"),
     ),
     difficulty: v.union(

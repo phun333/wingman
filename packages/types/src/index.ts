@@ -18,6 +18,7 @@ export type InterviewStatus =
   | "created"
   | "in-progress"
   | "completed"
+  | "abandoned"
   | "evaluated";
 
 export type Difficulty = "easy" | "medium" | "hard";

@@ -198,7 +198,7 @@ export function DashboardPage() {
               const diffInfo = difficultyLabels[interview.difficulty];
               return (
                 <Link key={interview._id} to={
-                  interview.status === "completed" || interview.status === "evaluated"
+                  interview.status === "completed" || interview.status === "evaluated" || interview.status === "abandoned"
                     ? `/interview/${interview._id}/report`
                     : `/interview/${interview._id}`
                 }>

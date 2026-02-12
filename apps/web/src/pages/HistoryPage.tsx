@@ -52,7 +52,7 @@ export function HistoryPage() {
               return (
                 <div key={interview._id}>
                   <Link to={
-                    interview.status === "completed" || interview.status === "evaluated"
+                    interview.status === "completed" || interview.status === "evaluated" || interview.status === "abandoned"
                       ? `/interview/${interview._id}/report`
                       : `/interview/${interview._id}`
                   }>
@@ -74,8 +74,8 @@ export function HistoryPage() {
                           </span>
                         )}
                         <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
-                        {(interview.status === "completed" || interview.status === "evaluated") && (
-                          <BarChart3 size={14} className="text-amber" />
+                        {(interview.status === "completed" || interview.status === "evaluated" || interview.status === "abandoned") && (
+                          <BarChart3 size={14} className={interview.status === "abandoned" ? "text-danger" : "text-amber"} />
                         )}
                       </div>
                     </Card>

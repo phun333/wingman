@@ -21,7 +21,7 @@ interface AIAssistantProps {
   hintLevel?: number;
   totalHints?: number;
   onRequestHint?: () => void;
-  interviewStatus?: "created" | "in-progress" | "completed" | "evaluated";
+  interviewStatus?: "created" | "in-progress" | "completed" | "abandoned" | "evaluated";
   onStartInterview?: () => void;
 }
 

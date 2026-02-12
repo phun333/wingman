@@ -213,9 +213,17 @@ interviewRoutes.patch(
       404: { description: "Not found" },
     },
   }),
+  validator(
+    "json",
+    z.object({
+      finalCode: z.string().optional(),
+      codeLanguage: z.string().optional(),
+    }).optional(),
+  ),
   async (c) => {
     const convexUser = await getConvexUser(c);
     const id = c.req.param("id");
+    const body = c.req.valid("json");
 
     try {
       const interview = await convex.query(api.interviews.getById, { id: id as any });
@@ -223,10 +231,60 @@ interviewRoutes.patch(
         return c.json({ error: "Forbidden" }, 403);
       }
 
-      const updated = await convex.mutation(api.interviews.complete, { id: id as any });
+      const updated = await convex.mutation(api.interviews.complete, {
+        id: id as any,
+        finalCode: body?.finalCode,
+        codeLanguage: body?.codeLanguage,
+      });
       return c.json(updated);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to complete";
+      return c.json({ error: msg }, 400);
+    }
+  },
+);
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  PATCH /interviews/:id/abandon — Abandon interview (early exit)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+interviewRoutes.patch(
+  "/:id/abandon",
+  describeRoute({
+    tags: ["Interviews"],
+    summary: "Abandon an interview — ended early without completing",
+    responses: {
+      200: { description: "Interview abandoned" },
+      401: { description: "Unauthorized" },
+      404: { description: "Not found" },
+    },
+  }),
+  validator(
+    "json",
+    z.object({
+      finalCode: z.string().optional(),
+      codeLanguage: z.string().optional(),
+    }).optional(),
+  ),
+  async (c) => {
+    const convexUser = await getConvexUser(c);
+    const id = c.req.param("id");
+    const body = c.req.valid("json");
+
+    try {
+      const interview = await convex.query(api.interviews.getById, { id: id as any });
+      if (interview.userId !== convexUser._id) {
+        return c.json({ error: "Forbidden" }, 403);
+      }
+
+      const updated = await convex.mutation(api.interviews.abandon, {
+        id: id as any,
+        finalCode: body?.finalCode,
+        codeLanguage: body?.codeLanguage,
+      });
+      return c.json(updated);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to abandon";
       return c.json({ error: msg }, 400);
     }
   },

@@ -287,14 +287,47 @@ export async function generateReport(interviewId: string): Promise<string> {
     metadata,
   );
 
-  // 5. Save to Convex
+  // 5. Save to Convex — convert null to undefined for optional fields
+  const sanitizedCategoryScores: Record<string, number | undefined> = {
+    problemSolving: report.categoryScores.problemSolving,
+    communication: report.categoryScores.communication,
+    analyticalThinking: report.categoryScores.analyticalThinking,
+  };
+  // Convex v.optional(v.number()) rejects null — only undefined or number allowed
+  if (report.categoryScores.codeQuality != null) {
+    sanitizedCategoryScores.codeQuality = report.categoryScores.codeQuality;
+  }
+  if (report.categoryScores.systemThinking != null) {
+    sanitizedCategoryScores.systemThinking = report.categoryScores.systemThinking;
+  }
+
+  // Sanitize codeAnalysis — ensure all required string fields are present
+  let sanitizedCodeAnalysis: {
+    timeComplexity: string;
+    spaceComplexity: string;
+    userSolution: string;
+    optimalSolution: string;
+    optimizationSuggestions: string[];
+  } | undefined;
+  if (report.codeAnalysis) {
+    sanitizedCodeAnalysis = {
+      timeComplexity: report.codeAnalysis.timeComplexity ?? "Bilinmiyor",
+      spaceComplexity: report.codeAnalysis.spaceComplexity ?? "Bilinmiyor",
+      userSolution: report.codeAnalysis.userSolution ?? "",
+      optimalSolution: report.codeAnalysis.optimalSolution ?? "",
+      optimizationSuggestions: Array.isArray(report.codeAnalysis.optimizationSuggestions)
+        ? report.codeAnalysis.optimizationSuggestions
+        : [],
+    };
+  }
+
   const result = await convex.mutation(api.interviewResults.create, {
     interviewId: interviewId as any,
     userId: interview.userId,
     overallScore: report.overallScore,
     hireRecommendation: report.hireRecommendation,
-    categoryScores: report.categoryScores,
-    codeAnalysis: report.codeAnalysis ?? undefined,
+    categoryScores: sanitizedCategoryScores as any,
+    codeAnalysis: sanitizedCodeAnalysis,
     strengths: report.strengths,
     weaknesses: report.weaknesses,
     summary: report.summary,

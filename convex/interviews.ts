@@ -63,17 +63,49 @@ export const start = mutation({
 // ─── Complete ────────────────────────────────────────────
 
 export const complete = mutation({
-  args: { id: v.id("interviews") },
+  args: {
+    id: v.id("interviews"),
+    finalCode: v.optional(v.string()),
+    codeLanguage: v.optional(v.string()),
+  },
   handler: async (ctx, args) => {
     const interview = await ctx.db.get(args.id);
     if (!interview) throw new Error("Interview not found");
     if (interview.status !== "in-progress") {
       throw new Error(`Cannot complete interview with status: ${interview.status}`);
     }
-    await ctx.db.patch(args.id, {
+    const patch: Record<string, any> = {
       status: "completed",
       endedAt: Date.now(),
-    });
+    };
+    if (args.finalCode !== undefined) patch.finalCode = args.finalCode;
+    if (args.codeLanguage !== undefined) patch.codeLanguage = args.codeLanguage;
+    await ctx.db.patch(args.id, patch);
+    return await ctx.db.get(args.id);
+  },
+});
+
+// ─── Abandon (ended early without completing) ────────────
+
+export const abandon = mutation({
+  args: {
+    id: v.id("interviews"),
+    finalCode: v.optional(v.string()),
+    codeLanguage: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const interview = await ctx.db.get(args.id);
+    if (!interview) throw new Error("Interview not found");
+    if (interview.status !== "in-progress" && interview.status !== "created") {
+      throw new Error(`Cannot abandon interview with status: ${interview.status}`);
+    }
+    const patch: Record<string, any> = {
+      status: "abandoned",
+      endedAt: Date.now(),
+    };
+    if (args.finalCode !== undefined) patch.finalCode = args.finalCode;
+    if (args.codeLanguage !== undefined) patch.codeLanguage = args.codeLanguage;
+    await ctx.db.patch(args.id, patch);
     return await ctx.db.get(args.id);
   },
 });

@@ -3,9 +3,9 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/Button";
 import { useVoice } from "@/lib/useVoice";
-import { getInterview, completeInterview, executeCode as executeCodeApi, getRandomProblem, getProblem, startInterview, getLeetcodeProblem } from "@/lib/api";
+import { getInterview, completeInterview, abandonInterview, executeCode as executeCodeApi, getRandomProblem, getProblem, startInterview, getLeetcodeProblem } from "@/lib/api";
 import { typeLabels } from "@/lib/constants";
-import { Mic, Hand, Coffee, Clock } from "lucide-react";
+import { Mic, Hand, Coffee, Clock, AlertTriangle, CheckCircle2, X } from "lucide-react";
 import type {
   VoicePipelineState,
   Interview,
@@ -49,6 +49,7 @@ export function InterviewRoomPage() {
   const [code, setCode] = useState("");
   const [executionResult, setExecutionResult] = useState<CodeExecutionResult | null>(null);
   const [executing, setExecuting] = useState(false);
+  const [showEndModal, setShowEndModal] = useState(false);
 
   // Debounced code update ref
   const codeUpdateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -278,11 +279,15 @@ export function InterviewRoomPage() {
 
   // ─── End interview ───────────────────────────────────
 
-  const handleEnd = useCallback(async () => {
+  const handleComplete = useCallback(async () => {
     if (timerRef.current) clearInterval(timerRef.current);
+    setShowEndModal(false);
     if (id) {
       try {
-        await completeInterview(id);
+        await completeInterview(id, {
+          finalCode: code || undefined,
+          codeLanguage: code ? codeLanguage : undefined,
+        });
       } catch {
         // Interview may already be completed
       }
@@ -290,7 +295,25 @@ export function InterviewRoomPage() {
     } else {
       navigate("/");
     }
-  }, [id, navigate]);
+  }, [id, navigate, code, codeLanguage]);
+
+  const handleAbandon = useCallback(async () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setShowEndModal(false);
+    if (id) {
+      try {
+        await abandonInterview(id, {
+          finalCode: code || undefined,
+          codeLanguage: code ? codeLanguage : undefined,
+        });
+      } catch {
+        // Interview may already be in a terminal state
+      }
+      navigate(`/interview/${id}/report`);
+    } else {
+      navigate("/");
+    }
+  }, [id, navigate, code, codeLanguage]);
 
   // ─── Start interview ─────────────────────────────────
 
@@ -338,26 +361,38 @@ export function InterviewRoomPage() {
   // ─── Voice-only mode (non-code interviews) ───────────
 
   if (!showCodeEditor) {
-    return <VoiceOnlyRoom
-      interview={interview}
-      state={state}
-      micActive={micActive}
-      volume={volume}
-      transcript={transcript}
-      aiText={aiText}
-      error={error}
-      connected={connected}
-      elapsed={elapsed}
-      formatTime={formatTime}
-      onMicClick={handleMicClick}
-      onEnd={handleEnd}
-      questionCurrent={questionCurrent}
-      questionTotal={questionTotal}
-      questionStartTime={questionStartTime}
-      recommendedSeconds={recommendedSeconds}
-      timeWarning={timeWarning}
-      onStartInterview={handleStartInterview}
-    />;
+    return (
+      <>
+        <VoiceOnlyRoom
+          interview={interview}
+          state={state}
+          micActive={micActive}
+          volume={volume}
+          transcript={transcript}
+          aiText={aiText}
+          error={error}
+          connected={connected}
+          elapsed={elapsed}
+          formatTime={formatTime}
+          onMicClick={handleMicClick}
+          onEnd={() => setShowEndModal(true)}
+          questionCurrent={questionCurrent}
+          questionTotal={questionTotal}
+          questionStartTime={questionStartTime}
+          recommendedSeconds={recommendedSeconds}
+          timeWarning={timeWarning}
+          onStartInterview={handleStartInterview}
+        />
+        <EndInterviewModal
+          open={showEndModal}
+          onClose={() => setShowEndModal(false)}
+          onComplete={handleComplete}
+          onAbandon={handleAbandon}
+          hasCode={false}
+          allTestsPassed={false}
+        />
+      </>
+    );
   }
 
   // ─── Live Coding layout ──────────────────────────────
@@ -407,7 +442,7 @@ export function InterviewRoomPage() {
               {formatTime(elapsed)}
             </span>
           )}
-          <Button variant="danger" size="sm" onClick={handleEnd}>
+          <Button variant="danger" size="sm" onClick={() => setShowEndModal(true)}>
             Bitir
           </Button>
         </div>
@@ -480,6 +515,16 @@ export function InterviewRoomPage() {
           onDismiss={dismissSolution}
         />
       )}
+
+      {/* End Interview Modal */}
+      <EndInterviewModal
+        open={showEndModal}
+        onClose={() => setShowEndModal(false)}
+        onComplete={handleComplete}
+        onAbandon={handleAbandon}
+        hasCode={!!code.trim()}
+        allTestsPassed={executionResult?.results?.length ? executionResult.results.every(r => r.passed) : false}
+      />
 
     </div>
   );
@@ -727,5 +772,130 @@ function VoiceOnlyRoom({
         </p>
       </div>
     </div>
+  );
+}
+
+// ─── End Interview Modal ─────────────────────────────────
+
+interface EndInterviewModalProps {
+  open: boolean;
+  onClose: () => void;
+  onComplete: () => void;
+  onAbandon: () => void;
+  hasCode: boolean;
+  allTestsPassed: boolean;
+}
+
+function EndInterviewModal({
+  open,
+  onClose,
+  onComplete,
+  onAbandon,
+  hasCode,
+  allTestsPassed,
+}: EndInterviewModalProps) {
+  if (!open) return null;
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+
+          {/* Modal */}
+          <motion.div
+            className="relative z-10 w-full max-w-md mx-4 bg-surface border border-border rounded-2xl shadow-2xl overflow-hidden"
+            initial={{ scale: 0.95, y: 20 }}
+            animate={{ scale: 1, y: 0 }}
+            exit={{ scale: 0.95, y: 20 }}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-5 border-b border-border-subtle">
+              <h2 className="font-display text-lg font-bold text-text">Mülakatı Sonlandır</h2>
+              <button
+                onClick={onClose}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text hover:bg-surface-raised transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-5 space-y-3">
+              {/* Complete option */}
+              <button
+                onClick={onComplete}
+                className={`
+                  w-full p-4 rounded-xl border-2 text-left transition-all duration-200
+                  ${allTestsPassed
+                    ? "border-success/40 bg-success/5 hover:bg-success/10 hover:border-success/60"
+                    : "border-border hover:border-success/40 hover:bg-success/5"
+                  }
+                `}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`
+                    w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0
+                    ${allTestsPassed ? "bg-success/20" : "bg-success/10"}
+                  `}>
+                    <CheckCircle2 size={20} className="text-success" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-text text-sm">Tamamla ve Değerlendir</h3>
+                    <p className="text-xs text-text-muted mt-1">
+                      {allTestsPassed
+                        ? "Tüm testler geçti! Çözümünü tamamlayıp rapor oluştur."
+                        : hasCode
+                        ? "Mevcut kodunla mülakatı tamamla ve rapor oluştur."
+                        : "Mülakatı tamamla ve performans raporu oluştur."
+                      }
+                    </p>
+                    {allTestsPassed && (
+                      <span className="inline-flex items-center gap-1 mt-2 text-[10px] text-success bg-success/10 px-2 py-0.5 rounded-full">
+                        <CheckCircle2 size={10} /> Tüm testler başarılı
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </button>
+
+              {/* Abandon option */}
+              <button
+                onClick={onAbandon}
+                className="w-full p-4 rounded-xl border-2 border-border text-left transition-all duration-200 hover:border-danger/40 hover:bg-danger/5"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-danger/10 flex items-center justify-center flex-shrink-0">
+                    <AlertTriangle size={20} className="text-danger" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-text text-sm">Yarıda Bırak</h3>
+                    <p className="text-xs text-text-muted mt-1">
+                      Mülakatı tamamlamadan çık. Rapor yine de oluşturulabilir ama "yarıda bırakıldı" olarak işaretlenir.
+                    </p>
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            {/* Footer */}
+            <div className="px-5 pb-5">
+              <button
+                onClick={onClose}
+                className="w-full py-2.5 rounded-lg text-sm text-text-muted hover:text-text hover:bg-surface-raised transition-colors"
+              >
+                Devam Et
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
