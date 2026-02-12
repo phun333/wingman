@@ -261,6 +261,97 @@ export interface UserMemoryEntry {
   updatedAt: number;
 }
 
+// ─── LeetCode Problem ────────────────────────────────────
+
+export interface LeetcodeProblem {
+  _id: string;
+  leetcodeId: number;
+  title: string;
+  description: string;
+  difficulty: Difficulty;
+  isPremium: boolean;
+  acceptanceRate: number;
+  frequency: number;
+  url: string;
+  solutionLink?: string;
+  discussCount: number;
+  accepted: string;
+  submissions: string;
+  companies: string[];
+  relatedTopics: string[];
+  likes: number;
+  dislikes: number;
+  rating: number;
+  askedByFaang: boolean;
+  similarQuestions?: string;
+  createdAt: number;
+}
+
+export interface LeetcodeListResult {
+  problems: LeetcodeProblem[];
+  total: number;
+}
+
+export interface CompanyStats {
+  name: string;
+  total: number;
+  easy: number;
+  medium: number;
+  hard: number;
+}
+
+export interface TopicStats {
+  name: string;
+  total: number;
+  easy: number;
+  medium: number;
+  hard: number;
+}
+
+export interface CompanyProblemsResult {
+  company: string;
+  problems: LeetcodeProblem[];
+  total: number;
+  stats: { easy: number; medium: number; hard: number };
+  topicBreakdown: { topic: string; count: number }[];
+}
+
+export interface StudyPathProblem {
+  leetcodeId: number;
+  leetcodeProblemId: string;
+  title: string;
+  difficulty: Difficulty;
+  url: string;
+  completed: boolean;
+  interviewId?: string;
+  score?: number;
+  completedAt?: number;
+}
+
+export interface StudyPathSection {
+  topic: string;
+  problems: StudyPathProblem[];
+}
+
+export interface CompanyStudyPath {
+  _id: string;
+  userId: string;
+  company: string;
+  title: string;
+  difficulty: "mixed" | Difficulty;
+  sections: StudyPathSection[];
+  totalProblems: number;
+  completedProblems: number;
+  progress: number;
+  stats: {
+    easy: { total: number; completed: number };
+    medium: { total: number; completed: number };
+    hard: { total: number; completed: number };
+  };
+  createdAt: number;
+  updatedAt: number;
+}
+
 // ─── WebSocket Protocol ──────────────────────────────────
 
 /** Client → Server */

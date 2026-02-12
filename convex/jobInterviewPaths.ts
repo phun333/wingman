@@ -154,11 +154,25 @@ export const updateQuestionProgress = mutation({
 });
 
 // ─── Helper: Generate Questions for Job ─────────────────
+
+interface PathQuestion {
+  id: string;
+  question: string;
+  difficulty: "easy" | "medium" | "hard";
+  completed: boolean;
+}
+
+interface PathCategory {
+  name: string;
+  type: "live-coding" | "system-design" | "phone-screen";
+  questions: PathQuestion[];
+}
+
 async function generateQuestionsForJob(job: any) {
-  const categories = [];
+  const categories: PathCategory[] = [];
 
   // Phone Screen Questions
-  const phoneQuestions = [];
+  const phoneQuestions: PathQuestion[] = [];
 
   // Company-specific questions
   if (job.company) {

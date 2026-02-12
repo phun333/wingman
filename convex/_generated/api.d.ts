@@ -9,12 +9,14 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as companyStudyPaths from "../companyStudyPaths.js";
 import type * as designProblems from "../designProblems.js";
 import type * as http from "../http.js";
 import type * as interviewResults from "../interviewResults.js";
 import type * as interviews from "../interviews.js";
 import type * as jobInterviewPaths from "../jobInterviewPaths.js";
 import type * as jobPostings from "../jobPostings.js";
+import type * as leetcodeProblems from "../leetcodeProblems.js";
 import type * as messages from "../messages.js";
 import type * as problems from "../problems.js";
 import type * as resumes from "../resumes.js";
@@ -31,12 +33,14 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  companyStudyPaths: typeof companyStudyPaths;
   designProblems: typeof designProblems;
   http: typeof http;
   interviewResults: typeof interviewResults;
   interviews: typeof interviews;
   jobInterviewPaths: typeof jobInterviewPaths;
   jobPostings: typeof jobPostings;
+  leetcodeProblems: typeof leetcodeProblems;
   messages: typeof messages;
   problems: typeof problems;
   resumes: typeof resumes;

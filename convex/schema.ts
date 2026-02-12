@@ -129,6 +129,87 @@ export default defineSchema({
   })
     .index("by_difficulty", ["difficulty"]),
 
+  leetcodeProblems: defineTable({
+    leetcodeId: v.number(),
+    title: v.string(),
+    description: v.string(),
+    difficulty: v.union(
+      v.literal("easy"),
+      v.literal("medium"),
+      v.literal("hard"),
+    ),
+    isPremium: v.boolean(),
+    acceptanceRate: v.number(),
+    frequency: v.number(),
+    url: v.string(),
+    solutionLink: v.optional(v.string()),
+    discussCount: v.number(),
+    accepted: v.string(),
+    submissions: v.string(),
+    companies: v.array(v.string()),
+    relatedTopics: v.array(v.string()),
+    likes: v.number(),
+    dislikes: v.number(),
+    rating: v.number(),
+    askedByFaang: v.boolean(),
+    similarQuestions: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_difficulty", ["difficulty"])
+    .index("by_leetcode_id", ["leetcodeId"])
+    .index("by_rating", ["rating"])
+    .index("by_frequency", ["frequency"]),
+
+  // ─── Şirket Bazlı Çalışma Yol Haritaları ──────────────
+
+  companyStudyPaths: defineTable({
+    userId: v.id("users"),
+    company: v.string(), // "Amazon", "Google", etc.
+    title: v.string(), // "Amazon Mülakat Hazırlığı"
+    difficulty: v.union(
+      v.literal("mixed"),
+      v.literal("easy"),
+      v.literal("medium"),
+      v.literal("hard"),
+    ),
+    // Topic bazlı gruplandırılmış problemler
+    sections: v.array(
+      v.object({
+        topic: v.string(), // "Array", "Dynamic Programming", etc.
+        problems: v.array(
+          v.object({
+            leetcodeId: v.number(),
+            leetcodeProblemId: v.id("leetcodeProblems"),
+            title: v.string(),
+            difficulty: v.union(
+              v.literal("easy"),
+              v.literal("medium"),
+              v.literal("hard"),
+            ),
+            url: v.string(),
+            completed: v.boolean(),
+            interviewId: v.optional(v.id("interviews")),
+            score: v.optional(v.number()),
+            completedAt: v.optional(v.number()),
+          }),
+        ),
+      }),
+    ),
+    totalProblems: v.number(),
+    completedProblems: v.number(),
+    progress: v.number(), // 0-100
+    stats: v.object({
+      easy: v.object({ total: v.number(), completed: v.number() }),
+      medium: v.object({ total: v.number(), completed: v.number() }),
+      hard: v.object({ total: v.number(), completed: v.number() }),
+    }),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_company", ["company"])
+    .index("by_user_company", ["userId", "company"]),
+
   problems: defineTable({
     title: v.string(),
     description: v.string(),
