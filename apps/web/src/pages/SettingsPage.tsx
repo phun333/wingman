@@ -1,12 +1,26 @@
 import { useEffect, useState, useCallback } from "react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
-import { User, FileText, Briefcase, Brain, Flame } from "lucide-react";
+import {
+  User,
+  FileText,
+  Briefcase,
+  Brain,
+  Flame,
+  ChevronDown,
+  ChevronUp,
+  Building2,
+  GraduationCap,
+  Clock,
+  Code2,
+  Star,
+} from "lucide-react";
 import { StreakHeatmap } from "@/components/ui/StreakHeatmap";
 import { Link } from "react-router-dom";
+import type { Resume } from "@ffh/types";
 import {
   getProfile,
   updateProfile,
@@ -26,6 +40,205 @@ const stagger = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.08 } },
 };
+
+// ─── Resume Detail Card ──────────────────────────────────
+
+function ResumeDetailCard({
+  resume,
+  onDelete,
+}: {
+  resume: Resume;
+  onDelete: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="rounded-xl border border-border-subtle bg-surface-raised overflow-hidden">
+      {/* Header — always visible */}
+      <div className="flex items-start justify-between px-4 py-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="text-sm font-semibold text-text truncate">
+              {resume.name || resume.fileName}
+            </h3>
+            {resume.title && (
+              <Badge variant="amber">{resume.title}</Badge>
+            )}
+            {resume.yearsOfExperience != null && (
+              <Badge variant="info">
+                <Clock size={10} className="mr-1" />
+                {resume.yearsOfExperience} yıl deneyim
+              </Badge>
+            )}
+          </div>
+
+          {/* Skills — always show */}
+          <div className="flex flex-wrap gap-1 mt-2">
+            {resume.skills.map((s) => (
+              <span
+                key={s}
+                className="inline-flex items-center rounded-md bg-amber/8 border border-amber/15 text-amber px-1.5 py-0.5 text-[11px] font-medium"
+              >
+                {s}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1 ml-3 shrink-0">
+          <button
+            type="button"
+            onClick={() => setExpanded(!expanded)}
+            className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-surface transition-colors cursor-pointer"
+            title={expanded ? "Daralt" : "Detayları Göster"}
+          >
+            {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            className="p-1.5 rounded-lg text-danger/50 hover:text-danger hover:bg-danger/10 transition-colors cursor-pointer text-xs"
+            title="Sil"
+          >
+            ×
+          </button>
+        </div>
+      </div>
+
+      {/* Expanded detail section */}
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="border-t border-border-subtle px-4 py-4 space-y-5">
+              {/* ── Experience ── */}
+              {resume.experience.length > 0 && (
+                <div>
+                  <h4 className="flex items-center gap-1.5 text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
+                    <Building2 size={13} /> İş Deneyimi
+                  </h4>
+                  <div className="space-y-3">
+                    {resume.experience.map((exp, i) => (
+                      <div
+                        key={i}
+                        className="relative pl-4 border-l-2 border-amber/30"
+                      >
+                        <div className="absolute -left-[5px] top-1 w-2 h-2 rounded-full bg-amber" />
+                        <p className="text-sm font-medium text-text">
+                          {exp.role}
+                        </p>
+                        <p className="text-xs text-text-secondary">
+                          {exp.company}
+                          <span className="mx-1.5 text-border">•</span>
+                          {exp.duration}
+                        </p>
+                        {exp.highlights.length > 0 && (
+                          <ul className="mt-1.5 space-y-0.5">
+                            {exp.highlights.map((h, j) => (
+                              <li
+                                key={j}
+                                className="text-xs text-text-secondary flex gap-1.5"
+                              >
+                                <Star
+                                  size={10}
+                                  className="text-amber/50 mt-0.5 shrink-0"
+                                />
+                                <span>{h}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Education ── */}
+              {resume.education.length > 0 && (
+                <div>
+                  <h4 className="flex items-center gap-1.5 text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
+                    <GraduationCap size={13} /> Eğitim
+                  </h4>
+                  <div className="space-y-2">
+                    {resume.education.map((edu, i) => (
+                      <div
+                        key={i}
+                        className="flex items-start gap-2 rounded-lg bg-surface px-3 py-2 border border-border-subtle"
+                      >
+                        <GraduationCap
+                          size={14}
+                          className="text-info mt-0.5 shrink-0"
+                        />
+                        <div>
+                          <p className="text-sm font-medium text-text">
+                            {edu.school}
+                          </p>
+                          <p className="text-xs text-text-secondary">
+                            {edu.degree}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Skills Summary ── */}
+              {resume.skills.length > 0 && (
+                <div>
+                  <h4 className="flex items-center gap-1.5 text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
+                    <Code2 size={13} /> Yetenekler ({resume.skills.length})
+                  </h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {resume.skills.map((s) => (
+                      <Badge key={s} variant="amber">
+                        {s}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Quick Stats ── */}
+              <div className="grid grid-cols-3 gap-2">
+                <div className="rounded-lg bg-surface border border-border-subtle p-2.5 text-center">
+                  <p className="text-lg font-bold text-amber tabular-nums">
+                    {resume.yearsOfExperience ?? "—"}
+                  </p>
+                  <p className="text-[10px] text-text-muted uppercase tracking-wider">
+                    Yıl Deneyim
+                  </p>
+                </div>
+                <div className="rounded-lg bg-surface border border-border-subtle p-2.5 text-center">
+                  <p className="text-lg font-bold text-info tabular-nums">
+                    {resume.skills.length}
+                  </p>
+                  <p className="text-[10px] text-text-muted uppercase tracking-wider">
+                    Yetenek
+                  </p>
+                </div>
+                <div className="rounded-lg bg-surface border border-border-subtle p-2.5 text-center">
+                  <p className="text-lg font-bold text-success tabular-nums">
+                    {resume.experience.length}
+                  </p>
+                  <p className="text-[10px] text-text-muted uppercase tracking-wider">
+                    İş Deneyimi
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export function SettingsPage() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
@@ -257,38 +470,15 @@ export function SettingsPage() {
             <FileText size={16} className="inline mr-1.5" /> Özgeçmiş
           </h2>
 
-          {/* Existing resumes */}
+          {/* Existing resumes — expanded detail view */}
           {profile?.resumes && profile.resumes.length > 0 && (
-            <div className="space-y-2 mb-4">
+            <div className="space-y-4 mb-6">
               {profile.resumes.map((resume) => (
-                <div
+                <ResumeDetailCard
                   key={resume._id}
-                  className="flex items-center justify-between rounded-lg border border-border-subtle bg-surface-raised px-3 py-2"
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-text truncate">
-                      {resume.name || resume.fileName}
-                      {resume.title && (
-                        <span className="text-text-secondary ml-2">— {resume.title}</span>
-                      )}
-                    </p>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {resume.skills.slice(0, 6).map((s) => (
-                        <Badge key={s} variant="default">{s}</Badge>
-                      ))}
-                      {resume.skills.length > 6 && (
-                        <Badge variant="default">+{resume.skills.length - 6}</Badge>
-                      )}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteResume(resume._id)}
-                    className="text-danger/60 hover:text-danger text-xs ml-3 cursor-pointer"
-                  >
-                    Sil
-                  </button>
-                </div>
+                  resume={resume}
+                  onDelete={() => handleDeleteResume(resume._id)}
+                />
               ))}
             </div>
           )}
