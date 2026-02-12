@@ -13,6 +13,12 @@ import type {
   Resume,
   UserProfile,
   UserMemoryEntry,
+  LeetcodeProblem,
+  LeetcodeListResult,
+  CompanyStats,
+  TopicStats,
+  CompanyProblemsResult,
+  CompanyStudyPath,
 } from "@ffh/types";
 
 const BASE = "/api";
@@ -228,6 +234,123 @@ export async function updateProfile(params: {
     method: "PUT",
     body: JSON.stringify(params),
   });
+}
+
+// ─── LeetCode Problems ───────────────────────────────────
+
+export async function listLeetcodeProblems(params?: {
+  difficulty?: Difficulty;
+  company?: string;
+  topic?: string;
+  faang?: boolean;
+  limit?: number;
+}): Promise<LeetcodeListResult> {
+  const q = new URLSearchParams();
+  if (params?.difficulty) q.set("difficulty", params.difficulty);
+  if (params?.company) q.set("company", params.company);
+  if (params?.topic) q.set("topic", params.topic);
+  if (params?.faang !== undefined) q.set("faang", String(params.faang));
+  if (params?.limit) q.set("limit", String(params.limit));
+  const qs = q.toString();
+  return request<LeetcodeListResult>(`/leetcode${qs ? `?${qs}` : ""}`);
+}
+
+export async function searchLeetcodeProblems(
+  query: string,
+  limit?: number,
+): Promise<LeetcodeProblem[]> {
+  const q = new URLSearchParams({ q: query });
+  if (limit) q.set("limit", String(limit));
+  return request<LeetcodeProblem[]>(`/leetcode/search?${q}`);
+}
+
+export async function getLeetcodeProblem(id: string | number): Promise<LeetcodeProblem> {
+  return request<LeetcodeProblem>(`/leetcode/${id}`);
+}
+
+export async function getRandomLeetcodeProblem(params?: {
+  difficulty?: Difficulty;
+  company?: string;
+  topic?: string;
+}): Promise<LeetcodeProblem> {
+  const q = new URLSearchParams();
+  if (params?.difficulty) q.set("difficulty", params.difficulty);
+  if (params?.company) q.set("company", params.company);
+  if (params?.topic) q.set("topic", params.topic);
+  const qs = q.toString();
+  return request<LeetcodeProblem>(`/leetcode/random${qs ? `?${qs}` : ""}`);
+}
+
+export async function listCompanies(): Promise<CompanyStats[]> {
+  return request<CompanyStats[]>("/leetcode/companies");
+}
+
+export async function getCompanyProblems(
+  company: string,
+  params?: { difficulty?: Difficulty; topic?: string; sort?: string },
+): Promise<CompanyProblemsResult> {
+  const q = new URLSearchParams();
+  if (params?.difficulty) q.set("difficulty", params.difficulty);
+  if (params?.topic) q.set("topic", params.topic);
+  if (params?.sort) q.set("sort", params.sort);
+  const qs = q.toString();
+  return request<CompanyProblemsResult>(
+    `/leetcode/companies/${encodeURIComponent(company)}${qs ? `?${qs}` : ""}`,
+  );
+}
+
+export async function listTopics(): Promise<TopicStats[]> {
+  return request<TopicStats[]>("/leetcode/topics");
+}
+
+// ─── Company Study Paths ─────────────────────────────────
+
+export async function generateStudyPath(params: {
+  userId: string;
+  company: string;
+  difficulty?: "mixed" | Difficulty;
+  maxProblems?: number;
+}): Promise<CompanyStudyPath> {
+  return request<CompanyStudyPath>("/study-paths", {
+    method: "POST",
+    body: JSON.stringify(params),
+  });
+}
+
+export async function listStudyPaths(userId: string): Promise<CompanyStudyPath[]> {
+  return request<CompanyStudyPath[]>(`/study-paths/user/${userId}`);
+}
+
+export async function getStudyPath(id: string): Promise<CompanyStudyPath> {
+  return request<CompanyStudyPath>(`/study-paths/${id}`);
+}
+
+export async function markStudyPathProblem(
+  pathId: string,
+  sectionIndex: number,
+  problemIndex: number,
+  completed: boolean,
+  extra?: { interviewId?: string; score?: number },
+): Promise<CompanyStudyPath> {
+  return request<CompanyStudyPath>(`/study-paths/${pathId}/progress`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      sectionIndex,
+      problemIndex,
+      completed,
+      ...extra,
+    }),
+  });
+}
+
+export async function resetStudyPath(id: string): Promise<CompanyStudyPath> {
+  return request<CompanyStudyPath>(`/study-paths/${id}/reset`, {
+    method: "POST",
+  });
+}
+
+export async function deleteStudyPath(id: string): Promise<void> {
+  await request<{ deleted: boolean }>(`/study-paths/${id}`, { method: "DELETE" });
 }
 
 // ─── Job Interview Paths ────────────────────────────────

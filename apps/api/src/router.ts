@@ -12,6 +12,8 @@ import { reportRoutes } from "./routes/reports";
 import { jobRoutes } from "./routes/jobs";
 import { resumeRoutes } from "./routes/resume";
 import { profileRoutes } from "./routes/profile";
+import { leetcodeRoutes } from "./routes/leetcode";
+import { studyPathRoutes } from "./routes/study-paths";
 
 export const apiRoutes = new Hono();
 
@@ -62,6 +64,18 @@ apiRoutes.route("/resume", resumeRoutes);
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 apiRoutes.route("/profile", profileRoutes);
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  LeetCode Problems
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+apiRoutes.route("/leetcode", leetcodeRoutes);
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  Company Study Paths
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+apiRoutes.route("/study-paths", studyPathRoutes);
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  Users
