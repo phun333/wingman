@@ -129,7 +129,10 @@ export const updateQuestionProgress = mutation({
 
     // Update question status
     const categories = [...path.categories];
-    const question = categories[args.categoryIndex].questions[args.questionIndex];
+    const category = categories[args.categoryIndex];
+    if (!category) throw new Error("Category not found");
+    const question = category.questions[args.questionIndex];
+    if (!question) throw new Error("Question not found");
     question.completed = args.completed;
     if (args.interviewId) question.interviewId = args.interviewId;
     if (args.score !== undefined) question.score = args.score;
@@ -212,7 +215,7 @@ async function generateQuestionsForJob(
 
   // Şirket sorusu yoksa, ilgili skill/topic'lere göre genel sorular çek
   if (companyProblems.length === 0) {
-    const skillSet = new Set(
+    const skillSet = new Set<string>(
       (job.skills ?? []).map((s: string) => s.toLowerCase()),
     );
 
