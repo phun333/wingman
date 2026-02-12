@@ -33,6 +33,7 @@ import {
   deleteJobPosting,
   getJobPaths,
 } from "@/lib/api";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import type { JobPosting } from "@ffh/types";
 
 // ─── Types ───────────────────────────────────────────────
@@ -116,6 +117,10 @@ export function JobsPage() {
   // Expanded job detail
   const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
 
+  // Delete confirmation modal
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   const loadData = useCallback(async () => {
     try {
       const [jobList, pathList] = await Promise.all([
@@ -159,12 +164,23 @@ export function JobsPage() {
     }
   }
 
-  async function handleDeleteJob(id: string) {
+  async function handleDeleteJob() {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      await deleteJobPosting(id);
-      await loadData();
+      await deleteJobPosting(deleteTarget.id);
+      // Optimistic update: remove from local state immediately
+      setJobs((prev) => prev.filter((j) => j._id !== deleteTarget.id));
+      setPaths((prev) => prev.filter((p) => p.jobPostingId !== deleteTarget.id));
+      setExpandedJobId((prev) => (prev === deleteTarget.id ? null : prev));
+      setDeleteTarget(null);
+      // Then sync with server in background
+      loadData();
     } catch {
-      // ignore
+      // If failed, reload to restore correct state
+      await loadData();
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -447,7 +463,7 @@ export function JobsPage() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleDeleteJob(job._id)}
+                          onClick={() => setDeleteTarget({ id: job._id, title: job.title })}
                           className="text-text-muted hover:text-danger transition-colors p-1 cursor-pointer"
                           title="İlanı sil"
                         >
@@ -684,6 +700,23 @@ export function JobsPage() {
           </div>
         </motion.div>
       )}
+
+      {/* ─── Delete Confirmation Modal ─── */}
+      <ConfirmModal
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDeleteJob}
+        title="İlanı Silmek İstediğine Emin Misin?"
+        description={
+          deleteTarget
+            ? `"${deleteTarget.title}" ilanı ve ilişkili mülakat yol haritası kalıcı olarak silinecek.`
+            : undefined
+        }
+        confirmText="Evet, Sil"
+        cancelText="Vazgeç"
+        variant="danger"
+        loading={deleting}
+      />
     </motion.div>
   );
 }

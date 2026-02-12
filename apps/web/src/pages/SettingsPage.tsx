@@ -29,6 +29,7 @@ import {
   deleteResume,
   type ProfileData,
 } from "@/lib/api";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 
 const fadeUp = {
@@ -255,6 +256,10 @@ export function SettingsPage() {
   const [uploadingResume, setUploadingResume] = useState(false);
   const [resumeError, setResumeError] = useState<string | null>(null);
 
+  // Delete confirmation
+  const [deleteResumeTarget, setDeleteResumeTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deletingResume, setDeletingResume] = useState(false);
+
   const loadProfile = useCallback(async () => {
     try {
       const data = await getProfile();
@@ -336,12 +341,17 @@ export function SettingsPage() {
     }
   }
 
-  async function handleDeleteResume(id: string) {
+  async function handleDeleteResume() {
+    if (!deleteResumeTarget) return;
+    setDeletingResume(true);
     try {
-      await deleteResume(id);
+      await deleteResume(deleteResumeTarget.id);
+      setDeleteResumeTarget(null);
       await loadProfile();
     } catch {
       // ignore
+    } finally {
+      setDeletingResume(false);
     }
   }
 
@@ -477,7 +487,12 @@ export function SettingsPage() {
                 <ResumeDetailCard
                   key={resume._id}
                   resume={resume}
-                  onDelete={() => handleDeleteResume(resume._id)}
+                  onDelete={() =>
+                    setDeleteResumeTarget({
+                      id: resume._id,
+                      name: resume.name || resume.fileName || "Özgeçmiş",
+                    })
+                  }
                 />
               ))}
             </div>
@@ -625,6 +640,23 @@ export function SettingsPage() {
           )}
         </Card>
       </motion.div>
+
+      {/* ─── Delete Resume Confirmation Modal ─── */}
+      <ConfirmModal
+        open={deleteResumeTarget !== null}
+        onClose={() => setDeleteResumeTarget(null)}
+        onConfirm={handleDeleteResume}
+        title="Özgeçmişi Silmek İstediğine Emin Misin?"
+        description={
+          deleteResumeTarget
+            ? `"${deleteResumeTarget.name}" özgeçmişi kalıcı olarak silinecek.`
+            : undefined
+        }
+        confirmText="Evet, Sil"
+        cancelText="Vazgeç"
+        variant="danger"
+        loading={deletingResume}
+      />
     </motion.div>
   );
 }
