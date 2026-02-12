@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { motion, AnimatePresence } from "motion/react";
 import { Badge } from "@/components/ui/Badge";
-import { Clock, HardDrive, Bot, Mic, Volume2, Brain, MessageSquare, Sparkles, Zap, User } from "lucide-react";
+import { Clock, HardDrive, Bot, Mic, Volume2, Brain, MessageSquare, Sparkles, Zap, User, GripHorizontal } from "lucide-react";
 import type { Problem } from "@ffh/types";
 
 interface Message {
@@ -26,7 +26,7 @@ interface ProblemPanelProps {
   hintLevel?: number;
   totalHints?: number;
   onRequestHint?: () => void;
-  interviewStatus?: "created" | "in-progress" | "completed" | "evaluated";
+  interviewStatus?: "created" | "in-progress" | "completed" | "abandoned" | "evaluated";
   onStartInterview?: () => void;
 }
 
@@ -131,10 +131,61 @@ export function ProblemPanel({
   const diff = difficultyConfig[problem.difficulty];
   const visibleTests = problem.testCases.filter((tc) => !tc.isHidden);
 
+  // ─── Resizable splitter between Problem and AI Assistant ───
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [aiPanelHeight, setAiPanelHeight] = useState(() => {
+    try {
+      const saved = localStorage.getItem("problemPanel:aiHeight");
+      return saved ? Number(saved) : 280;
+    } catch { return 280; }
+  });
+  const draggingRef = useRef(false);
+
+  // Persist height
+  useEffect(() => {
+    try { localStorage.setItem("problemPanel:aiHeight", String(aiPanelHeight)); } catch {}
+  }, [aiPanelHeight]);
+
+  const handleDragStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    draggingRef.current = true;
+    document.body.style.cursor = "row-resize";
+    document.body.style.userSelect = "none";
+
+    const getY = (ev: MouseEvent | TouchEvent) =>
+      "touches" in ev ? ev.touches[0]!.clientY : ev.clientY;
+
+    const startY = "touches" in e ? e.touches[0]!.clientY : e.clientY;
+    const startHeight = aiPanelHeight;
+
+    const onMove = (ev: MouseEvent | TouchEvent) => {
+      if (!draggingRef.current || !containerRef.current) return;
+      const containerH = containerRef.current.getBoundingClientRect().height;
+      const delta = startY - getY(ev);
+      const newHeight = Math.max(160, Math.min(containerH - 120, startHeight + delta));
+      setAiPanelHeight(newHeight);
+    };
+
+    const onEnd = () => {
+      draggingRef.current = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onEnd);
+      document.removeEventListener("touchmove", onMove);
+      document.removeEventListener("touchend", onEnd);
+    };
+
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onEnd);
+    document.addEventListener("touchmove", onMove, { passive: false });
+    document.addEventListener("touchend", onEnd);
+  }, [aiPanelHeight]);
+
   return (
-    <div className="flex flex-col h-full">
-      {/* Problem Content */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-4">
+    <div ref={containerRef} className="flex flex-col h-full">
+      {/* Problem Content — takes remaining space */}
+      <div className="flex-1 min-h-[80px] overflow-y-auto p-5 space-y-4">
         {/* Header */}
         <div>
           <div className="flex items-center gap-2 mb-2">
@@ -205,11 +256,27 @@ export function ProblemPanel({
         )}
       </div>
 
-      {/* AI Assistant Section */}
-      <div className="border-t border-border-subtle bg-surface-raised/50">
-        <div className="p-4">
+      {/* ─── Drag Handle ─── */}
+      <div
+        onMouseDown={handleDragStart}
+        onTouchStart={handleDragStart}
+        className="
+          flex-shrink-0 h-2 bg-border-subtle hover:bg-amber/30 active:bg-amber/40
+          transition-colors duration-150 cursor-row-resize
+          flex items-center justify-center group
+        "
+      >
+        <GripHorizontal size={12} className="text-text-muted/40 group-hover:text-amber/60 transition-colors" />
+      </div>
+
+      {/* AI Assistant Section — resizable height */}
+      <div
+        className="flex-shrink-0 bg-surface-raised/50 overflow-hidden flex flex-col"
+        style={{ height: aiPanelHeight }}
+      >
+        <div className="p-4 flex flex-col h-full">
           {/* AI Header */}
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-3 flex-shrink-0">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber to-orange flex items-center justify-center shadow">
                 <Bot size={16} className="text-white" />
@@ -237,11 +304,11 @@ export function ProblemPanel({
             )}
           </div>
 
-          {/* Chat Messages */}
-          <div className="bg-bg/50 rounded-lg border border-border-subtle p-3 mb-3 h-32 overflow-y-auto">
+          {/* Chat Messages — fills remaining space */}
+          <div className="bg-bg/50 rounded-lg border border-border-subtle p-3 mb-3 flex-1 min-h-0 overflow-y-auto">
             <div className="space-y-2">
               <AnimatePresence>
-                {messages.slice(-4).map((msg) => (
+                {messages.slice(-10).map((msg) => (
                   <motion.div
                     key={msg.id}
                     initial={{ opacity: 0, y: 5 }}
@@ -291,7 +358,7 @@ export function ProblemPanel({
           </div>
 
           {/* Control Buttons */}
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex items-center justify-center gap-3 flex-shrink-0">
             {/* Main Mic Button */}
             <motion.button
               onClick={onMicClick}
@@ -358,7 +425,7 @@ export function ProblemPanel({
             )}
           </div>
 
-          <p className="text-center text-[10px] text-text-muted mt-2">
+          <p className="text-center text-[10px] text-text-muted mt-2 flex-shrink-0">
             {!connected
               ? "Bağlantı kuruluyor..."
               : state === "speaking"
