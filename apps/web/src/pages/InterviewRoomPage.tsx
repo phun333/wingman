@@ -3,7 +3,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/Button";
 import { useVoice } from "@/lib/useVoice";
-import { getInterview, completeInterview, executeCode as executeCodeApi, getRandomProblem, getProblem, startInterview } from "@/lib/api";
+import { getInterview, completeInterview, executeCode as executeCodeApi, getRandomProblem, getProblem, startInterview, getLeetcodeProblem } from "@/lib/api";
 import { typeLabels } from "@/lib/constants";
 import { Mic, Hand, Coffee, Clock } from "lucide-react";
 import type {
@@ -156,9 +156,24 @@ export function InterviewRoomPage() {
           let p: Problem;
 
           if (requestedProblemId) {
-            // Load specific problem
+            // Load specific problem — try leetcodeProblems first, then legacy problems
             console.log("Loading specific problem with ID:", requestedProblemId);
-            p = await getProblem(requestedProblemId);
+            try {
+              const lc = await getLeetcodeProblem(requestedProblemId);
+              // Adapt LeetcodeProblem → Problem shape
+              p = {
+                _id: lc._id,
+                title: lc.title,
+                description: lc.description,
+                difficulty: lc.difficulty,
+                category: lc.relatedTopics[0] ?? "general",
+                testCases: [],
+                createdAt: lc.createdAt,
+              };
+            } catch {
+              // Fallback to legacy problems table
+              p = await getProblem(requestedProblemId);
+            }
             console.log("Loaded specific problem:", p.title);
           } else {
             // Load random problem
@@ -353,7 +368,7 @@ export function InterviewRoomPage() {
       <header className="flex h-12 items-center justify-between border-b border-border-subtle bg-surface/80 backdrop-blur-sm px-4">
         <div className="flex items-center gap-3">
           <div className="h-6 w-6 rounded-md bg-amber/15 flex items-center justify-center">
-            <span className="text-amber font-display text-xs font-bold">F</span>
+            <span className="text-amber font-display text-xs font-bold">W</span>
           </div>
           <span className="text-sm font-medium text-text-secondary">
             {interview ? typeLabels[interview.type] ?? interview.type : "Mülakat"}
@@ -545,7 +560,7 @@ function VoiceOnlyRoom({
       <header className="flex h-14 items-center justify-between border-b border-border-subtle bg-surface/80 backdrop-blur-sm px-5">
         <div className="flex items-center gap-3">
           <div className="h-7 w-7 rounded-md bg-amber/15 flex items-center justify-center">
-            <span className="text-amber font-display text-xs font-bold">F</span>
+            <span className="text-amber font-display text-xs font-bold">W</span>
           </div>
           <span className="text-sm font-medium text-text-secondary">
             {interview ? typeLabels[interview.type] ?? interview.type : "Mülakat"}
