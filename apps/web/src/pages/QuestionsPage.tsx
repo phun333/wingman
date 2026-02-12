@@ -1,14 +1,12 @@
-import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { useQuestionsStore } from "@/stores";
+import type { SortOption, Tab } from "@/stores";
 import {
-  listLeetcodeProblems,
-  searchLeetcodeProblems,
-  listCompanies,
-  listTopics,
   createInterview,
   startInterview,
 } from "@/lib/api";
@@ -37,9 +35,7 @@ import type {
   CompanyStats,
   TopicStats,
 } from "@ffh/types";
-
-type SortOption = "frequency" | "rating" | "acceptance" | "difficulty";
-type Tab = "problems" | "companies" | "topics";
+import { useRef } from "react";
 
 const DIFFICULTY_VARIANT = {
   easy: "success" as const,
@@ -50,78 +46,48 @@ const DIFFICULTY_VARIANT = {
 const PAGE_SIZE = 30;
 
 export function QuestionsPage() {
-  // ── State ──────────────────────────────────────────────
-  const [tab, setTab] = useState<Tab>("problems");
-  const [problems, setProblems] = useState<LeetcodeProblem[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
-  const [companies, setCompanies] = useState<CompanyStats[]>([]);
-  const [topics, setTopics] = useState<TopicStats[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
-  // Filters
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty | "">("");
-  const [selectedCompany, setSelectedCompany] = useState("");
-  const [selectedTopic, setSelectedTopic] = useState("");
-  const [faangOnly, setFaangOnly] = useState(false);
-  const [sortBy, setSortBy] = useState<SortOption>("frequency");
-  const [showFilters, setShowFilters] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
+  // ── Store ──────────────────────────────────────────────
+  const {
+    // Filters
+    tab, searchTerm, selectedDifficulty, selectedCompany,
+    selectedTopic, faangOnly, sortBy, currentPage, showFilters,
+    // Data
+    problems, totalCount, companies, topics,
+    loading, error,
+    // Actions
+    setTab, setSearchTerm, setSelectedDifficulty, setSelectedCompany,
+    setSelectedTopic, setFaangOnly, setSortBy, setCurrentPage,
+    setShowFilters, clearFilters,
+    // Fetchers
+    fetchProblems, fetchCompanies, fetchTopics,
+  } = useQuestionsStore();
 
-  // ── Data Loading ───────────────────────────────────────
+  // ── Data Loading (stale-while-revalidate) ──────────────
 
-  const loadProblems = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      if (searchTerm.length >= 2) {
-        const results = await searchLeetcodeProblems(searchTerm, 500);
-        setProblems(results);
-        setTotalCount(results.length);
-      } else {
-        const result = await listLeetcodeProblems({
-          difficulty: selectedDifficulty || undefined,
-          company: selectedCompany || undefined,
-          topic: selectedTopic || undefined,
-          faang: faangOnly || undefined,
-          limit: 2000,
-        });
-        setProblems(result.problems);
-        setTotalCount(result.total);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Sorular yüklenirken hata oluştu");
-    } finally {
-      setLoading(false);
-    }
-  }, [searchTerm, selectedDifficulty, selectedCompany, selectedTopic, faangOnly]);
-
+  // Fetch problems when filters change
   useEffect(() => {
     if (tab === "problems") {
-      const timer = setTimeout(loadProblems, searchTerm ? 300 : 0);
+      const timer = setTimeout(
+        () => fetchProblems(),
+        searchTerm ? 300 : 0,
+      );
       return () => clearTimeout(timer);
     }
-  }, [tab, loadProblems, searchTerm]);
+  }, [tab, fetchProblems, searchTerm, selectedDifficulty, selectedCompany, selectedTopic, faangOnly]);
 
-  // Load companies eagerly (needed for filter dropdown)
+  // Eagerly load companies (needed for filter dropdown)
   useEffect(() => {
-    if (companies.length === 0) {
-      listCompanies().then(setCompanies).catch(() => {});
+    fetchCompanies();
+  }, [fetchCompanies]);
+
+  // Load topics when tab changes
+  useEffect(() => {
+    if (tab === "topics") {
+      fetchTopics();
     }
-  }, [companies.length]);
-
-  useEffect(() => {
-    if (tab === "topics" && topics.length === 0) {
-      listTopics().then(setTopics).catch(() => {});
-    }
-  }, [tab, topics.length]);
-
-  // Reset page on filter change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, selectedDifficulty, selectedCompany, selectedTopic, faangOnly, sortBy]);
+  }, [tab, fetchTopics]);
 
   // ── Sorted & Paginated ────────────────────────────────
 
@@ -146,14 +112,6 @@ export function QuestionsPage() {
   const pageProblems = sortedProblems.slice(pageStart, pageStart + PAGE_SIZE);
 
   const hasActiveFilters = selectedDifficulty || selectedCompany || selectedTopic || faangOnly;
-
-  function clearFilters() {
-    setSelectedDifficulty("");
-    setSelectedCompany("");
-    setSelectedTopic("");
-    setFaangOnly(false);
-    setSearchTerm("");
-  }
 
   function handleCompanyClick(company: string) {
     setSelectedCompany(company);
@@ -180,10 +138,10 @@ export function QuestionsPage() {
       {/* Tabs */}
       <div className="flex gap-1 p-1 bg-surface-raised rounded-lg w-fit">
         {([
-          { id: "problems", label: "Sorular", icon: Hash },
-          { id: "companies", label: "Şirketler", icon: Building2 },
-          { id: "topics", label: "Konular", icon: Tag },
-        ] as const).map(({ id, label, icon: Icon }) => (
+          { id: "problems" as const, label: "Sorular", icon: Hash },
+          { id: "companies" as const, label: "Şirketler", icon: Building2 },
+          { id: "topics" as const, label: "Konular", icon: Tag },
+        ]).map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             onClick={() => setTab(id)}
@@ -285,6 +243,7 @@ export function QuestionsPage() {
                       topics={topics.length > 0 ? topics : undefined}
                       selected={selectedTopic}
                       onSelect={(t) => setSelectedTopic(t)}
+                      onOpen={() => fetchTopics()}
                     />
                   </div>
 
@@ -372,14 +331,14 @@ export function QuestionsPage() {
           )}
 
           {/* Loading */}
-          {loading && (
+          {loading && problems.length === 0 && (
             <div className="flex h-48 items-center justify-center">
               <div className="animate-spin w-7 h-7 border-2 border-amber border-t-transparent rounded-full" />
             </div>
           )}
 
           {/* Problems Table */}
-          {!loading && pageProblems.length > 0 && (
+          {pageProblems.length > 0 && (
             <div className="border border-border-subtle rounded-xl overflow-hidden">
               {/* Table Header */}
               <div className="grid grid-cols-[60px_1fr_90px_80px_80px_80px] gap-4 px-4 py-3 bg-surface-raised text-xs font-medium text-text-muted uppercase tracking-wider border-b border-border-subtle">
@@ -649,26 +608,16 @@ function TopicDropdown({
   topics,
   selected,
   onSelect,
+  onOpen,
 }: {
   topics?: TopicStats[];
   selected: string;
   onSelect: (topic: string) => void;
+  onOpen?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [localTopics, setLocalTopics] = useState<TopicStats[]>(topics ?? []);
   const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (topics) setLocalTopics(topics);
-  }, [topics]);
-
-  // Load topics on first open if not loaded
-  useEffect(() => {
-    if (open && localTopics.length === 0) {
-      listTopics().then(setLocalTopics).catch(() => {});
-    }
-  }, [open, localTopics.length]);
 
   // Close on click outside
   useEffect(() => {
@@ -681,6 +630,8 @@ function TopicDropdown({
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
+  const localTopics = topics ?? [];
+
   const filtered = localTopics.filter((t) =>
     t.name.toLowerCase().includes(search.toLowerCase()),
   );
@@ -689,7 +640,11 @@ function TopicDropdown({
     <div ref={ref} className="relative">
       <button
         type="button"
-        onClick={() => { setOpen(!open); setSearch(""); }}
+        onClick={() => {
+          setOpen(!open);
+          setSearch("");
+          if (!open) onOpen?.();
+        }}
         className={`
           w-full flex items-center justify-between px-3 py-2 bg-surface border rounded-lg text-sm transition-colors cursor-pointer
           ${selected ? "border-amber/30 text-amber" : "border-border-subtle text-text-secondary"}

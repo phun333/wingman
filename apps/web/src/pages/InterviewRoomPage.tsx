@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/Button";
 import { useVoice } from "@/lib/useVoice";
 import { getInterview, completeInterview, abandonInterview, executeCode as executeCodeApi, getRandomProblem, getProblem, startInterview, getLeetcodeProblem } from "@/lib/api";
+import { useInterviewsStore } from "@/stores";
 import { typeLabels } from "@/lib/constants";
 import { Mic, Hand, Coffee, Clock, AlertTriangle, CheckCircle2, X } from "lucide-react";
 import type {
@@ -291,6 +292,8 @@ export function InterviewRoomPage() {
       } catch {
         // Interview may already be completed
       }
+      // Invalidate interview caches so dashboard/history show updated data
+      useInterviewsStore.getState().invalidateAll();
       navigate(`/interview/${id}/report`);
     } else {
       navigate("/");
@@ -309,6 +312,8 @@ export function InterviewRoomPage() {
       } catch {
         // Interview may already be in a terminal state
       }
+      // Invalidate interview caches so dashboard/history show updated data
+      useInterviewsStore.getState().invalidateAll();
       navigate(`/interview/${id}/report`);
     } else {
       navigate("/");

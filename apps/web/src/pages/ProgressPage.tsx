@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { getUserProgress, listInterviews, getJobPaths, createInterview } from "@/lib/api";
+import { createInterview } from "@/lib/api";
+import { useInterviewsStore, useJobsStore } from "@/stores";
 import { typeLabels, typeColors, hireLabels, difficultyLabels, formatDate, formatFullDate } from "@/lib/constants";
 import { JobPaths } from "@/components/JobPaths";
 import { TrendingUp, Flame, CheckCircle2, AlertTriangle } from "lucide-react";
@@ -46,31 +47,34 @@ const CHART_TICK_DIM = "rgba(85, 85, 95, 1)";
 
 export function ProgressPage() {
   const navigate = useNavigate();
-  const [progress, setProgress] = useState<UserProgress | null>(null);
-  const [interviews, setInterviews] = useState<Interview[]>([]);
-  const [jobPaths, setJobPaths] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  // Zustand stores
+  const progress = useInterviewsStore((s) => s.progress);
+  const interviews = useInterviewsStore((s) => s.allInterviews);
+  const fetchProgressData = useInterviewsStore((s) => s.fetchProgressData);
+  const loadingInterviews = useInterviewsStore((s) => s.loadingAll || s.loadingProgress);
+
+  const jobPaths = useJobsStore((s) => s.paths);
+  const fetchJobs = useJobsStore((s) => s.fetchData);
+  const loadingJobs = useJobsStore((s) => s.loading);
+
+  const progressFetchedAt = useInterviewsStore((s) => s.progressFetchedAt);
+  const jobsFetchedAt = useJobsStore((s) => s.fetchedAt);
+
+  // Show loading spinner if data has never been fetched, or is currently loading
+  const loading =
+    (progressFetchedAt === 0 || loadingInterviews) &&
+    (jobsFetchedAt === 0 || loadingJobs);
+
   const [filter, setFilter] = useState<string>("all");
   const [activeTab, setActiveTab] = useState<"overview" | "job-paths">("overview");
 
   useEffect(() => {
-    Promise.all([
-      getUserProgress().catch(() => null),
-      listInterviews(50).catch(() => []),
-      getJobPaths().catch((err) => {
-        console.error("Failed to load job paths:", err);
-        return [];
-      }),
-    ]).then(([prog, ivs, paths]) => {
-      console.log("Loaded data:", { prog, ivs, paths });
-      setProgress(prog);
-      setInterviews(ivs);
-      setJobPaths(paths);
-      setLoading(false);
-    });
-  }, []);
+    fetchProgressData();
+    fetchJobs();
+  }, [fetchProgressData, fetchJobs]);
 
-  if (loading) {
+  if (loading && progressFetchedAt === 0) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-amber border-t-transparent" />

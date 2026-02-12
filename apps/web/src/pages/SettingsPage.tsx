@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -21,14 +21,8 @@ import {
 import { StreakHeatmap } from "@/components/ui/StreakHeatmap";
 import { Link } from "react-router-dom";
 import type { Resume } from "@ffh/types";
-import {
-  getProfile,
-  updateProfile,
-  uploadResumeFile,
-  uploadResumeText,
-  deleteResume,
-  type ProfileData,
-} from "@/lib/api";
+import { useProfileStore } from "@/stores";
+import type { ProfileData } from "@/lib/api";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 
@@ -242,10 +236,18 @@ function ResumeDetailCard({
 }
 
 export function SettingsPage() {
-  const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Zustand profile store
+  const profile = useProfileStore((s) => s.profile);
+  const isLoading = useProfileStore((s) => s.loading);
+  const profileFetchedAt = useProfileStore((s) => s.fetchedAt);
+  const loading = profileFetchedAt === 0 || isLoading;
+  const fetchProfile = useProfileStore((s) => s.fetchProfile);
+  const saveProfile = useProfileStore((s) => s.saveProfile);
+  const storeUploadFile = useProfileStore((s) => s.uploadFile);
+  const storeUploadText = useProfileStore((s) => s.uploadText);
+  const storeRemoveResume = useProfileStore((s) => s.removeResume);
 
-  // Profile form
+  // Profile form (local UI state)
   const [interests, setInterests] = useState<string[]>([]);
   const [newInterest, setNewInterest] = useState("");
   const [goals, setGoals] = useState("");
@@ -260,30 +262,25 @@ export function SettingsPage() {
   const [deleteResumeTarget, setDeleteResumeTarget] = useState<{ id: string; name: string } | null>(null);
   const [deletingResume, setDeletingResume] = useState(false);
 
-  const loadProfile = useCallback(async () => {
-    try {
-      const data = await getProfile();
-      setProfile(data);
-      setInterests(data.profile?.interests ?? []);
-      setGoals(data.profile?.goals ?? "");
-    } catch {
-      // ignore
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
+  // Fetch profile once (cached)
   useEffect(() => {
-    loadProfile();
-  }, [loadProfile]);
+    fetchProfile();
+  }, [fetchProfile]);
+
+  // Sync local form state when profile loads
+  useEffect(() => {
+    if (profile) {
+      setInterests(profile.profile?.interests ?? []);
+      setGoals(profile.profile?.goals ?? "");
+    }
+  }, [profile]);
 
   // ─── Profile Save ──────────────────────────────────────
 
   async function handleSaveProfile() {
     setSaving(true);
     try {
-      await updateProfile({ interests, goals: goals || undefined });
-      await loadProfile();
+      await saveProfile({ interests, goals: goals || undefined });
     } catch {
       // ignore
     } finally {
@@ -312,8 +309,7 @@ export function SettingsPage() {
     setUploadingResume(true);
     setResumeError(null);
     try {
-      await uploadResumeFile(file);
-      await loadProfile();
+      await storeUploadFile(file);
     } catch (err) {
       setResumeError(
         err instanceof Error ? err.message : "Yükleme başarısız",
@@ -329,9 +325,8 @@ export function SettingsPage() {
     setUploadingResume(true);
     setResumeError(null);
     try {
-      await uploadResumeText({ text: resumeText, fileName: "resume-paste.txt" });
+      await storeUploadText(resumeText, "resume-paste.txt");
       setResumeText("");
-      await loadProfile();
     } catch (err) {
       setResumeError(
         err instanceof Error ? err.message : "Analiz başarısız",
@@ -345,9 +340,8 @@ export function SettingsPage() {
     if (!deleteResumeTarget) return;
     setDeletingResume(true);
     try {
-      await deleteResume(deleteResumeTarget.id);
+      await storeRemoveResume(deleteResumeTarget.id);
       setDeleteResumeTarget(null);
-      await loadProfile();
     } catch {
       // ignore
     } finally {

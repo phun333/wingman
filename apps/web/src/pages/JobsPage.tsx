@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Card } from "@/components/ui/Card";
@@ -27,45 +27,10 @@ import {
   Loader2,
   Globe,
 } from "lucide-react";
-import {
-  parseJobPosting,
-  listJobPostings,
-  deleteJobPosting,
-  getJobPaths,
-} from "@/lib/api";
+import { useJobsStore } from "@/stores";
+import type { JobPath } from "@/stores";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import type { JobPosting } from "@ffh/types";
-
-// ─── Types ───────────────────────────────────────────────
-
-interface JobPath {
-  _id: string;
-  jobPostingId: string;
-  title: string;
-  description: string;
-  totalQuestions: number;
-  completedQuestions: number;
-  categories: Array<{
-    name: string;
-    type: "live-coding" | "system-design" | "phone-screen";
-    questions: Array<{
-      id: string;
-      question: string;
-      difficulty: "easy" | "medium" | "hard";
-      completed: boolean;
-      interviewId?: string;
-      score?: number;
-      leetcodeId?: number;
-      leetcodeUrl?: string;
-    }>;
-  }>;
-  progress: number;
-  job?: {
-    title: string;
-    company?: string;
-    level?: string;
-  } | null;
-}
 
 // ─── Animation Variants ──────────────────────────────────
 
@@ -102,11 +67,18 @@ const difficultyStyles = {
 export function JobsPage() {
   const navigate = useNavigate();
 
-  const [jobs, setJobs] = useState<JobPosting[]>([]);
-  const [paths, setPaths] = useState<JobPath[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Zustand store
+  const jobs = useJobsStore((s) => s.jobs);
+  const paths = useJobsStore((s) => s.paths);
+  const fetchedAt = useJobsStore((s) => s.fetchedAt);
+  const isLoading = useJobsStore((s) => s.loading);
+  const loading = fetchedAt === 0 || isLoading;
+  const fetchData = useJobsStore((s) => s.fetchData);
+  const storeParseJob = useJobsStore((s) => s.parseJob);
+  const storeRemoveJob = useJobsStore((s) => s.removeJob);
+  const storeGetPathForJob = useJobsStore((s) => s.getPathForJob);
 
-  // Add Job form state
+  // Add Job form state (local UI)
   const [showAddForm, setShowAddForm] = useState(false);
   const [jobUrl, setJobUrl] = useState("");
   const [jobRawText, setJobRawText] = useState("");
@@ -121,24 +93,9 @@ export function JobsPage() {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const loadData = useCallback(async () => {
-    try {
-      const [jobList, pathList] = await Promise.all([
-        listJobPostings(),
-        getJobPaths(),
-      ]);
-      setJobs(jobList);
-      setPaths(pathList);
-    } catch {
-      // ignore
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    fetchData();
+  }, [fetchData]);
 
   // ─── Handlers ────────────────────────────────────────
 
@@ -148,7 +105,7 @@ export function JobsPage() {
     setParsing(true);
     setError(null);
     try {
-      await parseJobPosting({
+      await storeParseJob({
         url: jobUrl || undefined,
         rawText: useManualText ? jobRawText || undefined : undefined,
       });
@@ -156,7 +113,6 @@ export function JobsPage() {
       setJobRawText("");
       setShowAddForm(false);
       setUseManualText(false);
-      await loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "İlan analizi başarısız oldu");
     } finally {
@@ -168,24 +124,18 @@ export function JobsPage() {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      await deleteJobPosting(deleteTarget.id);
-      // Optimistic update: remove from local state immediately
-      setJobs((prev) => prev.filter((j) => j._id !== deleteTarget.id));
-      setPaths((prev) => prev.filter((p) => p.jobPostingId !== deleteTarget.id));
+      await storeRemoveJob(deleteTarget.id);
       setExpandedJobId((prev) => (prev === deleteTarget.id ? null : prev));
       setDeleteTarget(null);
-      // Then sync with server in background
-      loadData();
     } catch {
-      // If failed, reload to restore correct state
-      await loadData();
+      // Store handles revert internally
     } finally {
       setDeleting(false);
     }
   }
 
   function getPathForJob(jobId: string): JobPath | undefined {
-    return paths.find((p) => p.jobPostingId === jobId);
+    return storeGetPathForJob(jobId);
   }
 
   function handleStartInterview(path: JobPath, category: any) {

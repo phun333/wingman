@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { listInterviews, getInterviewStats } from "@/lib/api";
+import { useInterviewsStore } from "@/stores";
 import { typeLabels, statusLabels, difficultyLabels, formatDate, formatDuration } from "@/lib/constants";
 import {
   Code2,
@@ -77,20 +77,17 @@ const fadeUp = {
 export function DashboardPage() {
   const { user } = useAuth();
 
-  const [interviews, setInterviews] = useState<Interview[]>([]);
-  const [stats, setStats] = useState<InterviewStats>({ total: 0, completed: 0, thisWeek: 0 });
-  const [loading, setLoading] = useState(true);
+  const interviews = useInterviewsStore((s) => s.recentInterviews);
+  const stats = useInterviewsStore((s) => s.stats);
+  const recentFetchedAt = useInterviewsStore((s) => s.recentFetchedAt);
+  const isLoading = useInterviewsStore((s) => s.loadingRecent || s.loadingStats);
+  const fetchDashboardData = useInterviewsStore((s) => s.fetchDashboardData);
+  // Show loading on first mount (never fetched) or when actively loading
+  const loading = recentFetchedAt === 0 || isLoading;
 
   useEffect(() => {
-    Promise.all([
-      listInterviews(10).catch(() => [] as Interview[]),
-      getInterviewStats().catch(() => ({ total: 0, completed: 0, thisWeek: 0 })),
-    ]).then(([interviewList, interviewStats]) => {
-      setInterviews(interviewList);
-      setStats(interviewStats);
-      setLoading(false);
-    });
-  }, []);
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
   return (
     <motion.div

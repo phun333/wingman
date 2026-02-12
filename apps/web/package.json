@@ -26,7 +26,8 @@
     "recharts": "^3.7.0",
     "remark-gfm": "^4.0.1",
     "tailwind-merge": "^3.4.0",
-    "tldraw": "^4.3.1"
+    "tldraw": "^4.3.1",
+    "zustand": "^5.0.11"
   },
   "devDependencies": {
     "@ffh/tsconfig": "workspace:*",

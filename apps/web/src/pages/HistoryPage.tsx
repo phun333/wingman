@@ -1,22 +1,23 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { listInterviews } from "@/lib/api";
+import { useInterviewsStore } from "@/stores";
 import { typeLabels, statusLabels, difficultyLabels, formatFullDate, formatDuration } from "@/lib/constants";
 import { BarChart3 } from "lucide-react";
 import type { Interview } from "@ffh/types";
 
 export function HistoryPage() {
-  const [interviews, setInterviews] = useState<Interview[]>([]);
-  const [loading, setLoading] = useState(true);
+  const interviews = useInterviewsStore((s) => s.allInterviews);
+  const allFetchedAt = useInterviewsStore((s) => s.allFetchedAt);
+  const isLoading = useInterviewsStore((s) => s.loadingAll);
+  const fetchAll = useInterviewsStore((s) => s.fetchAll);
+  // Show loading on first mount (never fetched) or when actively loading
+  const loading = allFetchedAt === 0 || isLoading;
 
   useEffect(() => {
-    listInterviews(50)
-      .then(setInterviews)
-      .catch(() => setInterviews([]))
-      .finally(() => setLoading(false));
-  }, []);
+    fetchAll();
+  }, [fetchAll]);
 
   return (
     <div className="max-w-4xl mx-auto">

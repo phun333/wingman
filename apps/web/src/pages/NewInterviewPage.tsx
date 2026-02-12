@@ -13,6 +13,7 @@ import {
 import { Code2, Waypoints, Phone, Dumbbell, Search, X, Check, Shuffle } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { InterviewType, Difficulty, LeetcodeProblem } from "@ffh/types";
+import { JavaScriptIcon, TypeScriptIcon, PythonIcon } from "@/components/icons/LanguageIcons";
 
 const types: {
   id: InterviewType;
@@ -247,9 +248,9 @@ export function NewInterviewPage() {
           </h2>
           <div className="flex gap-2">
             {[
-              { id: "javascript" as const, label: "JavaScript", icon: "🟨" },
-              { id: "typescript" as const, label: "TypeScript", icon: "🔷" },
-              { id: "python" as const, label: "Python", icon: "🐍" },
+              { id: "javascript" as const, label: "JavaScript", icon: <JavaScriptIcon size={16} /> },
+              { id: "typescript" as const, label: "TypeScript", icon: <TypeScriptIcon size={16} /> },
+              { id: "python" as const, label: "Python", icon: <PythonIcon size={16} /> },
             ].map((lang) => (
               <button
                 key={lang.id}
@@ -260,7 +261,7 @@ export function NewInterviewPage() {
                   ${codeLanguage === lang.id ? "border-amber bg-amber/10 text-amber" : "border-border-subtle bg-surface text-text-secondary hover:border-border"}
                 `}
               >
-                <span>{lang.icon}</span>
+                {lang.icon}
                 {lang.label}
               </button>
             ))}
