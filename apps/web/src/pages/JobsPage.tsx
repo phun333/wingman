@@ -388,13 +388,13 @@ export function JobsPage() {
 
       {/* ─── Job Cards ─── */}
       {jobs.length > 0 && (
-        <motion.div variants={stagger} className="space-y-5">
+        <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-5">
           {jobs.map((job) => {
             const path = getPathForJob(job._id);
             const isExpanded = expandedJobId === job._id;
 
             return (
-              <motion.div key={job._id} variants={fadeUp} layout>
+              <motion.div key={job._id} variants={fadeUp}>
                 <Card className="p-0 overflow-hidden hover:border-amber/20 transition-all duration-300">
                   {/* Job Header */}
                   <div className="p-5 pb-4">
@@ -471,9 +471,9 @@ export function JobsPage() {
 
                   {/* Interview Path Progress */}
                   {path && (
-                    <div className="px-5 pb-4">
-                      <div className="rounded-lg bg-surface-raised border border-border-subtle p-3">
-                        <div className="flex items-center justify-between mb-2">
+                    <div className="px-5 pb-5">
+                      <div className="rounded-xl bg-surface-raised border border-border-subtle p-4">
+                        <div className="flex items-center justify-between mb-3">
                           <span className="text-xs font-medium text-text-secondary">
                             Mülakat Hazırlığı
                           </span>
@@ -481,13 +481,13 @@ export function JobsPage() {
                             {path.progress}%
                           </span>
                         </div>
-                        <Progress value={path.progress} className="h-1.5" />
-                        <div className="flex items-center justify-between mt-2">
+                        <Progress value={path.progress} className="h-2" />
+                        <div className="flex items-center justify-between mt-3">
                           <span className="text-xs text-text-muted">
                             {path.completedQuestions} / {path.totalQuestions} soru
                             tamamlandı
                           </span>
-                          <div className="flex gap-3">
+                          <div className="flex gap-4">
                             {path.categories.map((cat) => {
                               const Icon = typeIcons[cat.type];
                               const color = typeColors[cat.type];
@@ -497,7 +497,7 @@ export function JobsPage() {
                               return (
                                 <span
                                   key={cat.type}
-                                  className="inline-flex items-center gap-1 text-xs text-text-muted"
+                                  className="inline-flex items-center gap-1.5 text-xs text-text-muted"
                                   title={cat.name}
                                 >
                                   <Icon size={12} className={color} />
@@ -524,15 +524,15 @@ export function JobsPage() {
                         <div className="border-t border-border-subtle">
                           {/* Requirements */}
                           {job.requirements.length > 0 && (
-                            <div className="px-5 pt-4 pb-3">
-                              <h4 className="text-xs text-text-muted uppercase tracking-wider font-medium mb-2">
+                            <div className="px-6 pt-5 pb-4">
+                              <h4 className="text-xs text-text-muted uppercase tracking-wider font-medium mb-3">
                                 Gereksinimler
                               </h4>
-                              <ul className="space-y-1">
+                              <ul className="space-y-2">
                                 {job.requirements.map((req, i) => (
                                   <li
                                     key={i}
-                                    className="text-sm text-text-secondary flex items-start gap-2"
+                                    className="text-sm text-text-secondary flex items-start gap-2.5"
                                   >
                                     <span className="text-amber mt-1.5 text-[6px]">
                                       ●
@@ -546,11 +546,11 @@ export function JobsPage() {
 
                           {/* Interview Path Categories */}
                           {path && (
-                            <div className="px-5 pb-5">
-                              <h4 className="text-xs text-text-muted uppercase tracking-wider font-medium mb-3">
+                            <div className="px-6 pt-2 pb-6">
+                              <h4 className="text-xs text-text-muted uppercase tracking-wider font-medium mb-4">
                                 Mülakat Yol Haritası
                               </h4>
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 {path.categories.map((category, idx) => {
                                   const Icon = typeIcons[category.type];
                                   const color = typeColors[category.type];
@@ -563,14 +563,16 @@ export function JobsPage() {
                                   return (
                                     <div
                                       key={idx}
-                                      className="bg-bg rounded-lg p-3 border border-border-subtle"
+                                      className="bg-bg rounded-xl p-4 border border-border-subtle"
                                     >
-                                      <div className="flex items-center justify-between mb-3">
+                                      <div className="flex items-center justify-between mb-4">
                                         <div className="flex items-center gap-2">
-                                          <Icon
-                                            size={14}
-                                            className={color}
-                                          />
+                                          <div className={`h-7 w-7 rounded-lg bg-surface-raised flex items-center justify-center border border-border-subtle`}>
+                                            <Icon
+                                              size={14}
+                                              className={color}
+                                            />
+                                          </div>
                                           <span className="text-sm font-medium text-text">
                                             {category.name}
                                           </span>
@@ -580,20 +582,20 @@ export function JobsPage() {
                                         </span>
                                       </div>
 
-                                      <div className="space-y-2">
+                                      <div className="space-y-3">
                                         {category.questions.map((q) => (
                                           <div
                                             key={q.id}
-                                            className="flex items-start gap-2"
+                                            className="flex items-start gap-2.5"
                                           >
                                             {q.completed ? (
                                               <CheckCircle
-                                                size={13}
+                                                size={14}
                                                 className="text-success mt-0.5 flex-shrink-0"
                                               />
                                             ) : (
                                               <Circle
-                                                size={13}
+                                                size={14}
                                                 className="text-text-muted mt-0.5 flex-shrink-0"
                                               />
                                             )}
@@ -607,7 +609,7 @@ export function JobsPage() {
                                               >
                                                 {q.question}
                                               </p>
-                                              <div className="flex items-center gap-2 mt-1">
+                                              <div className="flex items-center gap-2 mt-1.5">
                                                 <span
                                                   className={`text-[10px] px-1.5 py-0.5 rounded border ${
                                                     difficultyStyles[
@@ -635,7 +637,7 @@ export function JobsPage() {
                                           onClick={() =>
                                             handleStartInterview(path, category)
                                           }
-                                          className="mt-3 w-full flex items-center justify-center gap-1.5 rounded-lg bg-amber/10 border border-amber/20 px-3 py-1.5 text-xs font-medium text-amber hover:bg-amber/15 transition-colors cursor-pointer"
+                                          className="mt-4 w-full flex items-center justify-center gap-1.5 rounded-lg bg-amber/10 border border-amber/20 px-3 py-2 text-xs font-medium text-amber hover:bg-amber/15 transition-colors cursor-pointer"
                                         >
                                           Mülakata Başla
                                           <ArrowRight size={12} />
