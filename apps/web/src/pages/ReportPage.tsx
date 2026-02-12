@@ -306,7 +306,7 @@ export function ReportPage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link to="/" className="h-7 w-7 rounded-md bg-amber/15 flex items-center justify-center">
-              <span className="text-amber font-display text-xs font-bold">F</span>
+              <span className="text-amber font-display text-xs font-bold">W</span>
             </Link>
             <span className="text-sm text-text-muted">
               {interview ? typeLabels[interview.type] ?? interview.type : "Mülakat"} Raporu

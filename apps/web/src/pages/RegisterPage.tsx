@@ -48,7 +48,7 @@ export function RegisterPage() {
           className="relative z-10 text-center px-12"
         >
           <div className="mx-auto mb-8 h-24 w-24 rounded-full bg-amber/10 border border-amber/20 flex items-center justify-center glow-amber">
-            <span className="font-display text-4xl font-bold text-amber">F</span>
+            <span className="font-display text-4xl font-bold text-amber">W</span>
           </div>
           <h1 className="font-display text-4xl font-bold text-text text-balance">
             Kariyerine

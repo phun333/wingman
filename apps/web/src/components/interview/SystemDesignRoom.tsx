@@ -161,7 +161,7 @@ export function SystemDesignRoom({ interviewId }: SystemDesignRoomProps) {
       <header className="flex h-12 items-center justify-between border-b border-border-subtle bg-surface/80 backdrop-blur-sm px-4 shrink-0">
         <div className="flex items-center gap-3">
           <div className="h-6 w-6 rounded-md bg-amber/15 flex items-center justify-center">
-            <span className="text-amber font-display text-xs font-bold">F</span>
+            <span className="text-amber font-display text-xs font-bold">W</span>
           </div>
           <span className="text-sm font-medium text-text-secondary">
             System Design
