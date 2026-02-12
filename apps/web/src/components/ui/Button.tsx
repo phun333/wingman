@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 type Variant = "primary" | "secondary" | "ghost" | "danger";
@@ -27,40 +28,46 @@ const sizeClasses: Record<Size, string> = {
   lg: "h-12 px-6 text-base gap-2.5",
 };
 
-export function Button({
-  variant = "primary",
-  size = "md",
-  loading = false,
-  disabled,
-  children,
-  className = "",
-  ...props
-}: ButtonProps) {
-  return (
-    <button
-      disabled={disabled || loading}
-      className={`
-        inline-flex items-center justify-center rounded-lg font-body
-        transition-colors transition-shadow duration-150
-        disabled:opacity-50 disabled:pointer-events-none
-        cursor-pointer
-        ${variantClasses[variant]}
-        ${sizeClasses[size]}
-        ${className}
-      `}
-      {...props}
-    >
-      {loading ? (
-        <>
-          <span
-            className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
-            aria-hidden="true"
-          />
-          <span>Yükleniyor…</span>
-        </>
-      ) : (
-        children
-      )}
-    </button>
-  );
-}
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  function Button(
+    {
+      variant = "primary",
+      size = "md",
+      loading = false,
+      disabled,
+      children,
+      className = "",
+      ...props
+    },
+    ref,
+  ) {
+    return (
+      <button
+        ref={ref}
+        disabled={disabled || loading}
+        className={`
+          inline-flex items-center justify-center rounded-lg font-body
+          transition-colors transition-shadow duration-150
+          disabled:opacity-50 disabled:pointer-events-none
+          cursor-pointer
+          ${variantClasses[variant]}
+          ${sizeClasses[size]}
+          ${className}
+        `}
+        {...props}
+      >
+        {loading ? (
+          <>
+            <span
+              className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+              aria-hidden="true"
+            />
+            <span>Yükleniyor…</span>
+          </>
+        ) : (
+          children
+        )}
+      </button>
+    );
+  },
+);
