@@ -77,8 +77,17 @@ export class VoiceSession {
   private timeWarningTimer: ReturnType<typeof setTimeout> | null = null;
   private timeUpTimer: ReturnType<typeof setTimeout> | null = null;
 
-  // Problem reference for solution comparison
-  private currentProblem: { title?: string; slug?: string; optimalSolution?: string; timeComplexity?: string; spaceComplexity?: string } | null = null;
+  // Problem reference for solution comparison and intro generation
+  private currentProblem: {
+    title?: string;
+    slug?: string;
+    description?: string;
+    difficulty?: string;
+    relatedTopics?: string[];
+    optimalSolution?: string;
+    timeComplexity?: string;
+    spaceComplexity?: string;
+  } | null = null;
 
   constructor(send: (msg: ServerMessage) => void) {
     this.send = send;
@@ -198,18 +207,70 @@ export class VoiceSession {
           }
           if (problem) {
             this.send({ type: "problem_loaded", problem: problem as any });
-            // Store problem info for solution comparison
+            // Store problem info for solution comparison and intro generation
             this.currentProblem = {
               title: problem.title,
               slug: problem.slug || problem.title.toLowerCase().replace(/\s+/g, '-'),
+              description: problem.description,
+              difficulty: problem.difficulty,
+              relatedTopics: problem.relatedTopics ?? [],
               optimalSolution: problem.optimalSolution ?? undefined,
               timeComplexity: problem.timeComplexity ?? undefined,
               spaceComplexity: problem.spaceComplexity ?? undefined,
             };
-            // Add problem context to conversation
+            // Build rich problem context for AI
+            const contextParts: string[] = [
+              `[Mülakata atanan problem]`,
+              `Başlık: ${problem.title}`,
+              `Zorluk: ${problem.difficulty}`,
+            ];
+
+            // Category / topics
+            if (problem.relatedTopics?.length > 0) {
+              contextParts.push(`İlgili Konular: ${problem.relatedTopics.join(", ")}`);
+            } else if (problem.category) {
+              contextParts.push(`Kategori: ${problem.category}`);
+            }
+
+            // Companies context (shows this is a real interview question)
+            if (problem.companies?.length > 0) {
+              contextParts.push(`Bu soru şu şirketlerde sorulmuştur: ${problem.companies.slice(0, 5).join(", ")}`);
+            }
+
+            // Full description
+            contextParts.push(`\nProblem Açıklaması:\n${problem.description}`);
+
+            // Test cases (from problems table)
+            if (problem.testCases?.length > 0) {
+              const visibleTests = problem.testCases.filter((tc: any) => !tc.isHidden);
+              if (visibleTests.length > 0) {
+                contextParts.push(`\nÖrnek Test Case'ler:`);
+                for (const tc of visibleTests.slice(0, 3)) {
+                  contextParts.push(`  Girdi: ${tc.input} → Beklenen Çıktı: ${tc.expectedOutput}`);
+                }
+              }
+            }
+
+            // Complexity hints
+            if (problem.timeComplexity) {
+              contextParts.push(`Beklenen Zaman Karmaşıklığı: ${problem.timeComplexity}`);
+            }
+            if (problem.spaceComplexity) {
+              contextParts.push(`Beklenen Alan Karmaşıklığı: ${problem.spaceComplexity}`);
+            }
+
+            // Interview behavior instructions
+            contextParts.push(`\n--- MÜLAKAT TALİMATLARI ---`);
+            contextParts.push(`Bu bir teknik mülakat sorusudur. Sen mülakatçısın, aday bu problemi çözmeye çalışacak.`);
+            contextParts.push(`1. Problemi doğal bir dille açıkla (kod syntax'ı kullanma).`);
+            contextParts.push(`2. Adayın yaklaşımını sor, direkt çözüm verme.`);
+            contextParts.push(`3. Aday kodlarken sessiz kal, sadece takılırsa veya hata yaparsa yönlendir.`);
+            contextParts.push(`4. Test sonuçlarını değerlendir, edge case'leri hatırlat.`);
+            contextParts.push(`5. Her zaman bu probleme odaklan — konu dışına çıkma.`);
+
             this.conversationHistory.push({
               role: "system",
-              content: `[Mülakata atanan problem]\nBaşlık: ${problem.title}\nZorluk: ${problem.difficulty}\nKategori: ${problem.category}\nAçıklama: ${problem.description}\n\nBu problemi adaya sor. Problemi kısaca sesli olarak açıkla ve adayın çözmesini bekle.`,
+              content: contextParts.join("\n"),
             });
             // Link problem to interview (only for legacy problems table)
             if (!problem.leetcodeId) {
@@ -326,8 +387,8 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
         this.setState("listening");
 
         // İlk mikrofon açıldığında intro sesini çal (live-coding ve practice için)
-        console.log(`[start_listening] isFirstInteraction: ${this.isFirstInteraction}, type: ${this.interview.type}`);
-        if (this.isFirstInteraction && (this.interview.type === "live-coding" || this.interview.type === "practice")) {
+        console.log(`[start_listening] isFirstInteraction: ${this.isFirstInteraction}, type: ${this.interview?.type}`);
+        if (this.isFirstInteraction && this.interview && (this.interview.type === "live-coding" || this.interview.type === "practice")) {
           console.log("[start_listening] Playing pre-generated intro audio...");
           this.isFirstInteraction = false;
 
@@ -336,11 +397,11 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
             const problemSlug = this.currentProblem.slug;
             console.log("[start_listening] Using problem slug:", problemSlug);
 
-            const introText = getProblemIntro(problemSlug);
+            const introText = getProblemIntro(problemSlug, this.currentProblem);
             console.log("[start_listening] Intro text:", introText.substring(0, 100) + "...");
 
             // Send the intro text to the client immediately
-            this.send({ type: "ai_text", text: introText });
+            this.send({ type: "ai_text", text: introText, done: true });
 
             // Generate TTS audio
             this.generateIntroAudio(introText);
@@ -350,8 +411,8 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
             setTimeout(() => {
               if (this.currentProblem?.slug) {
                 const problemSlug = this.currentProblem.slug;
-                const introText = getProblemIntro(problemSlug);
-                this.send({ type: "ai_text", text: introText });
+                const introText = getProblemIntro(problemSlug, this.currentProblem);
+                this.send({ type: "ai_text", text: introText, done: true });
                 this.generateIntroAudio(introText);
               } else {
                 // Fallback to LLM
@@ -959,7 +1020,7 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
     signal: AbortSignal,
   ): Promise<void> {
     // TTS için telaffuz optimizasyonu uygula (sadece Türkçe için)
-    const optimizedText = this.interview.language === "tr" ? optimizeForTTS(text) : text;
+    const optimizedText = this.interview?.language === "tr" ? optimizeForTTS(text) : text;
 
     // Split into sentences for lower latency
     const sentences = optimizedText.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [optimizedText];
@@ -1001,7 +1062,7 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
     signal: AbortSignal,
   ): Promise<void> {
     // TTS için telaffuz optimizasyonu uygula (sadece Türkçe için)
-    const optimizedText = this.interview.language === "tr" ? optimizeForTTS(text) : text;
+    const optimizedText = this.interview?.language === "tr" ? optimizeForTTS(text) : text;
 
     const response = await fetch(
       `https://fal.run/${ENV.TTS_ENDPOINT}/audio/speech`,

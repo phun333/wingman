@@ -53,13 +53,57 @@ export const problemIntros: Record<string, string> = {
 };
 
 /**
- * Get intro text for a problem
+ * Get intro text for a problem.
+ * First checks hardcoded intros, then generates a dynamic one from problem data.
  */
-export function getProblemIntro(problemSlug: string): string {
+export function getProblemIntro(problemSlug: string, problemData?: { title?: string; description?: string; difficulty?: string; relatedTopics?: string[] }): string {
   // Normalize the slug (lowercase, replace spaces with dashes)
   const normalizedSlug = problemSlug.toLowerCase().replace(/\s+/g, '-');
 
-  return problemIntros[normalizedSlug] || problemIntros.default;
+  // Check hardcoded intros first
+  const hardcoded = problemIntros[normalizedSlug];
+  if (hardcoded) {
+    return hardcoded;
+  }
+
+  // Generate dynamic intro from problem data if available
+  if (problemData?.title && problemData?.description) {
+    return generateDynamicIntro(problemData);
+  }
+
+  return problemIntros["default"] ?? "Bu problem üzerinde çalışacağız. Birlikte inceleyelim. Nasıl yaklaşmayı düşünüyorsun?";
+}
+
+/**
+ * Generate a natural intro text from problem metadata.
+ * Keeps it conversational — no code syntax, no brackets.
+ */
+function generateDynamicIntro(problem: { title?: string; description?: string; difficulty?: string; relatedTopics?: string[] }): string {
+  const difficultyLabels: Record<string, string> = {
+    easy: "temel seviyede",
+    medium: "orta seviyede",
+    hard: "ileri seviyede",
+  };
+  const diffLabel = difficultyLabels[problem.difficulty ?? "medium"] ?? "orta seviyede";
+
+  // Extract first meaningful sentence from description (strip markdown/html)
+  const cleanDesc = (problem.description ?? "")
+    .replace(/```[\s\S]*?```/g, "")       // remove code blocks
+    .replace(/`[^`]*`/g, "")              // remove inline code
+    .replace(/\*\*([^*]+)\*\*/g, "$1")    // bold → plain
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // links → text
+    .replace(/<[^>]+>/g, "")              // strip HTML tags
+    .replace(/\n+/g, " ")                 // newlines → spaces
+    .trim();
+
+  // Take first ~200 chars as a summary
+  const summary = cleanDesc.length > 200 ? cleanDesc.substring(0, 200).replace(/\s\S*$/, "") + "..." : cleanDesc;
+
+  const topicHint = problem.relatedTopics?.length
+    ? ` Bu problemde ${problem.relatedTopics.slice(0, 2).join(" ve ")} konularına hakim olman faydalı olacak.`
+    : "";
+
+  return `Bugün ${problem.title} problemi üzerinde çalışacağız. Bu ${diffLabel} bir soru. ${summary}${topicHint} Nasıl yaklaşmayı düşünüyorsun?`;
 }
 
 /**
