@@ -323,6 +323,8 @@ export default defineSchema({
         completed: v.boolean(),
         interviewId: v.optional(v.id("interviews")),
         score: v.optional(v.number()),
+        leetcodeId: v.optional(v.number()),
+        leetcodeUrl: v.optional(v.string()),
       })),
     })),
     progress: v.number(), // 0-100

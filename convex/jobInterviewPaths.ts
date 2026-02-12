@@ -24,8 +24,8 @@ export const createForJob = mutation({
     const job = await ctx.db.get(args.jobPostingId);
     if (!job) throw new Error("Job posting not found");
 
-    // Generate questions based on job requirements and skills
-    const questions = await generateQuestionsForJob(job);
+    // Generate questions from LeetCode DB + role-specific behavioral
+    const questions = await generateQuestionsForJob(ctx, job);
 
     const now = Date.now();
     const id = await ctx.db.insert("jobInterviewPaths", {
@@ -153,13 +153,15 @@ export const updateQuestionProgress = mutation({
   },
 });
 
-// ─── Helper: Generate Questions for Job ─────────────────
+// ─── Helper: Generate Questions from LeetCode DB ────────
 
 interface PathQuestion {
   id: string;
   question: string;
   difficulty: "easy" | "medium" | "hard";
   completed: boolean;
+  leetcodeId?: number;
+  leetcodeUrl?: string;
 }
 
 interface PathCategory {
@@ -168,163 +170,171 @@ interface PathCategory {
   questions: PathQuestion[];
 }
 
-async function generateQuestionsForJob(job: any) {
+async function generateQuestionsForJob(
+  ctx: any,
+  job: any,
+): Promise<PathCategory[]> {
   const categories: PathCategory[] = [];
+  const company = job.company ?? "";
+  const companyLower = company.toLowerCase();
 
-  // Phone Screen Questions
+  // ── 1. LeetCode'dan şirketin gerçek sorularını çek ──
+  const allProblems = await ctx.db.query("leetcodeProblems").collect();
+  const companyProblems = allProblems
+    .filter((p: any) =>
+      p.companies.some((c: string) => c.toLowerCase() === companyLower),
+    )
+    .sort((a: any, b: any) => b.frequency - a.frequency);
+
+  // ── 2. Live Coding — Şirketin en çok sorduğu LeetCode soruları ──
+  if (companyProblems.length > 0) {
+    // Difficulty dengesine göre seç: 2 easy, 4 medium, 2 hard (max 8)
+    const easy = companyProblems.filter((p: any) => p.difficulty === "easy").slice(0, 2);
+    const medium = companyProblems.filter((p: any) => p.difficulty === "medium").slice(0, 4);
+    const hard = companyProblems.filter((p: any) => p.difficulty === "hard").slice(0, 2);
+    const selected = [...easy, ...medium, ...hard];
+
+    if (selected.length > 0) {
+      categories.push({
+        name: `Live Coding — ${company}`,
+        type: "live-coding",
+        questions: selected.map((p: any, i: number) => ({
+          id: `lc-${p.leetcodeId}`,
+          question: `#${p.leetcodeId}. ${p.title}`,
+          difficulty: p.difficulty,
+          completed: false,
+          leetcodeId: p.leetcodeId,
+          leetcodeUrl: p.url,
+        })),
+      });
+    }
+  }
+
+  // Şirket sorusu yoksa, ilgili skill/topic'lere göre genel sorular çek
+  if (companyProblems.length === 0) {
+    const skillSet = new Set(
+      (job.skills ?? []).map((s: string) => s.toLowerCase()),
+    );
+
+    // Skill → LeetCode topic eşleşmesi
+    const topicMap: Record<string, string[]> = {
+      "array": ["Array"],
+      "string": ["String"],
+      "dynamic programming": ["Dynamic Programming"],
+      "tree": ["Tree", "Binary Tree"],
+      "graph": ["Graph"],
+      "sql": ["Database"],
+      "python": ["Array", "String", "Hash Table"],
+      "java": ["Array", "String", "Hash Table"],
+      "javascript": ["Array", "String", "Hash Table"],
+      "typescript": ["Array", "String", "Hash Table"],
+    };
+
+    const matchedTopics = new Set<string>();
+    for (const skill of skillSet) {
+      const topics = topicMap[skill];
+      if (topics) topics.forEach((t) => matchedTopics.add(t));
+    }
+
+    // Hiç match yoksa genel popüler sorulardan al
+    if (matchedTopics.size === 0) {
+      matchedTopics.add("Array");
+      matchedTopics.add("String");
+      matchedTopics.add("Hash Table");
+    }
+
+    const topicProblems = allProblems
+      .filter((p: any) =>
+        p.relatedTopics.some((t: string) => matchedTopics.has(t)),
+      )
+      .sort((a: any, b: any) => b.frequency - a.frequency)
+      .slice(0, 8);
+
+    if (topicProblems.length > 0) {
+      categories.push({
+        name: "Live Coding",
+        type: "live-coding",
+        questions: topicProblems.map((p: any) => ({
+          id: `lc-${p.leetcodeId}`,
+          question: `#${p.leetcodeId}. ${p.title}`,
+          difficulty: p.difficulty,
+          completed: false,
+          leetcodeId: p.leetcodeId,
+          leetcodeUrl: p.url,
+        })),
+      });
+    }
+  }
+
+  // ── 3. Phone Screen — Pozisyona özel davranışsal sorular ──
   const phoneQuestions: PathQuestion[] = [];
 
-  // Company-specific questions
-  if (job.company) {
+  if (company) {
     phoneQuestions.push({
-      id: `ps-company-1`,
-      question: `${job.company} hakkında ne biliyorsunuz ve neden burada çalışmak istiyorsunuz?`,
-      difficulty: "easy" as const,
+      id: "ps-company-1",
+      question: `${company} hakkında ne biliyorsunuz ve neden burada çalışmak istiyorsunuz?`,
+      difficulty: "easy",
       completed: false,
     });
   }
 
-  // Role-specific questions
   phoneQuestions.push({
-    id: `ps-role-1`,
-    question: `${job.title} pozisyonu için en uygun adayın siz olduğunuzu düşünmenizin nedenleri nelerdir?`,
-    difficulty: "medium" as const,
+    id: "ps-role-1",
+    question: `${job.title} pozisyonunda başarıyı nasıl tanımlarsınız?`,
+    difficulty: "medium",
     completed: false,
   });
 
-  // Level-specific questions
-  if (job.level?.includes("senior") || job.level?.includes("lead")) {
+  if (
+    job.level?.includes("senior") ||
+    job.level?.includes("lead") ||
+    job.level?.includes("staff")
+  ) {
     phoneQuestions.push({
-      id: `ps-level-1`,
-      question: "Liderlik ettiğiniz bir projeden ve karşılaştığınız zorluklardan bahseder misiniz?",
-      difficulty: "hard" as const,
+      id: "ps-leadership-1",
+      question:
+        "Teknik bir karar konusunda ekiptekileri ikna etmeniz gereken bir durumu anlatır mısınız?",
+      difficulty: "hard",
       completed: false,
     });
   }
 
   categories.push({
     name: "Phone Screen",
-    type: "phone-screen" as const,
+    type: "phone-screen",
     questions: phoneQuestions,
   });
 
-  // Technical/Coding Questions based on skills
-  const codingQuestions = [];
-  const skillSet = new Set(job.skills?.map((s: string) => s.toLowerCase()) || []);
+  // ── 4. System Design — Senior+ roller veya ilanda geçiyorsa ──
+  const isDesignRole =
+    job.level?.includes("senior") ||
+    job.level?.includes("lead") ||
+    job.level?.includes("staff") ||
+    job.level?.includes("architect") ||
+    (job.skills ?? []).some((s: string) =>
+      s.toLowerCase().includes("system design"),
+    );
 
-  // Algorithm questions for technical roles
-  if (skillSet.has("algorithms") || skillSet.has("data structures")) {
-    codingQuestions.push({
-      id: `lc-algo-1`,
-      question: "İki sayının toplamı (Two Sum) problemini çözün",
-      difficulty: "easy" as const,
-      completed: false,
-    });
-    codingQuestions.push({
-      id: `lc-algo-2`,
-      question: "Binary tree'nin maksimum derinliğini bulun",
-      difficulty: "medium" as const,
-      completed: false,
-    });
-  }
-
-  // Frontend-specific
-  if (skillSet.has("react") || skillSet.has("javascript") || skillSet.has("frontend")) {
-    codingQuestions.push({
-      id: `lc-fe-1`,
-      question: "React'te bir todo list komponenti implement edin",
-      difficulty: "medium" as const,
-      completed: false,
-    });
-    codingQuestions.push({
-      id: `lc-fe-2`,
-      question: "Debounce fonksiyonu yazın ve kullanım örneği verin",
-      difficulty: "medium" as const,
-      completed: false,
-    });
-  }
-
-  // Backend-specific
-  if (skillSet.has("nodejs") || skillSet.has("backend") || skillSet.has("api")) {
-    codingQuestions.push({
-      id: `lc-be-1`,
-      question: "REST API rate limiting middleware'i implement edin",
-      difficulty: "medium" as const,
-      completed: false,
-    });
-  }
-
-  // Database-specific
-  if (skillSet.has("sql") || skillSet.has("database") || skillSet.has("mongodb")) {
-    codingQuestions.push({
-      id: `lc-db-1`,
-      question: "Veritabanı sorgularını optimize etme stratejilerini açıklayın",
-      difficulty: "medium" as const,
-      completed: false,
-    });
-  }
-
-  if (codingQuestions.length > 0) {
-    categories.push({
-      name: "Live Coding",
-      type: "live-coding" as const,
-      questions: codingQuestions,
-    });
-  }
-
-  // System Design Questions for senior roles
-  if (job.level?.includes("senior") || job.level?.includes("architect") || skillSet.has("system design")) {
-    const designQuestions = [];
-
-    // General system design
-    designQuestions.push({
-      id: `sd-general-1`,
-      question: "URL kısaltma servisi (like bit.ly) tasarlayın",
-      difficulty: "hard" as const,
-      completed: false,
-    });
-
-    // Domain-specific design
-    if (job.title?.toLowerCase().includes("frontend")) {
-      designQuestions.push({
-        id: `sd-fe-1`,
-        question: "Real-time collaborative editor (Google Docs gibi) tasarlayın",
-        difficulty: "hard" as const,
-        completed: false,
-      });
-    }
-
-    if (job.title?.toLowerCase().includes("backend")) {
-      designQuestions.push({
-        id: `sd-be-1`,
-        question: "Distributed message queue sistemi tasarlayın",
-        difficulty: "hard" as const,
-        completed: false,
-      });
-    }
-
+  if (isDesignRole) {
     categories.push({
       name: "System Design",
-      type: "system-design" as const,
-      questions: designQuestions,
+      type: "system-design",
+      questions: [
+        {
+          id: "sd-1",
+          question: "URL kısaltma servisi (bit.ly) tasarlayın",
+          difficulty: "hard" as const,
+          completed: false,
+        },
+        {
+          id: "sd-2",
+          question: "Chat uygulaması (WhatsApp) tasarlayın",
+          difficulty: "hard" as const,
+          completed: false,
+        },
+      ],
     });
   }
-
-  // Add general technical questions based on requirements
-  const requirements = job.requirements || [];
-  requirements.forEach((req: string, idx: number) => {
-    if (idx < 3) { // Limit to first 3 requirements
-      const category = categories.find(c => c.type === "phone-screen");
-      if (category) {
-        category.questions.push({
-          id: `ps-req-${idx}`,
-          question: `"${req}" konusundaki deneyimlerinizden bahseder misiniz?`,
-          difficulty: "medium" as const,
-          completed: false,
-        });
-      }
-    }
-  });
 
   return categories;
 }

@@ -54,6 +54,8 @@ interface JobPath {
       completed: boolean;
       interviewId?: string;
       score?: number;
+      leetcodeId?: number;
+      leetcodeUrl?: string;
     }>;
   }>;
   progress: number;
@@ -600,15 +602,23 @@ export function JobsPage() {
                                               />
                                             )}
                                             <div className="flex-1 min-w-0">
-                                              <p
-                                                className={`text-xs leading-relaxed ${
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  if (!q.completed) {
+                                                    navigate(
+                                                      `/interview/new?type=${category.type}&jobPathId=${path._id}&questionId=${q.id}`
+                                                    );
+                                                  }
+                                                }}
+                                                className={`text-left text-xs leading-relaxed transition-colors cursor-pointer ${
                                                   q.completed
                                                     ? "line-through text-text-muted"
-                                                    : "text-text-secondary"
+                                                    : "text-text-secondary hover:text-amber"
                                                 }`}
                                               >
                                                 {q.question}
-                                              </p>
+                                              </button>
                                               <div className="flex items-center gap-2 mt-1.5">
                                                 <span
                                                   className={`text-[10px] px-1.5 py-0.5 rounded border ${
