@@ -4,7 +4,8 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
-import { User, FileText, Briefcase, Brain } from "lucide-react";
+import { User, FileText, Briefcase, Brain, Flame } from "lucide-react";
+import { StreakHeatmap } from "@/components/ui/StreakHeatmap";
 import { Link } from "react-router-dom";
 import {
   getProfile,
@@ -358,6 +359,11 @@ export function SettingsPage() {
             </Link>
           </div>
         </Card>
+      </motion.div>
+
+      {/* ─── Streak Heatmap ─── */}
+      <motion.div variants={fadeUp}>
+        <StreakHeatmap />
       </motion.div>
 
       {/* ─── Memory / Performance Section ─── */}

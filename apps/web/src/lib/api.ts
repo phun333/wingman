@@ -154,6 +154,18 @@ export async function getUserProgress(): Promise<UserProgress> {
   return request<UserProgress>("/reports/progress");
 }
 
+export interface DailyActivity {
+  activity: { date: string; count: number; level: number }[];
+  currentStreak: number;
+  longestStreak: number;
+  totalActiveDays: number;
+  totalSolved: number;
+}
+
+export async function getDailyActivity(): Promise<DailyActivity> {
+  return request<DailyActivity>("/reports/activity");
+}
+
 // ─── Code Execution ──────────────────────────────────────
 
 export async function executeCode(params: {

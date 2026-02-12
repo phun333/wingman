@@ -104,6 +104,31 @@ reportRoutes.get(
 );
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  GET /reports/activity — Daily activity heatmap data
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+reportRoutes.get(
+  "/activity",
+  describeRoute({
+    tags: ["Reports"],
+    summary: "Get daily activity data for streak heatmap",
+    responses: {
+      200: { description: "Activity data" },
+      401: { description: "Unauthorized" },
+    },
+  }),
+  async (c) => {
+    const userId = c.get("userId");
+
+    const data = await convex.query(api.interviewResults.getDailyActivity, {
+      userId: userId as any,
+    });
+
+    return c.json(data);
+  },
+);
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  GET /reports/progress — Get user's progress data
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

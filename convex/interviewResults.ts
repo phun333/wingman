@@ -73,6 +73,85 @@ export const listByUser = query({
   },
 });
 
+// ─── Get Daily Activity (Heatmap) ────────────────────────
+
+export const getDailyActivity = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const oneYearAgo = Date.now() - 365 * 24 * 60 * 60 * 1000;
+
+    const results = await ctx.db
+      .query("interviewResults")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .order("desc")
+      .collect();
+
+    // Aggregate by day
+    const dayCounts = new Map<string, number>();
+
+    for (const r of results) {
+      if (r.createdAt < oneYearAgo) continue;
+      const d = new Date(r.createdAt);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      dayCounts.set(key, (dayCounts.get(key) ?? 0) + 1);
+    }
+
+    // Build activity array
+    const activity: { date: string; count: number; level: number }[] = [];
+    const today = new Date();
+    const start = new Date(oneYearAgo);
+    start.setHours(0, 0, 0, 0);
+
+    for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) {
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const count = dayCounts.get(key) ?? 0;
+      const level = count === 0 ? 0 : count <= 1 ? 1 : count <= 2 ? 2 : count <= 4 ? 3 : 4;
+      activity.push({ date: key, count, level });
+    }
+
+    // Streak calculation
+    let currentStreak = 0;
+    let longestStreak = 0;
+    let tempStreak = 0;
+
+    for (let i = activity.length - 1; i >= 0; i--) {
+      if (activity[i]!.count > 0) {
+        tempStreak++;
+      } else {
+        if (i === activity.length - 1) {
+          // Today might not have activity yet, check yesterday
+          tempStreak = 0;
+          continue;
+        }
+        break;
+      }
+    }
+    currentStreak = tempStreak;
+
+    // Longest streak
+    tempStreak = 0;
+    for (const a of activity) {
+      if (a.count > 0) {
+        tempStreak++;
+        longestStreak = Math.max(longestStreak, tempStreak);
+      } else {
+        tempStreak = 0;
+      }
+    }
+
+    const totalActiveDays = activity.filter((a) => a.count > 0).length;
+    const totalSolved = activity.reduce((sum, a) => sum + a.count, 0);
+
+    return {
+      activity,
+      currentStreak,
+      longestStreak,
+      totalActiveDays,
+      totalSolved,
+    };
+  },
+});
+
 // ─── Get User Progress Stats ─────────────────────────────
 
 export const getUserProgress = query({
