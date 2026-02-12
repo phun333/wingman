@@ -1034,7 +1034,7 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
         const stream = await fal.stream(ENV.TTS_ENDPOINT as any, {
           input: { input: trimmed, speed: this.config.speed },
           path: "/stream",
-        });
+        } as any);
 
         for await (const event of stream as AsyncIterable<{
           audio?: string;
@@ -1134,7 +1134,7 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
       const stream = await fal.stream(ENV.TTS_ENDPOINT as any, {
         input: { input: text, speed: this.config.speed },
         path: "/stream",
-      });
+      } as any);
 
       for await (const event of stream as AsyncIterable<{
         audio?: string;

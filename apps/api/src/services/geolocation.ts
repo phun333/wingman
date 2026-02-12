@@ -21,7 +21,7 @@ interface GeolocationData {
 export async function getGeolocationFromIP(ip: string): Promise<GeolocationData | null> {
   try {
     // Clean IP address (remove IPv6 prefix if present)
-    const cleanIP = ip.includes("::ffff:") ? ip.split("::ffff:")[1] : ip;
+    const cleanIP = ip.includes("::ffff:") ? ip.split("::ffff:")[1] ?? ip : ip;
 
     // Skip localhost/private IPs
     if (cleanIP === "127.0.0.1" || cleanIP === "::1" || cleanIP.startsWith("192.168.") || cleanIP.startsWith("10.")) {
@@ -41,7 +41,7 @@ export async function getGeolocationFromIP(ip: string): Promise<GeolocationData 
       return null;
     }
 
-    const data = await response.json();
+    const data = await response.json() as Record<string, any>;
 
     return {
       ip: cleanIP,
@@ -71,7 +71,7 @@ export function getClientIP(request: Request, headers?: Headers): string {
   const forwardedFor = headers?.get("X-Forwarded-For");
   if (forwardedFor) {
     // X-Forwarded-For can contain multiple IPs, take the first one
-    return forwardedFor.split(",")[0].trim();
+    return forwardedFor.split(",")[0]?.trim() ?? forwardedFor;
   }
 
   const realIP = headers?.get("X-Real-IP");

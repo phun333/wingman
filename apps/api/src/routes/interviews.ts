@@ -20,11 +20,14 @@ async function getConvexUser(c: any) {
   const userName = c.get("userName");
   const userEmail = c.get("userEmail");
 
-  return await convex.mutation(api.users.getOrCreateByAuthId, {
+  const user = await convex.mutation(api.users.getOrCreateByAuthId, {
     authId: authId,
     email: userEmail,
     name: userName,
   });
+
+  if (!user) throw new Error("User not found");
+  return user;
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

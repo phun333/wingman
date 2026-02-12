@@ -94,7 +94,6 @@ export const pronunciationGuide = {
 
   // Test related
   "test": "test",
-  "case": "keys",
   "pass": "pas",
   "fail": "feyl",
   "error": "erör",
@@ -151,7 +150,6 @@ export const pronunciationGuide = {
   "includes": "inkluds",
   "indexOf": "indeks of",
   "charAt": "ker et",
-  "substring": "sabsıtring",
   "toLowerCase": "tu lovır keys",
   "toUpperCase": "tu apır keys",
 };
@@ -172,7 +170,8 @@ export function applyPronunciationGuide(text: string): string {
     const regex = new RegExp(`\\b${term}\\b`, 'gi');
     processedText = processedText.replace(regex, (match) => {
       // Orijinal case'i koru
-      if (match[0] === match[0].toUpperCase()) {
+      const firstChar = match[0];
+      if (firstChar && firstChar === firstChar.toUpperCase()) {
         return pronunciation.charAt(0).toUpperCase() + pronunciation.slice(1);
       }
       return pronunciation;
@@ -220,7 +219,7 @@ export function optimizeForTTS(text: string): string {
   text = text.replace(/\[([^\]]+)\]/g, (match, content) => {
     // Sadece sayı dizilerini çevir
     if (/^[\d,\s]+$/.test(content)) {
-      const numbers = content.split(',').map(n => n.trim());
+      const numbers = content.split(',').map((n: string) => n.trim());
       if (numbers.length === 1) {
         return numbers[0];
       } else if (numbers.length === 2) {

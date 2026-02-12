@@ -230,7 +230,11 @@ jobRoutes.put(
     try {
       const updated = await convex.mutation(api.jobInterviewPaths.updateQuestionProgress, {
         pathId: pathId as any,
-        ...body,
+        categoryIndex: body.categoryIndex,
+        questionIndex: body.questionIndex,
+        completed: body.completed,
+        interviewId: body.interviewId as any,
+        score: body.score,
       });
       return c.json(updated);
     } catch (err) {
