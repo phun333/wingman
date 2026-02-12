@@ -73,8 +73,8 @@ export function InterviewRoomPage() {
             return currentProblem;
           });
           // Set code language from interview if available
-          if (iv.codeLanguage) {
-            setCodeLanguage(iv.codeLanguage);
+          if (iv.language) {
+            setCodeLanguage(iv.language as CodeLanguage);
           }
         }
       })

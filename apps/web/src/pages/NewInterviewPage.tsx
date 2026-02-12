@@ -95,7 +95,7 @@ export function NewInterviewPage() {
     <motion.div
       initial="hidden"
       animate="visible"
-      variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
+      variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.08 } } }}
       className="max-w-3xl mx-auto"
     >
       <motion.div variants={fadeUp}>

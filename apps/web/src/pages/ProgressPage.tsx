@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { motion } from "motion/react";
+import { Link, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { getUserProgress, listInterviews } from "@/lib/api";
+import { getUserProgress, listInterviews, getJobPaths, createInterview } from "@/lib/api";
 import { typeLabels, typeColors, hireLabels, difficultyLabels, formatDate, formatFullDate } from "@/lib/constants";
+import { JobPaths } from "@/components/JobPaths";
 import { TrendingUp, Flame, CheckCircle2, AlertTriangle } from "lucide-react";
 import type { UserProgress, Interview } from "@ffh/types";
 import {
@@ -42,39 +42,39 @@ const CHART_AXIS = "rgba(85, 85, 95, 0.8)";
 const CHART_TICK = "rgba(139, 139, 150, 1)";
 const CHART_TICK_DIM = "rgba(85, 85, 95, 1)";
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
-};
-
 // ─── Main Component ──────────────────────────────────────
 
 export function ProgressPage() {
+  const navigate = useNavigate();
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [interviews, setInterviews] = useState<Interview[]>([]);
+  const [jobPaths, setJobPaths] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
+  const [activeTab, setActiveTab] = useState<"overview" | "job-paths">("overview");
 
   useEffect(() => {
     Promise.all([
       getUserProgress().catch(() => null),
       listInterviews(50).catch(() => []),
-    ]).then(([prog, ivs]) => {
+      getJobPaths().catch((err) => {
+        console.error("Failed to load job paths:", err);
+        return [];
+      }),
+    ]).then(([prog, ivs, paths]) => {
+      console.log("Loaded data:", { prog, ivs, paths });
       setProgress(prog);
       setInterviews(ivs);
+      setJobPaths(paths);
       setLoading(false);
     });
   }, []);
 
   if (loading) {
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="flex items-center justify-center py-20"
-      >
+      <div className="flex items-center justify-center py-20">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-amber border-t-transparent" />
-      </motion.div>
+      </div>
     );
   }
 
@@ -143,68 +143,91 @@ export function ProgressPage() {
   });
 
   return (
-    <motion.div
-      variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
-      initial="hidden"
-      animate="visible"
-      className="max-w-5xl mx-auto"
-    >
-      {/* Header */}
-      <motion.div variants={fadeUp}>
+    <div className="max-w-5xl mx-auto">
+      {/* Header with Tabs */}
+      <div>
         <h1 className="font-display text-2xl font-bold text-text">İlerleme</h1>
         <p className="mt-1 text-sm text-text-secondary">
           Mülakat performansın ve zaman içindeki gelişimin
         </p>
-      </motion.div>
 
-      {/* Stats Cards */}
-      <motion.div variants={fadeUp} className="mt-8 grid grid-cols-2 md:grid-cols-5 gap-3">
-        {[
-          { label: "Değerlendirilen", value: progress?.totalEvaluated ?? 0 },
-          { label: "Ortalama Skor", value: progress?.averageScore ?? 0 },
-          { label: "En Yüksek", value: progress?.highestScore ?? 0 },
-          { label: "Bu Ay", value: progress?.thisMonth ?? 0 },
-          { label: "Seri", value: progress?.streak ?? 0, icon: Flame },
-        ].map((stat) => (
-          <Card key={stat.label}>
-            <p className="text-xs text-text-muted uppercase tracking-wider font-medium flex items-center gap-1">
-              {stat.label}
-              {"icon" in stat && stat.icon && <stat.icon size={11} className="text-amber" />}
-            </p>
-            <p className="mt-1 font-display text-2xl font-bold text-text tabular-nums">
-              {stat.value}
-            </p>
-          </Card>
-        ))}
-      </motion.div>
+        {/* Tab Selector */}
+        <div className="mt-6 flex items-center gap-2">
+          <button
+            onClick={() => setActiveTab("overview")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === "overview"
+                ? "bg-amber/15 text-amber border border-amber/30"
+                : "bg-surface-raised text-text-secondary hover:text-text"
+            }`}
+          >
+            Genel Bakış
+          </button>
+          <button
+            onClick={() => setActiveTab("job-paths")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === "job-paths"
+                ? "bg-amber/15 text-amber border border-amber/30"
+                : "bg-surface-raised text-text-secondary hover:text-text"
+            }`}
+          >
+            İş İlanı Yolları
+            {jobPaths.length > 0 && (
+              <span className="ml-2 px-2 py-0.5 rounded-full bg-amber/20 text-xs">
+                {jobPaths.length}
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
 
-      {!hasData ? (
-        <motion.div variants={fadeUp} className="mt-10">
-          <Card className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="h-14 w-14 rounded-2xl bg-amber/15 border border-amber/30 flex items-center justify-center mb-4">
-              <TrendingUp size={24} className="text-amber" strokeWidth={1.8} />
+      {activeTab === "overview" ? (
+        <>
+          {/* Stats Cards */}
+          <div className="mt-8 grid grid-cols-2 md:grid-cols-5 gap-3">
+            {[
+              { label: "Değerlendirilen", value: progress?.totalEvaluated ?? 0 },
+              { label: "Ortalama Skor", value: progress?.averageScore ?? 0 },
+              { label: "En Yüksek", value: progress?.highestScore ?? 0 },
+              { label: "Bu Ay", value: progress?.thisMonth ?? 0 },
+              { label: "Seri", value: progress?.streak ?? 0, icon: Flame },
+            ].map((stat) => (
+              <Card key={stat.label}>
+                <p className="text-xs text-text-muted uppercase tracking-wider font-medium flex items-center gap-1">
+                  {stat.label}
+                  {"icon" in stat && stat.icon && <stat.icon size={11} className="text-amber" />}
+                </p>
+                <p className="mt-1 font-display text-2xl font-bold text-text tabular-nums">
+                  {stat.value}
+                </p>
+              </Card>
+            ))}
+          </div>
+
+          {!hasData ? (
+            <div className="mt-10">
+              <Card className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="h-14 w-14 rounded-2xl bg-amber/15 border border-amber/30 flex items-center justify-center mb-4">
+                  <TrendingUp size={24} className="text-amber" strokeWidth={1.8} />
+                </div>
+                <p className="text-text-secondary text-sm">
+                  Henüz değerlendirilmiş mülakat yok
+                </p>
+                <p className="text-text-muted text-xs mt-1">
+                  Mülakat yap ve rapor oluştur — ilerleme grafiklerini burada göreceksin
+                </p>
+                <Link
+                  to="/interview/new"
+                  className="mt-4 inline-flex items-center gap-2 rounded-lg bg-amber/10 border border-amber/20 px-4 py-2 text-sm font-medium text-amber hover:bg-amber/15 transition-colors"
+                >
+                  İlk Mülakatını Başlat
+                </Link>
+              </Card>
             </div>
-            <p className="text-text-secondary text-sm">
-              Henüz değerlendirilmiş mülakat yok
-            </p>
-            <p className="text-text-muted text-xs mt-1">
-              Mülakat yap ve rapor oluştur — ilerleme grafiklerini burada göreceksin
-            </p>
-            <Link
-              to="/interview/new"
-              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-amber/10 border border-amber/20 px-4 py-2 text-sm font-medium text-amber hover:bg-amber/15 transition-colors"
-            >
-              İlk Mülakatını Başlat
-            </Link>
-          </Card>
-        </motion.div>
-      ) : (
+          ) : (
         <>
           {/* Charts Row */}
-          <motion.div
-            variants={fadeUp}
-            className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6"
-          >
+          <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Score over time */}
             <Card className="p-6">
               <h2 className="font-display text-lg font-semibold text-text mb-4">
@@ -267,14 +290,11 @@ export function ProgressPage() {
                 </RadarChart>
               </ResponsiveContainer>
             </Card>
-          </motion.div>
+          </div>
 
           {/* Strengths / Weaknesses Cumulative */}
           {(progress?.topStrengths?.length || progress?.topWeaknesses?.length) ? (
-            <motion.div
-              variants={fadeUp}
-              className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6"
-            >
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Top Strengths */}
               {progress?.topStrengths && progress.topStrengths.length > 0 && (
                 <Card className="p-6">
@@ -312,11 +332,11 @@ export function ProgressPage() {
                   </ul>
                 </Card>
               )}
-            </motion.div>
+            </div>
           ) : null}
 
           {/* Interview History Table */}
-          <motion.div variants={fadeUp} className="mt-8">
+          <div className="mt-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-display text-lg font-semibold text-text">
                 Mülakat Geçmişi
@@ -458,9 +478,32 @@ export function ProgressPage() {
                 </table>
               </div>
             </Card>
-          </motion.div>
+          </div>
         </>
       )}
-    </motion.div>
+        </>
+      ) : (
+      /* Job Paths Tab */
+      <div className="mt-8">
+        <JobPaths
+          paths={jobPaths}
+          onStartInterview={async (path, question, category) => {
+            try {
+              const interview = await createInterview({
+                type: category.type,
+                difficulty: question.difficulty,
+                language: "tr",
+                questionCount: 1,
+                jobPostingId: path.jobPostingId,
+              });
+              navigate(`/interview/${interview._id}`);
+            } catch (error) {
+              console.error("Failed to create interview:", error);
+            }
+          }}
+        />
+      </div>
+    )}
+    </div>
   );
 }
