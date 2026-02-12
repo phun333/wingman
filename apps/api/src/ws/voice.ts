@@ -168,12 +168,26 @@ export class VoiceSession {
       if (this.interview.type === "live-coding" || this.interview.type === "practice") {
         console.log(`Loading problem for ${this.interview.type}, difficulty: ${this.interview.difficulty}, problemId: ${problemId || 'random'}`);
         try {
-          let problem;
+          let problem: any;
           if (problemId) {
-            // Load specific problem by ID
-            problem = await convex.query(api.problems.getById, {
-              id: problemId as any,
-            });
+            // Try leetcodeProblems first, then fall back to legacy problems
+            try {
+              const lc = await convex.query(api.leetcodeProblems.getById, {
+                id: problemId as any,
+              });
+              if (lc) {
+                problem = {
+                  ...lc,
+                  category: lc.relatedTopics?.[0] ?? "general",
+                  testCases: [],
+                };
+              }
+            } catch {
+              // Not a leetcode problem ID, try legacy
+              problem = await convex.query(api.problems.getById, {
+                id: problemId as any,
+              });
+            }
             console.log("Specific problem loaded:", problem?._id);
           } else {
             // Load random problem by difficulty
@@ -197,14 +211,16 @@ export class VoiceSession {
               role: "system",
               content: `[Mülakata atanan problem]\nBaşlık: ${problem.title}\nZorluk: ${problem.difficulty}\nKategori: ${problem.category}\nAçıklama: ${problem.description}\n\nBu problemi adaya sor. Problemi kısaca sesli olarak açıkla ve adayın çözmesini bekle.`,
             });
-            // Link problem to interview
-            try {
-              await convex.mutation(api.interviews.setProblem, {
-                id: interviewId as any,
-                problemId: problem._id,
-              });
-            } catch {
-              // Non-fatal
+            // Link problem to interview (only for legacy problems table)
+            if (!problem.leetcodeId) {
+              try {
+                await convex.mutation(api.interviews.setProblem, {
+                  id: interviewId as any,
+                  problemId: problem._id,
+                });
+              } catch {
+                // Non-fatal
+              }
             }
           }
         } catch (err) {
@@ -343,7 +359,7 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
                   role: "user",
                   content: "[SYSTEM: Kullanıcı hazır, problemi açıklamaya başla]",
                 });
-                this.processWithLLM();
+                this.triggerAIResponse();
               }
             }, 500); // Wait 500ms for problem to load
           }
@@ -1082,7 +1098,7 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
         role: "user",
         content: "[SYSTEM: Kullanıcı hazır, problemi açıklamaya başla]",
       });
-      this.processWithLLM();
+      this.triggerAIResponse();
     }
   }
 }
