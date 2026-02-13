@@ -51,11 +51,11 @@ function buildWsUrl(interviewId?: string, problemId?: string): string {
 }
 
 // VAD: silence threshold and duration
-// Optimized to reduce keyboard noise and false triggers
-const VAD_THRESHOLD = 0.08; // Higher threshold to ignore keyboard/background noise
-const VAD_SILENCE_MS = 1500; // Wait 1.5 seconds of silence before stopping (was 800ms)
-const VAD_MIN_SPEECH_MS = 600; // Minimum 600ms of continuous speech to trigger interruption
-const VAD_SPEECH_CONFIDENCE_MS = 100; // Need 100ms of continuous audio above threshold to start speech detection
+// Balanced to detect normal speech while filtering background noise
+const VAD_THRESHOLD = 0.03; // Lowered to detect normal speaking volume (was 0.08 — too aggressive)
+const VAD_SILENCE_MS = 1200; // Wait 1.2 seconds of silence before stopping
+const VAD_MIN_SPEECH_MS = 400; // Minimum 400ms of continuous speech to trigger interruption (was 600ms)
+const VAD_SPEECH_CONFIDENCE_MS = 80; // Need 80ms of continuous audio above threshold to start speech detection
 
 export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
   const [state, setState] = useState<VoicePipelineState>("idle");
@@ -346,8 +346,8 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
       // Silence detected
       consecutiveSilenceRef.current++;
 
-      // Reset confidence if we have multiple silence samples
-      if (consecutiveSilenceRef.current > 5) {
+      // Reset confidence if we have sustained silence (raised from 5 to 15 frames to avoid premature reset)
+      if (consecutiveSilenceRef.current > 15) {
         speechConfidenceTimeRef.current = null;
         speechStartTimeRef.current = null;
       }

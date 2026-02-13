@@ -890,8 +890,10 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
       // 1) STT
       const transcript = await this.transcribe(signal);
       if (!transcript || signal.aborted) {
-        // STT returned nothing (too short / noise) — go back to idle
+        // STT returned nothing (too short / noise) — notify client and go back to idle
         if (!signal.aborted) {
+          console.log("[STT] No transcript returned — audio too short or unclear");
+          this.send({ type: "error", message: "Ses algılanamadı. Lütfen tekrar deneyin." });
           this.setState("idle");
         }
         return;
@@ -964,12 +966,19 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
     );
     this.audioChunks = [];
 
-    if (combined.length < 1000) return null; // too short
+    console.log(`[STT] Audio buffer size: ${combined.length} bytes, chunks merged: ${this.audioChunks.length}`);
+
+    if (combined.length < 200) {
+      console.log("[STT] Audio too short, skipping transcription");
+      return null;
+    }
 
     const formData = new FormData();
     const blob = new Blob([combined], { type: "audio/webm" });
     formData.append("file", blob, "audio.webm");
     formData.append("language", this.config.language);
+
+    console.log(`[STT] Sending ${combined.length} bytes to Freya STT (lang: ${this.config.language})`);
 
     const response = await fetch(
       `https://fal.run/${ENV.STT_ENDPOINT}/audio/transcriptions`,
@@ -982,10 +991,13 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
     );
 
     if (!response.ok) {
+      const errorBody = await response.text().catch(() => "");
+      console.error(`[STT] Failed: ${response.status} — ${errorBody}`);
       throw new Error(`STT failed: ${response.status}`);
     }
 
     const result = (await response.json()) as { text: string };
+    console.log(`[STT] Transcript: "${result.text}"`);
     return result.text?.trim() || null;
   }
 
@@ -994,6 +1006,12 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
   private async generateResponse(signal: AbortSignal): Promise<string | null> {
     // Inject current code context if available
     const messages = [...this.conversationHistory];
+
+    // Inject a brevity reminder as the last system message — LLMs weigh recent instructions more heavily
+    messages.push({
+      role: "system",
+      content: `[HATIRLATMA] Bu sesli bir konuşmadır. Yanıtın MUTLAKA 1-3 cümle olsun. Uzun açıklamalar yapma, liste yapma, madde madde yazma. Doğal ve kısa konuş — gerçek bir sohbet gibi.`,
+    });
     if (this.currentCode) {
       const codeContext: ChatMessage = {
         role: "system",
@@ -1036,6 +1054,8 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
           model: ENV.OPENROUTER_MODEL,
           messages,
           stream: true,
+          max_tokens: 200,
+          temperature: 0.7,
         }),
         signal,
       },
