@@ -77,6 +77,18 @@ export class VoiceSession {
   private timeWarningTimer: ReturnType<typeof setTimeout> | null = null;
   private timeUpTimer: ReturnType<typeof setTimeout> | null = null;
 
+  // Design problem reference for system-design intro
+  private currentDesignProblem: {
+    title?: string;
+    description?: string;
+    difficulty?: string;
+    requirements?: {
+      functional: string[];
+      nonFunctional: string[];
+    };
+    discussionPoints?: string[];
+  } | null = null;
+
   // Problem reference for solution comparison and intro generation
   private currentProblem: {
     title?: string;
@@ -125,6 +137,9 @@ export class VoiceSession {
       } else if (this.interview.type === "live-coding") {
         const timeLimitsMin: Record<string, number> = { easy: 20, medium: 30, hard: 45 };
         this.timeLimitMs = (timeLimitsMin[this.interview.difficulty] ?? 30) * 60 * 1000;
+      } else if (this.interview.type === "system-design") {
+        const timeLimitsMin: Record<string, number> = { easy: 25, medium: 35, hard: 45 };
+        this.timeLimitMs = (timeLimitsMin[this.interview.difficulty] ?? 35) * 60 * 1000;
       }
 
       // Build system prompt based on interview config
@@ -141,11 +156,27 @@ export class VoiceSession {
       // For system-design interviews, load a design problem
       if (this.interview.type === "system-design") {
         try {
-          const designProblem = await convex.query(api.designProblems.getRandom, {
+          let designProblem = await convex.query(api.designProblems.getRandom, {
             difficulty: this.interview.difficulty as any,
           });
+
+          // If no design problems exist, seed the table and retry
+          if (!designProblem) {
+            console.log("[init] No design problems found, seeding...");
+            try {
+              await convex.mutation(api.designProblems.seedIfEmpty, {});
+              designProblem = await convex.query(api.designProblems.getRandom, {
+                difficulty: this.interview.difficulty as any,
+              });
+            } catch (seedErr) {
+              console.error("Failed to seed design problems:", seedErr);
+            }
+          }
+
           if (designProblem) {
             this.send({ type: "design_problem_loaded", problem: designProblem as any });
+            // Store design problem info for intro generation
+            this.currentDesignProblem = designProblem as any;
             // Add design problem context to conversation
             const reqText = [
               "Fonksiyonel Gereksinimler:",
@@ -167,6 +198,8 @@ export class VoiceSession {
             } catch {
               // Non-fatal
             }
+          } else {
+            console.error("[init] No design problems available even after seeding");
           }
         } catch (err) {
           console.error("Failed to load design problem:", err);
@@ -386,43 +419,79 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
         this.audioChunks = [];
         this.setState("listening");
 
-        // İlk mikrofon açıldığında intro sesini çal (live-coding ve practice için)
+        // İlk mikrofon açıldığında intro sesini çal
         console.log(`[start_listening] isFirstInteraction: ${this.isFirstInteraction}, type: ${this.interview?.type}`);
-        if (this.isFirstInteraction && this.interview && (this.interview.type === "live-coding" || this.interview.type === "practice")) {
-          console.log("[start_listening] Playing pre-generated intro audio...");
+        if (this.isFirstInteraction && this.interview) {
           this.isFirstInteraction = false;
 
-          // Check if problem is loaded
-          if (this.currentProblem?.slug) {
-            const problemSlug = this.currentProblem.slug;
-            console.log("[start_listening] Using problem slug:", problemSlug);
+          if (this.interview.type === "live-coding" || this.interview.type === "practice") {
+            console.log("[start_listening] Playing pre-generated intro audio...");
 
-            const introText = getProblemIntro(problemSlug, this.currentProblem);
-            console.log("[start_listening] Intro text:", introText.substring(0, 100) + "...");
+            // Check if problem is loaded
+            if (this.currentProblem?.slug) {
+              const problemSlug = this.currentProblem.slug;
+              console.log("[start_listening] Using problem slug:", problemSlug);
 
-            // Send the intro text to the client immediately
-            this.send({ type: "ai_text", text: introText, done: true });
+              const introText = getProblemIntro(problemSlug, this.currentProblem);
+              console.log("[start_listening] Intro text:", introText.substring(0, 100) + "...");
 
-            // Generate TTS audio
-            this.generateIntroAudio(introText);
-          } else {
-            // If problem not loaded yet, wait a bit and retry
-            console.log("[start_listening] Problem not loaded yet, waiting...");
-            setTimeout(() => {
-              if (this.currentProblem?.slug) {
-                const problemSlug = this.currentProblem.slug;
-                const introText = getProblemIntro(problemSlug, this.currentProblem);
-                this.send({ type: "ai_text", text: introText, done: true });
-                this.generateIntroAudio(introText);
-              } else {
-                // Fallback to LLM
-                this.conversationHistory.push({
-                  role: "user",
-                  content: "[SYSTEM: Kullanıcı hazır, problemi açıklamaya başla]",
-                });
-                this.triggerAIResponse();
-              }
-            }, 500); // Wait 500ms for problem to load
+              // Send the intro text to the client immediately
+              this.send({ type: "ai_text", text: introText, done: true });
+
+              // Generate TTS audio
+              this.generateIntroAudio(introText);
+            } else {
+              // If problem not loaded yet, wait a bit and retry
+              console.log("[start_listening] Problem not loaded yet, waiting...");
+              setTimeout(() => {
+                if (this.currentProblem?.slug) {
+                  const problemSlug = this.currentProblem.slug;
+                  const introText = getProblemIntro(problemSlug, this.currentProblem);
+                  this.send({ type: "ai_text", text: introText, done: true });
+                  this.generateIntroAudio(introText);
+                } else {
+                  // Fallback to LLM
+                  this.conversationHistory.push({
+                    role: "user",
+                    content: "[SYSTEM: Kullanıcı hazır, problemi açıklamaya başla]",
+                  });
+                  this.triggerAIResponse();
+                }
+              }, 500); // Wait 500ms for problem to load
+            }
+          } else if (this.interview.type === "system-design") {
+            // System design: AI introduces the design problem verbally
+            console.log("[start_listening] System design — triggering AI intro for design problem...");
+
+            if (this.currentDesignProblem?.title) {
+              // Generate a natural intro for the design problem
+              const introText = `Merhaba! Bugünkü system design mülakatımıza hoş geldin. Seninle "${this.currentDesignProblem.title}" konusunu tartışacağız. ${this.currentDesignProblem.description} Şimdi senden bu sistemi tasarlamanı istiyorum. Önce gereksinimleri birlikte netleştirelim. Sence bu sistemin en önemli fonksiyonel gereksinimleri neler olmalı?`;
+
+              this.send({ type: "ai_text", text: introText, done: true });
+
+              // Persist AI intro
+              this.conversationHistory.push({ role: "assistant", content: introText });
+              this.persistMessage("assistant", introText);
+
+              // Generate TTS audio for the intro
+              this.generateIntroAudio(introText);
+            } else {
+              // No design problem loaded, use LLM to generate the question
+              console.log("[start_listening] No design problem loaded, using LLM...");
+              this.conversationHistory.push({
+                role: "user",
+                content: "[SYSTEM: Kullanıcı hazır, system design problemi sor ve açıkla]",
+              });
+              this.triggerAIResponse();
+            }
+          } else if (this.interview.type === "phone-screen") {
+            // Phone screen: AI introduces itself and starts with the first question
+            console.log("[start_listening] Phone screen — triggering AI intro...");
+            this.conversationHistory.push({
+              role: "user",
+              content: "[SYSTEM: Kullanıcı hazır, mülakata başla ve ilk soruyu sor]",
+            });
+            this.triggerAIResponse();
           }
         }
         break;

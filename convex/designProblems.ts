@@ -60,6 +60,215 @@ export const create = mutation({
   },
 });
 
+// Public mutation callable from the API to seed if the table is empty
+export const seedIfEmpty = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const existing = await ctx.db.query("designProblems").first();
+    if (existing) return { seeded: false };
+
+    const problems = [
+      {
+        title: "URL Shortener Tasarla",
+        description:
+          "bit.ly benzeri bir URL kısaltma servisi tasarla. Kullanıcılar uzun URL'leri kısa URL'lere dönüştürebilmeli ve kısa URL'ler orijinal URL'ye yönlendirmeli.",
+        difficulty: "easy" as const,
+        requirements: {
+          functional: [
+            "Uzun URL'yi kısa URL'ye dönüştürme",
+            "Kısa URL ile orijinal URL'ye yönlendirme (301/302)",
+            "Opsiyonel: custom alias desteği",
+            "Opsiyonel: URL istatistikleri (tıklama sayısı)",
+          ],
+          nonFunctional: [
+            "Günde 100M URL kısaltma, 1B yönlendirme",
+            "Yönlendirme latency < 10ms",
+            "Yüksek erişilebilirlik (%99.9)",
+            "Kısa URL'ler 5 yıl geçerli olmalı",
+          ],
+        },
+        expectedComponents: [
+          "Load Balancer",
+          "API Gateway",
+          "URL Service",
+          "Database",
+          "Cache",
+        ],
+        discussionPoints: [
+          "URL hash nasıl üretilir? (Base62, MD5, counter-based)",
+          "Hash collision nasıl çözülür?",
+          "Read-heavy sistem: Cache stratejisi ne olmalı?",
+          "Database seçimi: SQL vs NoSQL?",
+          "301 vs 302 redirect farkı ve etkileri",
+        ],
+      },
+      {
+        title: "Chat / Mesajlaşma Sistemi Tasarla",
+        description:
+          "WhatsApp veya Telegram benzeri bir gerçek zamanlı mesajlaşma sistemi tasarla. 1:1 mesajlaşma, grup mesajlaşma ve okundu bilgisi desteklenmeli.",
+        difficulty: "medium" as const,
+        requirements: {
+          functional: [
+            "1:1 mesajlaşma",
+            "Grup mesajlaşma (max 500 kişi)",
+            "Okundu bilgisi (delivered, read)",
+            "Çevrimdışı mesaj desteği",
+            "Medya paylaşımı (resim, video)",
+          ],
+          nonFunctional: [
+            "500M aktif kullanıcı",
+            "Mesaj teslim süresi < 500ms",
+            "Mesajların kalıcı saklanması",
+            "End-to-end encryption",
+            "Yüksek erişilebilirlik",
+          ],
+        },
+        expectedComponents: [
+          "Load Balancer",
+          "API Gateway",
+          "Chat Service",
+          "Message Queue",
+          "Database",
+          "Cache",
+          "WebSocket Server",
+          "Storage",
+          "CDN",
+        ],
+        discussionPoints: [
+          "WebSocket vs long polling vs SSE?",
+          "Mesaj sıralaması nasıl garanti edilir?",
+          "Çevrimdışı kullanıcılara mesaj nasıl iletilir?",
+          "Grup mesajlarında fan-out stratejisi?",
+          "Database sharding: user-based mi conversation-based mi?",
+          "Message queue kullanımı nerede gerekli?",
+        ],
+      },
+      {
+        title: "News Feed / Timeline Tasarla",
+        description:
+          "Twitter veya Instagram benzeri bir haber akışı sistemi tasarla.",
+        difficulty: "medium" as const,
+        requirements: {
+          functional: [
+            "Post oluşturma (metin + medya)",
+            "Kişiselleştirilmiş news feed",
+            "Follow/unfollow",
+            "Like, comment, share",
+            "Bildirimler (notifications)",
+          ],
+          nonFunctional: [
+            "300M aktif kullanıcı",
+            "Feed yükleme < 2s",
+            "Yeni post feed'de < 5s içinde görünmeli",
+            "Yüksek erişilebilirlik",
+            "Eventual consistency kabul edilebilir",
+          ],
+        },
+        expectedComponents: [
+          "Load Balancer",
+          "API Gateway",
+          "Post Service",
+          "Feed Service",
+          "Message Queue",
+          "Database",
+          "Cache",
+          "CDN",
+          "Storage",
+        ],
+        discussionPoints: [
+          "Push model vs Pull model?",
+          "Celebrity problemi: milyonlarca takipçisi olan kullanıcılar?",
+          "Feed ranking algoritması?",
+          "Cache invalidation stratejisi?",
+          "Database seçimi: feed vs posts vs social graph?",
+        ],
+      },
+      {
+        title: "Distributed Cache Tasarla",
+        description:
+          "Memcached veya Redis benzeri bir dağıtık cache sistemi tasarla.",
+        difficulty: "hard" as const,
+        requirements: {
+          functional: [
+            "Key-value GET/SET/DELETE",
+            "TTL (time-to-live) desteği",
+            "LRU/LFU eviction politikası",
+            "Cache invalidation mekanizması",
+          ],
+          nonFunctional: [
+            "Sub-millisecond latency",
+            "Milyon ops/saniye throughput",
+            "Petabyte ölçeğinde veri",
+            "Yüksek erişilebilirlik",
+          ],
+        },
+        expectedComponents: [
+          "Client Library",
+          "Cache Server",
+          "Database",
+          "Load Balancer",
+        ],
+        discussionPoints: [
+          "Consistent hashing nedir ve neden gerekli?",
+          "Replication: master-slave vs master-master?",
+          "Cache-aside vs write-through vs write-behind?",
+          "CAP teoremi: hangi ikiyi seçersin?",
+          "Thundering herd nasıl önlenir?",
+        ],
+      },
+      {
+        title: "Video Streaming Platformu Tasarla",
+        description:
+          "YouTube veya Netflix benzeri bir video streaming platformu tasarla.",
+        difficulty: "hard" as const,
+        requirements: {
+          functional: [
+            "Video yükleme (upload)",
+            "Video transcoding (farklı çözünürlükler)",
+            "Adaptive bitrate streaming (HLS/DASH)",
+            "Video arama ve keşfet",
+            "İzleme geçmişi ve öneriler",
+          ],
+          nonFunctional: [
+            "1B günlük video izleme",
+            "Video başlatma süresi < 2s",
+            "Buffer-free deneyim",
+            "Global erişilebilirlik (CDN)",
+          ],
+        },
+        expectedComponents: [
+          "Load Balancer",
+          "API Gateway",
+          "Upload Service",
+          "Transcoding Service",
+          "Message Queue",
+          "Database",
+          "Storage",
+          "CDN",
+          "Cache",
+          "Search Service",
+        ],
+        discussionPoints: [
+          "Video transcoding pipeline nasıl tasarlanır?",
+          "Adaptive bitrate streaming nasıl çalışır?",
+          "CDN stratejisi: origin pull vs push?",
+          "Storage tiers: hot vs warm vs cold?",
+          "Real-time analytics: view count, watch time?",
+        ],
+      },
+    ];
+
+    for (const problem of problems) {
+      await ctx.db.insert("designProblems", {
+        ...problem,
+        createdAt: Date.now(),
+      });
+    }
+
+    return { seeded: true };
+  },
+});
+
 export const seed: any = internalMutation({
   handler: async (ctx: any) => {
     const existing = await ctx.db.query("designProblems").first();
