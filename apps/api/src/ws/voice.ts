@@ -709,16 +709,11 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
     const { signal } = this.abortController;
 
     try {
-      const aiResponse = await this.generateResponse(signal);
+      const aiResponse = await this.generateAndSpeak(signal);
       if (!aiResponse || signal.aborted) return;
 
       this.conversationHistory.push({ role: "assistant", content: aiResponse });
       this.persistMessage("assistant", aiResponse);
-
-      if (!signal.aborted) {
-        this.setState("speaking");
-        await this.synthesizeSpeech(aiResponse, signal);
-      }
     } catch (err) {
       if (!signal.aborted) {
         const message = err instanceof Error ? err.message : "Code result response hatası";
@@ -763,16 +758,11 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
     const { signal } = this.abortController;
 
     try {
-      const aiResponse = await this.generateResponse(signal);
+      const aiResponse = await this.generateAndSpeak(signal);
       if (!aiResponse || signal.aborted) return;
 
       this.conversationHistory.push({ role: "assistant", content: aiResponse });
       this.persistMessage("assistant", aiResponse);
-
-      if (!signal.aborted) {
-        this.setState("speaking");
-        await this.synthesizeSpeech(aiResponse, signal);
-      }
     } catch (err) {
       if (!signal.aborted) {
         const message = err instanceof Error ? err.message : "Hint hatası";
@@ -798,17 +788,12 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
     const { signal } = this.abortController;
 
     try {
-      const aiResponse = await this.generateResponse(signal);
+      const aiResponse = await this.generateAndSpeak(signal);
       if (!aiResponse || signal.aborted) return;
 
       this.conversationHistory.push({ role: "assistant", content: aiResponse });
       this.persistMessage("assistant", aiResponse);
       this.trackQuestionProgress(aiResponse);
-
-      if (!signal.aborted) {
-        this.setState("speaking");
-        await this.synthesizeSpeech(aiResponse, signal);
-      }
     } catch (err) {
       if (!signal.aborted) {
         const message = err instanceof Error ? err.message : "AI response hatası";
@@ -907,24 +892,13 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
       // Persist user message to Convex
       await this.persistMessage("user", transcript);
 
-      // 2) LLM → streaming text
-      const aiResponse = await this.generateResponse(signal);
+      // 2) LLM + TTS interleaved pipeline (parallel sentence streaming)
+      const aiResponse = await this.generateAndSpeak(signal);
       if (!aiResponse || signal.aborted) return;
 
-      // Add assistant message to history
       this.conversationHistory.push({ role: "assistant", content: aiResponse });
-
-      // Persist assistant message to Convex
       await this.persistMessage("assistant", aiResponse);
-
-      // Track question progress for phone-screen
       this.trackQuestionProgress(aiResponse);
-
-      // 3) TTS — send full response as audio
-      if (!signal.aborted) {
-        this.setState("speaking");
-        await this.synthesizeSpeech(aiResponse, signal);
-      }
     } catch (err) {
       if (!signal.aborted) {
         const message = err instanceof Error ? err.message : "Pipeline hatası";
@@ -1001,23 +975,23 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
     return result.text?.trim() || null;
   }
 
-  // ─── LLM ─────────────────────────────────────────────
+  // ─── Message Preparation ───────────────────────────────
 
-  private async generateResponse(signal: AbortSignal): Promise<string | null> {
-    // Inject current code context if available
+  private prepareMessages(): ChatMessage[] {
     const messages = [...this.conversationHistory];
 
-    // Inject a brevity reminder as the last system message — LLMs weigh recent instructions more heavily
+    // Brevity reminder — LLMs weigh recent instructions more heavily
     messages.push({
       role: "system",
       content: `[HATIRLATMA] Bu sesli bir konuşmadır. Yanıtın MUTLAKA 1-3 cümle olsun. Uzun açıklamalar yapma, liste yapma, madde madde yazma. Doğal ve kısa konuş — gerçek bir sohbet gibi.`,
     });
+
+    // Inject code context before the last user message
     if (this.currentCode) {
       const codeContext: ChatMessage = {
         role: "system",
         content: `[Adayın şu anki kodu (${this.currentCodeLanguage})]:\n\`\`\`${this.currentCodeLanguage}\n${this.currentCode}\n\`\`\``,
       };
-      // Insert code context before the last user message
       const lastUserIdx = messages.findLastIndex((m) => m.role === "user");
       if (lastUserIdx >= 0) {
         messages.splice(lastUserIdx, 0, codeContext);
@@ -1026,7 +1000,7 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
       }
     }
 
-    // Inject current whiteboard state for system-design interviews
+    // Inject whiteboard state for system-design interviews
     if (this.currentWhiteboardState) {
       const wbContext: ChatMessage = {
         role: "system",
@@ -1040,109 +1014,196 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
       }
     }
 
-    const response = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${ENV.OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": ENV.SITE_URL,
-          "X-Title": "Wingman AI Interview",
-        },
-        body: JSON.stringify({
-          model: ENV.OPENROUTER_MODEL,
-          messages,
-          stream: true,
-          max_tokens: 200,
-          temperature: 0.7,
-        }),
-        signal,
-      },
-    );
+    return messages;
+  }
 
-    if (!response.ok) {
-      throw new Error(`LLM failed: ${response.status}`);
-    }
+  // ─── LLM + TTS Interleaved Pipeline ──────────────────
+  //
+  // Streams LLM tokens, detects sentence boundaries on the fly,
+  // and immediately starts TTS for each completed sentence.
+  // This overlaps LLM generation with TTS playback for <2s E2E latency.
+  // Concurrency: max 1 TTS stream at a time (sequential sentence order).
 
-    const reader = response.body?.getReader();
-    if (!reader) throw new Error("No response stream");
+  private async generateAndSpeak(signal: AbortSignal): Promise<string | null> {
+    const messages = this.prepareMessages();
 
-    const decoder = new TextDecoder();
+    // ── Async sentence queue with notification ──
+    const sentenceQueue: string[] = [];
+    let llmDone = false;
+    // Mutable container to avoid TS closure narrowing issues
+    const pending: { notify: (() => void) | null } = { notify: null };
+
+    const waitForSentence = (): Promise<void> =>
+      new Promise((resolve) => {
+        if (sentenceQueue.length > 0 || llmDone) {
+          resolve();
+          return;
+        }
+        pending.notify = resolve;
+      });
+
+    const pushSentence = (s: string): void => {
+      sentenceQueue.push(s);
+      pending.notify?.();
+      pending.notify = null;
+    };
+
+    // ── TTS consumer (runs concurrently with LLM producer) ──
+    let hasSwitchedToSpeaking = false;
+
+    const ttsConsumer = async (): Promise<void> => {
+      while (true) {
+        if (signal.aborted) return;
+        await waitForSentence();
+        if (sentenceQueue.length === 0 && llmDone) break;
+
+        const sentence = sentenceQueue.shift();
+        if (!sentence) continue;
+
+        // Switch to "speaking" state on first TTS sentence
+        if (!hasSwitchedToSpeaking) {
+          hasSwitchedToSpeaking = true;
+          this.setState("speaking");
+        }
+
+        await this.synthesizeSentence(sentence, signal);
+      }
+    };
+
+    // Start TTS consumer in background
+    const ttsPromise = ttsConsumer();
+
+    // ── LLM producer (stream tokens → detect sentences → push to queue) ──
     let fullText = "";
+    let sentenceBuffer = "";
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done || signal.aborted) break;
+    try {
+      const response = await fetch(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${ENV.OPENROUTER_API_KEY}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": ENV.SITE_URL,
+            "X-Title": "Wingman AI Interview",
+          },
+          body: JSON.stringify({
+            model: ENV.OPENROUTER_MODEL,
+            messages,
+            stream: true,
+            max_tokens: 200,
+            temperature: 0.7,
+          }),
+          signal,
+        },
+      );
 
-      const chunk = decoder.decode(value, { stream: true });
-      const lines = chunk.split("\n");
+      if (!response.ok) {
+        throw new Error(`LLM failed: ${response.status}`);
+      }
 
-      for (const line of lines) {
-        if (!line.startsWith("data: ")) continue;
-        const data = line.slice(6).trim();
-        if (data === "[DONE]") continue;
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("No response stream");
 
-        try {
-          const parsed = JSON.parse(data);
-          const token = parsed.choices?.[0]?.delta?.content;
-          if (!token) continue;
+      const decoder = new TextDecoder();
 
-          fullText += token;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done || signal.aborted) break;
 
-          // Send token to client
-          this.send({ type: "ai_text", text: token, done: false });
-        } catch {
-          // skip unparseable
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n");
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const data = line.slice(6).trim();
+          if (data === "[DONE]") continue;
+
+          try {
+            const parsed = JSON.parse(data);
+            const token = parsed.choices?.[0]?.delta?.content;
+            if (!token) continue;
+
+            fullText += token;
+            sentenceBuffer += token;
+
+            // Stream token to client in real-time
+            this.send({ type: "ai_text", text: token, done: false });
+
+            // Detect sentence boundary: [.!?] followed by whitespace
+            const boundaryIdx = sentenceBuffer.search(/[.!?]\s/);
+            if (boundaryIdx !== -1) {
+              const sentence = sentenceBuffer.slice(0, boundaryIdx + 1).trim();
+              sentenceBuffer = sentenceBuffer.slice(boundaryIdx + 2);
+              if (sentence) {
+                const optimized =
+                  this.interview?.language === "tr"
+                    ? optimizeForTTS(sentence)
+                    : sentence;
+                pushSentence(optimized);
+              }
+            }
+          } catch {
+            // skip unparseable SSE chunks
+          }
         }
       }
+
+      // Flush remaining text as final sentence
+      const remaining = sentenceBuffer.trim();
+      if (remaining) {
+        const optimized =
+          this.interview?.language === "tr"
+            ? optimizeForTTS(remaining)
+            : remaining;
+        pushSentence(optimized);
+      }
+
+      this.send({ type: "ai_text", text: "", done: true });
+    } finally {
+      // Signal TTS consumer that LLM is done
+      llmDone = true;
+      pending.notify?.();
     }
 
-    this.send({ type: "ai_text", text: "", done: true });
+    // Wait for all TTS sentences to finish playing
+    await ttsPromise;
+
     return fullText || null;
   }
 
-  // ─── TTS ─────────────────────────────────────────────
+  // ─── Single Sentence TTS ─────────────────────────────
 
-  private async synthesizeSpeech(
+  private async synthesizeSentence(
     text: string,
     signal: AbortSignal,
   ): Promise<void> {
-    // TTS için telaffuz optimizasyonu uygula (sadece Türkçe için)
-    const optimizedText = this.interview?.language === "tr" ? optimizeForTTS(text) : text;
+    if (signal.aborted || !text) return;
 
-    // Split into sentences for lower latency
-    const sentences = optimizedText.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [optimizedText];
+    try {
+      const stream = await fal.stream(ENV.TTS_ENDPOINT as any, {
+        input: { input: text, speed: this.config.speed },
+        path: "/stream",
+      } as any);
 
-    for (const sentence of sentences) {
-      if (signal.aborted) return;
-      const trimmed = sentence.trim();
-      if (!trimmed) continue;
-
-      try {
-        const stream = await fal.stream(ENV.TTS_ENDPOINT as any, {
-          input: { input: trimmed, speed: this.config.speed },
-          path: "/stream",
-        } as any);
-
-        for await (const event of stream as AsyncIterable<{
-          audio?: string;
-          done?: boolean;
-          error?: { message: string };
-        }>) {
-          if (signal.aborted) return;
-          if (event.audio) {
-            this.send({ type: "ai_audio", data: event.audio });
-          }
-          if (event.error) {
-            this.send({ type: "error", message: event.error.message });
-          }
-        }
-      } catch {
+      for await (const event of stream as AsyncIterable<{
+        audio?: string;
+        done?: boolean;
+        error?: { message: string };
+      }>) {
         if (signal.aborted) return;
-        // Fallback: generate full audio via /audio/speech
-        await this.ttsFallback(trimmed, signal);
+        if (event.audio) {
+          this.send({ type: "ai_audio", data: event.audio });
+        }
+        if (event.error) {
+          this.send({ type: "error", message: event.error.message });
+        }
       }
+    } catch {
+      if (signal.aborted) return;
+      // Fallback: generate full audio via /audio/speech
+      await this.ttsFallback(text, signal);
     }
   }
 

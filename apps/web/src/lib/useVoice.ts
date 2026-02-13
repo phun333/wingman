@@ -50,12 +50,11 @@ function buildWsUrl(interviewId?: string, problemId?: string): string {
   return params.toString() ? `${base}?${params.toString()}` : base;
 }
 
-// VAD: silence threshold and duration
-// Balanced to detect normal speech while filtering background noise
-const VAD_THRESHOLD = 0.03; // Lowered to detect normal speaking volume (was 0.08 — too aggressive)
-const VAD_SILENCE_MS = 1200; // Wait 1.2 seconds of silence before stopping
-const VAD_MIN_SPEECH_MS = 400; // Minimum 400ms of continuous speech to trigger interruption (was 600ms)
-const VAD_SPEECH_CONFIDENCE_MS = 80; // Need 80ms of continuous audio above threshold to start speech detection
+// VAD: aggressive settings for conversational feel (<2s E2E latency target)
+const VAD_THRESHOLD = 0.02; // More sensitive — detect speech faster
+const VAD_SILENCE_MS = 500; // 500ms silence → send (was 1200ms — too slow for conversation)
+const VAD_MIN_SPEECH_MS = 250; // 250ms speech to trigger interruption (was 400ms)
+const VAD_SPEECH_CONFIDENCE_MS = 40; // 40ms confidence for faster speech start (was 80ms)
 
 export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
   const [state, setState] = useState<VoicePipelineState>("idle");
