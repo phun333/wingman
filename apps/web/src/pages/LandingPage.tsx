@@ -1,6 +1,6 @@
-import { useRef } from "react";
+import { useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { motion, useScroll, useTransform, useInView } from "motion/react";
+import { motion, useScroll, useTransform, useInView, type Variants } from "motion/react";
 import {
   Code2,
   Waypoints,
@@ -21,6 +21,16 @@ import {
   FileCode,
   CheckCircle2,
   Sparkles,
+  Terminal,
+  Braces,
+  Cpu,
+  Wifi,
+  Globe,
+  Hash,
+  Layers,
+  GitBranch,
+  Database,
+  type LucideIcon,
 } from "lucide-react";
 
 /* ────────────────────────────────────────────────── */
@@ -448,99 +458,459 @@ const features = [
     icon: Volume2,
     title: "Türkçe Sesli AI",
     description: "Freya ile gerçekçi Türkçe konuşma deneyimi. Sizi dinler, anlar ve doğal bir şekilde yanıt verir.",
-    accent: "amber",
+    accent: "amber" as const,
+    orbitIcons: [Mic, Wifi, Globe] as LucideIcon[],
   },
   {
     icon: Code2,
     title: "Gerçek Zamanlı Kod",
     description: "Monaco editör ile kod yazın, çalıştırın ve test edin. AI kodunuzu anlık olarak değerlendirir.",
-    accent: "info",
+    accent: "info" as const,
+    orbitIcons: [Terminal, Braces, FileCode] as LucideIcon[],
   },
   {
     icon: Brain,
     title: "Akıllı Değerlendirme",
     description: "Algoritmik düşünce, kod kalitesi, iletişim becerisi — her yönden detaylı analiz.",
-    accent: "success",
+    accent: "success" as const,
+    orbitIcons: [Cpu, Sparkles, Layers] as LucideIcon[],
   },
   {
     icon: BarChart3,
     title: "Detaylı Raporlar",
     description: "Her mülakat sonrası güçlü ve zayıf yönlerinizi gösteren kapsamlı performans raporu.",
-    accent: "amber",
+    accent: "amber" as const,
+    orbitIcons: [Hash, GitBranch, Star] as LucideIcon[],
   },
   {
     icon: MessageSquare,
     title: "Doğal Diyalog",
     description: "Gerçek bir mülakatçı gibi ipuçları verir, takip soruları sorar ve yaklaşımınızı yönlendirir.",
-    accent: "info",
+    accent: "info" as const,
+    orbitIcons: [Zap, Globe, Mic] as LucideIcon[],
   },
   {
     icon: Zap,
     title: "Anında Geri Bildirim",
     description: "Kod çalıştırma, test sonuçları ve AI yorumları — beklemeden öğrenin.",
-    accent: "success",
+    accent: "success" as const,
+    orbitIcons: [CheckCircle2, Database, Terminal] as LucideIcon[],
   },
 ];
 
-const accentColors: Record<string, { bg: string; border: string; text: string; glow: string }> = {
+const accentColors = {
   amber: {
     bg: "bg-amber/10",
     border: "border-amber/20",
     text: "text-amber",
     glow: "group-hover:shadow-[0_0_30px_rgba(229,161,14,0.08)]",
+    rgb: "229,161,14",
+    pulseColor: "rgba(229,161,14,0.15)",
   },
   info: {
     bg: "bg-info/10",
     border: "border-info/20",
     text: "text-info",
     glow: "group-hover:shadow-[0_0_30px_rgba(59,130,246,0.08)]",
+    rgb: "59,130,246",
+    pulseColor: "rgba(59,130,246,0.15)",
   },
   success: {
     bg: "bg-success/10",
     border: "border-success/20",
     text: "text-success",
     glow: "group-hover:shadow-[0_0_30px_rgba(34,197,94,0.08)]",
+    rgb: "34,197,94",
+    pulseColor: "rgba(34,197,94,0.15)",
   },
 };
 
-function Features() {
+/* Floating background particles for the features section */
+function FloatingParticles() {
+  const particles = useMemo(() => {
+    const icons: LucideIcon[] = [Terminal, Braces, Hash, Cpu, Globe, GitBranch, Database, Layers, Sparkles, Code2, Mic, Zap];
+    return Array.from({ length: 18 }, (_, i) => ({
+      id: i,
+      Icon: icons[i % icons.length]!,
+      x: `${5 + (i * 5.3) % 90}%`,
+      y: `${8 + (i * 7.1) % 84}%`,
+      size: 10 + (i % 3) * 2,
+      duration: 5 + (i % 4) * 2,
+      delay: (i % 5) * 0.8,
+      opacity: 0.04 + (i % 3) * 0.015,
+      driftX: (i % 2 === 0 ? 1 : -1) * (8 + (i % 3) * 6),
+      driftY: (i % 2 === 0 ? -1 : 1) * (6 + (i % 4) * 5),
+      rotate: (i % 2 === 0 ? 1 : -1) * (15 + (i % 3) * 20),
+    }));
+  }, []);
+
   return (
-    <section id="features" className="relative py-28 overflow-hidden">
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {particles.map((p) => (
+        <motion.div
+          key={p.id}
+          className="absolute"
+          style={{ left: p.x, top: p.y, opacity: p.opacity }}
+          animate={{
+            x: [0, p.driftX, -p.driftX * 0.5, 0],
+            y: [0, p.driftY, -p.driftY * 0.7, 0],
+            rotate: [0, p.rotate, -p.rotate * 0.5, 0],
+            scale: [1, 1.15, 0.9, 1],
+          }}
+          transition={{
+            duration: p.duration,
+            delay: p.delay,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        >
+          <p.Icon size={p.size} className="text-text-muted" strokeWidth={1} />
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
+/* Orbiting dots around the feature icon */
+function OrbitRing({
+  accent,
+  orbitIcons,
+}: {
+  accent: keyof typeof accentColors;
+  orbitIcons: LucideIcon[];
+}) {
+  const ac = accentColors[accent];
+
+  return (
+    <div className="absolute inset-0 pointer-events-none">
+      {/* Pulse rings */}
+      <motion.div
+        className="absolute inset-0 rounded-xl"
+        style={{ border: `1px solid rgba(${ac.rgb}, 0.08)` }}
+        animate={{
+          scale: [1, 1.6, 1.6],
+          opacity: [0.5, 0, 0],
+        }}
+        transition={{
+          duration: 2.5,
+          repeat: Infinity,
+          ease: "easeOut",
+          delay: 0.5,
+        }}
+      />
+      <motion.div
+        className="absolute inset-0 rounded-xl"
+        style={{ border: `1px solid rgba(${ac.rgb}, 0.06)` }}
+        animate={{
+          scale: [1, 1.9, 1.9],
+          opacity: [0.3, 0, 0],
+        }}
+        transition={{
+          duration: 2.5,
+          repeat: Infinity,
+          ease: "easeOut",
+          delay: 1.2,
+        }}
+      />
+
+      {/* Orbiting mini-icons */}
+      {orbitIcons.map((OIcon, i) => {
+        const angle = (i * 120) * (Math.PI / 180);
+        const radius = 32;
+        return (
+          <motion.div
+            key={i}
+            className="absolute"
+            style={{
+              left: "50%",
+              top: "50%",
+              marginLeft: -6,
+              marginTop: -6,
+            }}
+            animate={{
+              x: [
+                Math.cos(angle) * radius,
+                Math.cos(angle + Math.PI * 2 / 3) * radius,
+                Math.cos(angle + Math.PI * 4 / 3) * radius,
+                Math.cos(angle + Math.PI * 2) * radius,
+              ],
+              y: [
+                Math.sin(angle) * radius,
+                Math.sin(angle + Math.PI * 2 / 3) * radius,
+                Math.sin(angle + Math.PI * 4 / 3) * radius,
+                Math.sin(angle + Math.PI * 2) * radius,
+              ],
+              opacity: [0.3, 0.6, 0.3, 0.3],
+              scale: [0.8, 1.1, 0.8, 0.8],
+            }}
+            transition={{
+              duration: 6 + i * 1.5,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+          >
+            <div
+              className="h-3 w-3 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: `rgba(${ac.rgb}, 0.12)` }}
+            >
+              <OIcon size={7} style={{ color: `rgba(${ac.rgb}, 0.7)` }} strokeWidth={2} />
+            </div>
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* Animated sparkle/dot that floats near cards */
+function SparkDot({
+  color,
+  delay,
+  x,
+  y,
+}: {
+  color: string;
+  delay: number;
+  x: number;
+  y: number;
+}) {
+  return (
+    <motion.div
+      className="absolute w-1 h-1 rounded-full"
+      style={{
+        backgroundColor: `rgba(${color}, 0.4)`,
+        left: x,
+        top: y,
+        boxShadow: `0 0 6px rgba(${color}, 0.3)`,
+      }}
+      animate={{
+        opacity: [0, 0.8, 0],
+        scale: [0.5, 1.5, 0.5],
+        y: [0, -15, 0],
+      }}
+      transition={{
+        duration: 3,
+        delay,
+        repeat: Infinity,
+        ease: "easeInOut",
+      }}
+    />
+  );
+}
+
+/* Individual feature card with all animations */
+function FeatureCard({
+  feature,
+  index,
+}: {
+  feature: (typeof features)[number];
+  index: number;
+}) {
+  const ac = accentColors[feature.accent];
+  const cardRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(cardRef, { once: true, amount: 0.3 });
+
+  // Card entrance animation
+  const cardVariants: Variants = {
+    hidden: { opacity: 0, y: 40, scale: 0.95 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        duration: 0.6,
+        delay: index * 0.1,
+        ease: [0.22, 1, 0.36, 1],
+      },
+    },
+  };
+
+  // Icon bounce on hover is handled via whileHover on the icon wrapper
+
+  return (
+    <motion.div
+      ref={cardRef}
+      variants={cardVariants}
+      initial="hidden"
+      animate={isInView ? "visible" : "hidden"}
+    >
+      <motion.div
+        className={`group relative rounded-2xl border border-border-subtle bg-surface/60 backdrop-blur-sm p-6 h-full transition-shadow duration-300 hover:border-border ${ac.glow} overflow-hidden`}
+        whileHover={{ y: -4, transition: { duration: 0.25, ease: "easeOut" } }}
+      >
+        {/* Hover glow bg */}
+        <motion.div
+          className="absolute inset-0 rounded-2xl pointer-events-none"
+          initial={{ opacity: 0 }}
+          whileHover={{ opacity: 1 }}
+          style={{
+            background: `radial-gradient(300px circle at 50% 20%, rgba(${ac.rgb}, 0.04), transparent 70%)`,
+          }}
+        />
+
+        {/* Tiny spark dots */}
+        <SparkDot color={ac.rgb} delay={index * 0.4} x={-4} y={20} />
+        <SparkDot color={ac.rgb} delay={index * 0.4 + 1.2} x={-8} y={50} />
+
+        {/* Icon container with orbit + pulse */}
+        <div className="relative h-11 w-11 mb-5">
+          <motion.div
+            className={`relative z-10 h-11 w-11 rounded-xl ${ac.bg} border ${ac.border} flex items-center justify-center`}
+            whileHover={{
+              scale: 1.12,
+              rotate: [0, -6, 6, 0],
+              transition: { duration: 0.4, ease: "easeInOut" },
+            }}
+          >
+            <feature.icon size={20} className={ac.text} strokeWidth={1.7} />
+          </motion.div>
+          <OrbitRing accent={feature.accent} orbitIcons={feature.orbitIcons} />
+        </div>
+
+        {/* Text content with stagger */}
+        <motion.h3
+          className="font-display text-base font-semibold text-text mb-2"
+          initial={{ opacity: 0, x: -10 }}
+          animate={isInView ? { opacity: 1, x: 0 } : {}}
+          transition={{ delay: index * 0.1 + 0.3, duration: 0.4 }}
+        >
+          {feature.title}
+        </motion.h3>
+        <motion.p
+          className="text-sm text-text-secondary leading-relaxed text-pretty"
+          initial={{ opacity: 0, x: -10 }}
+          animate={isInView ? { opacity: 1, x: 0 } : {}}
+          transition={{ delay: index * 0.1 + 0.4, duration: 0.4 }}
+        >
+          {feature.description}
+        </motion.p>
+
+        {/* Bottom decorative animated line */}
+        <motion.div
+          className="absolute bottom-0 left-6 right-6 h-px"
+          style={{
+            background: `linear-gradient(90deg, transparent, rgba(${ac.rgb}, 0.2), transparent)`,
+          }}
+          initial={{ scaleX: 0, opacity: 0 }}
+          animate={isInView ? { scaleX: 1, opacity: 1 } : {}}
+          transition={{ delay: index * 0.1 + 0.5, duration: 0.8, ease: "easeOut" }}
+        />
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function Features() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(sectionRef, { once: true, amount: 0.1 });
+
+  return (
+    <section id="features" ref={sectionRef} className="relative py-28 overflow-hidden">
       {/* Background accent */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-amber/[0.02] blur-[150px] pointer-events-none" />
 
-      <div className="relative mx-auto max-w-6xl px-6">
-        <FadeIn className="text-center mb-16">
-          <span className="inline-block text-xs font-semibold tracking-widest uppercase text-amber mb-4">
-            Özellikler
-          </span>
-          <h2 className="font-display text-3xl sm:text-4xl font-bold text-text text-balance">
-            Gerçek Mülakata En Yakın Deneyim
-          </h2>
-          <p className="mt-4 text-text-secondary max-w-lg mx-auto text-pretty">
-            En gelişmiş AI teknolojileri ile donatılmış, kapsamlı mülakat hazırlık platformu.
-          </p>
-        </FadeIn>
+      {/* Floating background particles */}
+      {isInView && <FloatingParticles />}
 
+      {/* Animated connecting dots grid (subtle) */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {isInView &&
+          Array.from({ length: 6 }, (_, i) => (
+            <motion.div
+              key={`grid-dot-${i}`}
+              className="absolute w-1 h-1 rounded-full bg-amber/10"
+              style={{
+                left: `${15 + (i % 3) * 35}%`,
+                top: `${30 + Math.floor(i / 3) * 40}%`,
+              }}
+              animate={{
+                opacity: [0.2, 0.6, 0.2],
+                scale: [1, 1.8, 1],
+              }}
+              transition={{
+                duration: 3,
+                delay: i * 0.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+          ))}
+      </div>
+
+      <div className="relative mx-auto max-w-6xl px-6">
+        {/* Section header with animated accents */}
+        <div className="text-center mb-16 relative">
+          <FadeIn>
+            <span className="inline-block text-xs font-semibold tracking-widest uppercase text-amber mb-4">
+              Özellikler
+            </span>
+          </FadeIn>
+          <FadeIn delay={0.1}>
+            <h2 className="font-display text-3xl sm:text-4xl font-bold text-text text-balance relative inline-block">
+              Gerçek Mülakata En Yakın Deneyim
+              {/* Animated underline accent */}
+              <motion.div
+                className="absolute -bottom-2 left-0 right-0 h-0.5 rounded-full"
+                style={{
+                  background: "linear-gradient(90deg, transparent, rgba(229,161,14,0.4), rgba(59,130,246,0.3), rgba(34,197,94,0.3), transparent)",
+                }}
+                initial={{ scaleX: 0 }}
+                animate={isInView ? { scaleX: 1 } : {}}
+                transition={{ delay: 0.6, duration: 1, ease: [0.22, 1, 0.36, 1] }}
+              />
+            </h2>
+          </FadeIn>
+          <FadeIn delay={0.15}>
+            <p className="mt-6 text-text-secondary max-w-lg mx-auto text-pretty">
+              En gelişmiş AI teknolojileri ile donatılmış, kapsamlı mülakat hazırlık platformu.
+            </p>
+          </FadeIn>
+
+          {/* Decorative floating sparkles around the heading */}
+          {isInView && (
+            <>
+              <motion.div
+                className="absolute -top-2 -right-4 sm:right-[15%]"
+                animate={{
+                  y: [0, -8, 0],
+                  rotate: [0, 15, 0],
+                  opacity: [0.3, 0.7, 0.3],
+                }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <Sparkles size={14} className="text-amber" />
+              </motion.div>
+              <motion.div
+                className="absolute top-6 -left-2 sm:left-[12%]"
+                animate={{
+                  y: [0, 6, 0],
+                  rotate: [0, -12, 0],
+                  opacity: [0.2, 0.5, 0.2],
+                }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+              >
+                <Zap size={12} className="text-info" />
+              </motion.div>
+              <motion.div
+                className="absolute -bottom-4 right-[30%]"
+                animate={{
+                  y: [0, -5, 0],
+                  x: [0, 4, 0],
+                  opacity: [0.2, 0.5, 0.2],
+                }}
+                transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+              >
+                <Star size={10} className="text-success" />
+              </motion.div>
+            </>
+          )}
+        </div>
+
+        {/* Feature cards grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {features.map((f, i) => {
-            const ac = accentColors[f.accent];
-            return (
-              <FadeIn key={f.title} delay={i * 0.08}>
-                <div className={`group relative rounded-2xl border border-border-subtle bg-surface/60 backdrop-blur-sm p-6 h-full transition-all duration-300 hover:border-border ${ac.glow}`}>
-                  <div className={`h-11 w-11 rounded-xl ${ac.bg} border ${ac.border} flex items-center justify-center mb-5`}>
-                    <f.icon size={20} className={ac.text} strokeWidth={1.7} />
-                  </div>
-                  <h3 className="font-display text-base font-semibold text-text mb-2">
-                    {f.title}
-                  </h3>
-                  <p className="text-sm text-text-secondary leading-relaxed text-pretty">
-                    {f.description}
-                  </p>
-                </div>
-              </FadeIn>
-            );
-          })}
+          {features.map((f, i) => (
+            <FeatureCard key={f.title} feature={f} index={i} />
+          ))}
         </div>
       </div>
     </section>
