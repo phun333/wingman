@@ -45,4 +45,7 @@ export const ENV = {
 
   // Hyperbrowser
   HYPERBROWSER_API_KEY: process.env.HYPERBROWSER_API_KEY || "",
+
+  // Convex HTTP (auth proxy — production'da .convex.site URL'i)
+  CONVEX_HTTP_URL: process.env.CONVEX_HTTP_URL || "",
 } as const;

@@ -2,6 +2,7 @@ import { ENV } from "@ffh/env";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { createBunWebSocket } from "hono/bun";
+import { serveStatic } from "hono/bun";
 import { openAPIRouteHandler } from "hono-openapi";
 import { Scalar as apiReference } from "@scalar/hono-api-reference";
 import { apiRoutes } from "./router";
@@ -17,6 +18,35 @@ app.use("*", cors());
 
 // Health check
 app.get("/health", (c) => c.json({ status: "ok" }));
+
+// ─── Auth Proxy → Convex HTTP (production'da .convex.site) ─
+app.all("/api/auth/*", async (c) => {
+  const convexHttpUrl = ENV.CONVEX_HTTP_URL;
+  if (!convexHttpUrl) {
+    // Dev'de proxy yok — Vite halleder
+    return c.json({ error: "CONVEX_HTTP_URL not configured" }, 503);
+  }
+
+  const url = new URL(c.req.url);
+  const target = `${convexHttpUrl}${url.pathname}${url.search}`;
+
+  const headers = new Headers(c.req.raw.headers);
+  headers.delete("host");
+
+  const res = await fetch(target, {
+    method: c.req.method,
+    headers,
+    body: ["GET", "HEAD"].includes(c.req.method) ? undefined : c.req.raw.body,
+    // @ts-expect-error — duplex needed for streaming body
+    duplex: "half",
+  });
+
+  // Cookie header'larını koru (Set-Cookie vs.)
+  return new Response(res.body, {
+    status: res.status,
+    headers: res.headers,
+  });
+});
 
 // Mount API routes
 app.route("/api", apiRoutes);
@@ -102,6 +132,13 @@ app.get(
     };
   }),
 );
+
+// ─── Static Files + SPA Fallback (Production) ───────────
+// Vite build output'u ./public'den serve edilir.
+// Dev'de Vite kendi dev server'ından serve eder, buraya düşmez.
+
+app.use("*", serveStatic({ root: "./public" }));
+app.get("*", serveStatic({ root: "./public", path: "/index.html" }));
 
 // ─── Start ───────────────────────────────────────────────
 
