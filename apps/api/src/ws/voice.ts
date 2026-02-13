@@ -983,7 +983,7 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
     // Brevity reminder — LLMs weigh recent instructions more heavily
     messages.push({
       role: "system",
-      content: `[HATIRLATMA] Bu sesli bir konuşmadır. Yanıtın MUTLAKA 1-3 cümle olsun. Uzun açıklamalar yapma, liste yapma, madde madde yazma. Doğal ve kısa konuş — gerçek bir sohbet gibi.`,
+      content: `[HATIRLATMA] Bu sesli bir konuşmadır. Normalde 2-3 cümle ile kısa ve öz yanıt ver. Ancak bir kavramı açıklaman, problemi tanıtman veya detaylı geri bildirim vermen gerekiyorsa 4-5 cümleye kadar çıkabilirsin. Liste yapma, madde madde yazma. Doğal ve akıcı konuş — gerçek bir sohbet gibi. Her cümleni tamamla, yarıda bırakma.`,
     });
 
     // Inject code context before the last user message
@@ -1092,7 +1092,7 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
             model: ENV.OPENROUTER_MODEL,
             messages,
             stream: true,
-            max_tokens: 200,
+            max_tokens: 500,
             temperature: 0.7,
           }),
           signal,
