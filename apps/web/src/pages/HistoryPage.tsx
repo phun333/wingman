@@ -39,7 +39,7 @@ export function HistoryPage() {
           <Card className="flex flex-col items-center justify-center py-16 text-center">
             <p className="text-sm" style={{ color: '#8b8b96' }}>Henüz mülakat geçmişin yok</p>
             <Link
-              to="/interview/new"
+              to="/dashboard/interview/new"
               className="mt-4 inline-flex items-center gap-2 rounded-lg bg-amber/10 border border-amber/20 px-4 py-2 text-sm font-medium text-amber hover:bg-amber/15 transition-colors duration-150"
             >
               İlk Mülakatını Başlat

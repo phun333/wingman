@@ -137,7 +137,7 @@ export function DashboardPage() {
           {interviewTypes.map((type) => {
             const IconComponent = type.icon;
             return (
-              <Link key={type.id} to={`/interview/new?type=${type.id}`}>
+              <Link key={type.id} to={`/dashboard/interview/new?type=${type.id}`}>
                 <Card hover className="flex items-start gap-4 h-full">
                   <div
                     className={`h-10 w-10 rounded-lg ${type.bgColor} border ${type.borderColor} flex items-center justify-center flex-shrink-0`}
@@ -181,7 +181,7 @@ export function DashboardPage() {
               Hemen bir mülakat başlat ve pratik yapmaya başla
             </p>
             <Link
-              to="/interview/new"
+              to="/dashboard/interview/new"
               className="mt-4 inline-flex items-center gap-2 rounded-lg bg-amber/10 border border-amber/20 px-4 py-2 text-sm font-medium text-amber hover:bg-amber/15 transition-colors duration-150"
             >
               <Play size={14} />

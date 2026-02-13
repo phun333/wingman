@@ -141,7 +141,7 @@ export function JobsPage() {
   function handleStartInterview(path: JobPath, category: any) {
     const nextQuestion = category.questions.find((q: any) => !q.completed);
     if (nextQuestion) {
-      navigate(`/interview/new?type=${category.type}&jobPathId=${path._id}`);
+      navigate(`/dashboard/interview/new?type=${category.type}&jobPathId=${path._id}`);
     }
   }
 
@@ -573,7 +573,7 @@ export function JobsPage() {
                                                 onClick={() => {
                                                   if (!q.completed) {
                                                     navigate(
-                                                      `/interview/new?type=${category.type}&jobPathId=${path._id}&questionId=${q.id}`
+                                                      `/dashboard/interview/new?type=${category.type}&jobPathId=${path._id}&questionId=${q.id}`
                                                     );
                                                   }
                                                 }}

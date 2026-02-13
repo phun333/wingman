@@ -147,7 +147,7 @@ export function SystemDesignRoom({ interviewId }: SystemDesignRoomProps) {
       <div className="flex h-screen items-center justify-center bg-bg">
         <div className="text-center">
           <p className="text-danger text-lg font-medium">{loadError}</p>
-          <Button variant="ghost" className="mt-4" onClick={() => navigate("/")}>
+          <Button variant="ghost" className="mt-4" onClick={() => navigate("/dashboard")}>
             Dashboard'a Dön
           </Button>
         </div>

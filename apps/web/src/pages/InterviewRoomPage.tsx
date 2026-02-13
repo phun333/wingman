@@ -296,7 +296,7 @@ export function InterviewRoomPage() {
       useInterviewsStore.getState().invalidateAll();
       navigate(`/interview/${id}/report`);
     } else {
-      navigate("/");
+      navigate("/dashboard");
     }
   }, [id, navigate, code, codeLanguage]);
 
@@ -316,7 +316,7 @@ export function InterviewRoomPage() {
       useInterviewsStore.getState().invalidateAll();
       navigate(`/interview/${id}/report`);
     } else {
-      navigate("/");
+      navigate("/dashboard");
     }
   }, [id, navigate, code, codeLanguage]);
 
@@ -349,7 +349,7 @@ export function InterviewRoomPage() {
       <div className="flex h-screen items-center justify-center bg-bg">
         <div className="text-center">
           <p className="text-danger text-lg font-medium">{loadError}</p>
-          <Button variant="ghost" className="mt-4" onClick={() => navigate("/")}>
+          <Button variant="ghost" className="mt-4" onClick={() => navigate("/dashboard")}>
             Dashboard'a Dön
           </Button>
         </div>

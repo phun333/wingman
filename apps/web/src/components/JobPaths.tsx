@@ -74,7 +74,7 @@ export function JobPaths({ paths, onStartInterview }: JobPathsProps) {
           İş ilanı ekledikten sonra size özel mülakat soruları burada görünecek
         </p>
         <Link
-          to="/settings"
+          to="/dashboard/settings"
           className="mt-4 inline-flex items-center gap-2 rounded-lg bg-info/10 border border-info/20 px-4 py-2 text-sm font-medium text-info hover:bg-info/15 transition-colors"
         >
           İş İlanı Ekle

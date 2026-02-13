@@ -222,7 +222,7 @@ export function ReportPage() {
       <div className="flex h-screen items-center justify-center bg-bg">
         <div className="text-center">
           <p className="text-danger text-lg">{error}</p>
-          <Button variant="ghost" className="mt-4" onClick={() => navigate("/")}>
+          <Button variant="ghost" className="mt-4" onClick={() => navigate("/dashboard")}>
             Dashboard'a Dön
           </Button>
         </div>
@@ -272,7 +272,7 @@ export function ReportPage() {
             )}
           </Button>
           <Link
-            to="/"
+            to="/dashboard"
             className="block mt-4 text-sm text-text-muted hover:text-text transition-colors"
           >
             Dashboard'a Dön
@@ -305,7 +305,7 @@ export function ReportPage() {
       <header className="border-b border-border-subtle bg-surface/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link to="/" className="h-7 w-7 rounded-md bg-amber/15 flex items-center justify-center">
+            <Link to="/dashboard" className="h-7 w-7 rounded-md bg-amber/15 flex items-center justify-center">
               <span className="text-amber font-display text-xs font-bold">W</span>
             </Link>
             <span className="text-sm text-text-muted">
@@ -313,10 +313,10 @@ export function ReportPage() {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/history")}>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard/history")}>
               Geçmiş
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
               Dashboard
             </Button>
           </div>
@@ -658,10 +658,10 @@ export function ReportPage() {
 
         {/* ─── Actions ─────────────────────────────────── */}
         <div className="flex items-center justify-center gap-4 pb-8">
-          <Button variant="ghost" onClick={() => navigate("/history")}>
+          <Button variant="ghost" onClick={() => navigate("/dashboard/history")}>
             Geçmiş Mülakatlar
           </Button>
-          <Button onClick={() => navigate("/interview/new")}>
+          <Button onClick={() => navigate("/dashboard/interview/new")}>
             Yeni Mülakat Başlat
           </Button>
         </div>

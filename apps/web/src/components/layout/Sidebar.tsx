@@ -10,13 +10,13 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
-  { to: "/interview/new", label: "Yeni Mülakat", icon: Play },
-  { to: "/questions", label: "Sorular", icon: Code },
-  { to: "/history", label: "Geçmiş", icon: History },
-  { to: "/progress", label: "İlerleme", icon: TrendingUp },
-  { to: "/jobs", label: "İş İlanları", icon: Briefcase },
-  { to: "/settings", label: "Profil & Ayarlar", icon: Settings },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
+  { to: "/dashboard/interview/new", label: "Yeni Mülakat", icon: Play },
+  { to: "/dashboard/questions", label: "Sorular", icon: Code },
+  { to: "/dashboard/history", label: "Geçmiş", icon: History },
+  { to: "/dashboard/progress", label: "İlerleme", icon: TrendingUp },
+  { to: "/dashboard/jobs", label: "İş İlanları", icon: Briefcase },
+  { to: "/dashboard/settings", label: "Profil & Ayarlar", icon: Settings },
 ];
 
 export function Sidebar() {
