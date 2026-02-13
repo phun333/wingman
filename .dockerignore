@@ -1,0 +1,13 @@
+node_modules
+**/node_modules
+dist
+**/dist
+.git
+.env
+.env.local
+*.log
+.DS_Store
+.pi
+presentation
+roadmap
+dataset

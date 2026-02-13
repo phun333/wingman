@@ -1,0 +1,36 @@
+# ─── Dokploy Docker Compose ───────────────────────────────
+# Tek servis: Bun API (REST + WebSocket + Static + Auth Proxy)
+# Traefik (Dokploy) SSL & domain routing'i halleder.
+# ──────────────────────────────────────────────────────────
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+    expose:
+      - "3001"
+    environment:
+      # Core
+      - PORT_API=3001
+      - SITE_URL=${SITE_URL}
+      # Convex
+      - CONVEX_URL=${CONVEX_URL}
+      - CONVEX_HTTP_URL=${CONVEX_HTTP_URL}
+      # fal.ai / Freya
+      - FAL_KEY=${FAL_KEY}
+      - TTS_ENDPOINT=${TTS_ENDPOINT:-freya-mypsdi253hbk/freya-tts}
+      - STT_ENDPOINT=${STT_ENDPOINT:-freya-mypsdi253hbk/freya-stt}
+      - LLM_ENDPOINT=${LLM_ENDPOINT:-openrouter/router}
+      # OpenRouter
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL:-google/gemini-2.5-flash}
+      # Optional
+      - HYPERBROWSER_API_KEY=${HYPERBROWSER_API_KEY:-}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bun", "-e", "try{const r=await fetch('http://localhost:3001/health');process.exit(r.ok?0:1)}catch{process.exit(1)}"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
