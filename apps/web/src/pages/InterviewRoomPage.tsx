@@ -7,7 +7,7 @@ import { useVoice } from "@/lib/useVoice";
 import { getInterview, completeInterview, abandonInterview, executeCode as executeCodeApi, getRandomProblem, getProblem, startInterview, getLeetcodeProblem } from "@/lib/api";
 import { useInterviewsStore } from "@/stores";
 import { typeLabels } from "@/lib/constants";
-import { Mic, MicOff, Hand, Coffee, Clock, AlertTriangle, CheckCircle2, X, Volume2, Play } from "lucide-react";
+import { Mic, MicOff, Hand, Coffee, Clock, AlertTriangle, CheckCircle2, X, Volume2, Play, MicOff as MicOffIcon, RefreshCw, VolumeX, WifiOff, MessageSquareText, RotateCcw } from "lucide-react";
 import type {
   VoicePipelineState,
   Interview,
@@ -15,6 +15,7 @@ import type {
   CodeLanguage,
   CodeExecutionResult,
 } from "@ffh/types";
+import type { ErrorInfo } from "@/lib/useVoice";
 import { ProblemPanel } from "@/components/interview/ProblemPanel";
 import { CodeEditor } from "@/components/interview/CodeEditor";
 import { TestResultsPanel } from "@/components/interview/TestResultsPanel";
@@ -127,6 +128,7 @@ export function InterviewRoomPage() {
     transcript,
     aiText,
     error,
+    errorInfo,
     connected,
     voiceStarted,
     hintLevel,
@@ -144,6 +146,7 @@ export function InterviewRoomPage() {
     sendCodeResult,
     requestHint,
     dismissSolution,
+    dismissError,
   } = useVoice({
     interviewId: id,
     problemId: searchParams.get("problemId") || undefined,
@@ -394,6 +397,7 @@ export function InterviewRoomPage() {
           transcript={transcript}
           aiText={aiText}
           error={error}
+          errorInfo={errorInfo}
           connected={connected}
           voiceStarted={voiceStarted}
           elapsed={elapsed}
@@ -408,6 +412,7 @@ export function InterviewRoomPage() {
           recommendedSeconds={recommendedSeconds}
           timeWarning={timeWarning}
           onStartInterview={handleStartInterview}
+          onDismissError={dismissError}
         />
         <EndInterviewModal
           open={showEndModal}
@@ -532,6 +537,15 @@ export function InterviewRoomPage() {
         />
       </div>
 
+      {/* Error toast overlay for live-coding */}
+      <div className="fixed top-16 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-2">
+        <AnimatePresence>
+          {errorInfo && (
+            <ErrorToast errorInfo={errorInfo} onDismiss={dismissError} onRetry={handleMicClick} />
+          )}
+        </AnimatePresence>
+      </div>
+
       {/* Solution comparison modal (practice mode) */}
       {solutionComparison && (
         <SolutionComparisonPanel
@@ -567,6 +581,7 @@ interface VoiceOnlyRoomProps {
   transcript: string;
   aiText: string;
   error: string | null;
+  errorInfo: ErrorInfo | null;
   connected: boolean;
   voiceStarted: boolean;
   elapsed: number;
@@ -581,6 +596,7 @@ interface VoiceOnlyRoomProps {
   recommendedSeconds: number;
   timeWarning: number | null;
   onStartInterview: () => void;
+  onDismissError: () => void;
 }
 
 function VoiceOnlyRoom({
@@ -591,6 +607,7 @@ function VoiceOnlyRoom({
   transcript,
   aiText,
   error,
+  errorInfo,
   connected,
   voiceStarted,
   elapsed,
@@ -605,6 +622,7 @@ function VoiceOnlyRoom({
   recommendedSeconds,
   timeWarning,
   onStartInterview,
+  onDismissError,
 }: VoiceOnlyRoomProps) {
   // Per-question elapsed timer
   const [questionElapsed, setQuestionElapsed] = useState(0);
@@ -718,11 +736,11 @@ function VoiceOnlyRoom({
           )}
         </AnimatePresence>
 
-        {error && (
-          <div className="rounded-lg bg-danger/10 border border-danger/20 px-4 py-2 max-w-md">
-            <p className="text-sm text-danger">{error}</p>
-          </div>
-        )}
+        <AnimatePresence>
+          {errorInfo && (
+            <ErrorToast errorInfo={errorInfo} onDismiss={onDismissError} onRetry={onMicClick} />
+          )}
+        </AnimatePresence>
       </div>
 
       {/* ── Bottom controls ── */}
@@ -1005,5 +1023,276 @@ function EndInterviewModal({
         </motion.div>
       )}
     </AnimatePresence>
+  );
+}
+
+// ─── Error Toast (Granular Error Feedback) ───────────────
+
+interface ErrorToastProps {
+  errorInfo: ErrorInfo;
+  onDismiss: () => void;
+  onRetry?: () => void;
+}
+
+interface ErrorVisualConfig {
+  icon: typeof MicOff;
+  label: string;
+  subtitle?: string;
+  accentColor: string;     // Tailwind color token e.g. "amber", "info", "danger"
+  iconBg: string;          // Background for icon container
+  iconColor: string;       // Icon color class
+  textColor: string;       // Main text color class
+  borderColor: string;     // Border color class
+  bgColor: string;         // Toast background class
+  glowColor: string;       // Shadow glow for the toast
+  spinning?: boolean;
+  showRetry?: boolean;
+  autoDismissMs?: number;  // null = manual dismiss only
+}
+
+const errorVisualConfigs: Record<string, ErrorVisualConfig> = {
+  stt_failed: {
+    icon: MicOffIcon,
+    label: "Ses Algılama",
+    subtitle: "Mikrofon sesi net olmayabilir",
+    accentColor: "amber",
+    iconBg: "bg-amber/15",
+    iconColor: "text-amber",
+    textColor: "text-amber",
+    borderColor: "border-amber/25",
+    bgColor: "bg-[#1a160d]",
+    glowColor: "shadow-[0_0_30px_rgba(229,161,14,0.08)]",
+    autoDismissMs: 5000,
+  },
+  llm_failed: {
+    icon: RefreshCw,
+    label: "AI Yanıt",
+    subtitle: "Yeniden deneyebilirsiniz",
+    accentColor: "amber",
+    iconBg: "bg-amber/15",
+    iconColor: "text-amber",
+    textColor: "text-amber",
+    borderColor: "border-amber/25",
+    bgColor: "bg-[#1a160d]",
+    glowColor: "shadow-[0_0_30px_rgba(229,161,14,0.08)]",
+    spinning: true,
+    showRetry: true,
+    autoDismissMs: 8000,
+  },
+  llm_timeout: {
+    icon: RefreshCw,
+    label: "AI Yanıt",
+    subtitle: "Sunucu yanıt vermedi",
+    accentColor: "amber",
+    iconBg: "bg-amber/15",
+    iconColor: "text-amber",
+    textColor: "text-amber",
+    borderColor: "border-amber/25",
+    bgColor: "bg-[#1a160d]",
+    glowColor: "shadow-[0_0_30px_rgba(229,161,14,0.08)]",
+    spinning: true,
+    showRetry: true,
+    autoDismissMs: 8000,
+  },
+  tts_failed: {
+    icon: VolumeX,
+    label: "Ses Sentezi",
+    subtitle: "Metin olarak gösteriliyor",
+    accentColor: "info",
+    iconBg: "bg-info/15",
+    iconColor: "text-info",
+    textColor: "text-info",
+    borderColor: "border-info/25",
+    bgColor: "bg-[#0d1320]",
+    glowColor: "shadow-[0_0_30px_rgba(59,130,246,0.08)]",
+    autoDismissMs: 5000,
+  },
+  connection: {
+    icon: WifiOff,
+    label: "Bağlantı",
+    subtitle: "Otomatik yeniden bağlanılıyor",
+    accentColor: "danger",
+    iconBg: "bg-danger/15",
+    iconColor: "text-danger",
+    textColor: "text-danger",
+    borderColor: "border-danger/25",
+    bgColor: "bg-[#1a0d0d]",
+    glowColor: "shadow-[0_0_30px_rgba(239,68,68,0.08)]",
+    spinning: true,
+  },
+};
+
+const defaultVisualConfig: ErrorVisualConfig = {
+  icon: AlertTriangle,
+  label: "Hata",
+  accentColor: "danger",
+  iconBg: "bg-danger/15",
+  iconColor: "text-danger",
+  textColor: "text-danger",
+  borderColor: "border-danger/25",
+  bgColor: "bg-[#1a0d0d]",
+  glowColor: "shadow-[0_0_30px_rgba(239,68,68,0.08)]",
+};
+
+function ErrorToast({ errorInfo, onDismiss, onRetry }: ErrorToastProps) {
+  const config = errorInfo.errorType
+    ? errorVisualConfigs[errorInfo.errorType] ?? defaultVisualConfig
+    : defaultVisualConfig;
+  const Icon = config.icon;
+
+  // Auto-dismiss countdown progress
+  const [progress, setProgress] = useState(100);
+  const autoDismissMs = config.autoDismissMs;
+
+  useEffect(() => {
+    if (!autoDismissMs) return;
+
+    const startTime = Date.now();
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(0, 100 - (elapsed / autoDismissMs) * 100);
+      setProgress(remaining);
+      if (remaining <= 0) clearInterval(interval);
+    }, 50);
+
+    return () => clearInterval(interval);
+  }, [autoDismissMs]);
+
+  const isTtsFallback = errorInfo.errorType === "tts_failed" && errorInfo.fallbackText;
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: -16, scale: 0.92, filter: "blur(4px)" }}
+      animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+      exit={{ opacity: 0, y: -12, scale: 0.95, filter: "blur(4px)" }}
+      transition={{ type: "spring", stiffness: 400, damping: 28 }}
+      className={`
+        relative overflow-hidden rounded-xl ${config.bgColor} border ${config.borderColor}
+        ${config.glowColor} backdrop-blur-xl
+        w-[380px] max-w-[calc(100vw-2rem)]
+      `}
+    >
+      {/* Auto-dismiss progress bar */}
+      {autoDismissMs && (
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-white/5">
+          <motion.div
+            className={`h-full rounded-full ${
+              config.accentColor === "amber"
+                ? "bg-amber/50"
+                : config.accentColor === "info"
+                  ? "bg-info/50"
+                  : "bg-danger/50"
+            }`}
+            style={{ width: `${progress}%` }}
+            transition={{ duration: 0.05 }}
+          />
+        </div>
+      )}
+
+      <div className="flex items-start gap-3 px-4 py-3">
+        {/* Icon container */}
+        <div className={`
+          shrink-0 w-9 h-9 rounded-lg ${config.iconBg}
+          flex items-center justify-center
+          ring-1 ${
+            config.accentColor === "amber"
+              ? "ring-amber/20"
+              : config.accentColor === "info"
+                ? "ring-info/20"
+                : "ring-danger/20"
+          }
+        `}>
+          <Icon
+            size={18}
+            className={`${config.iconColor} ${config.spinning ? "animate-spin" : ""}`}
+            strokeWidth={1.8}
+          />
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0 pt-0.5">
+          {/* Label + badge */}
+          <div className="flex items-center gap-2">
+            <span className={`text-[11px] font-mono font-medium uppercase tracking-wider ${config.textColor}/70`}>
+              {config.label}
+            </span>
+            {errorInfo.retry && (
+              <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${config.iconBg} ${config.textColor}/60`}>
+                RETRY
+              </span>
+            )}
+          </div>
+
+          {/* Main message */}
+          <p className={`text-[13px] font-medium ${config.textColor} mt-0.5 leading-snug`}>
+            {errorInfo.message}
+          </p>
+
+          {/* Subtitle / contextual info */}
+          {config.subtitle && !isTtsFallback && (
+            <p className="text-[11px] text-text-muted mt-1">
+              {config.subtitle}
+            </p>
+          )}
+
+          {/* TTS fallback indicator */}
+          {isTtsFallback && (
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <MessageSquareText size={11} className="text-info/60" />
+              <p className="text-[11px] text-info/70">
+                AI yanıtı metin olarak gösteriliyor
+              </p>
+            </div>
+          )}
+
+          {/* Connection: reconnection dots animation */}
+          {errorInfo.errorType === "connection" && (
+            <div className="flex items-center gap-1 mt-2">
+              {[0, 1, 2].map((i) => (
+                <motion.div
+                  key={i}
+                  className="w-1.5 h-1.5 rounded-full bg-danger/60"
+                  animate={{ opacity: [0.3, 1, 0.3] }}
+                  transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
+                />
+              ))}
+              <span className="text-[10px] text-danger/50 ml-1 font-mono">bağlanılıyor</span>
+            </div>
+          )}
+
+          {/* Retry button for LLM errors */}
+          {config.showRetry && onRetry && (
+            <button
+              onClick={() => {
+                onRetry();
+                onDismiss();
+              }}
+              className={`
+                mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                text-[11px] font-medium transition-all duration-200 cursor-pointer
+                ${config.accentColor === "amber"
+                  ? "bg-amber/10 text-amber hover:bg-amber/20 border border-amber/20 hover:border-amber/30"
+                  : "bg-danger/10 text-danger hover:bg-danger/20 border border-danger/20 hover:border-danger/30"
+                }
+              `}
+            >
+              <RotateCcw size={11} strokeWidth={2} />
+              Tekrar Dene
+            </button>
+          )}
+        </div>
+
+        {/* Dismiss button */}
+        <button
+          onClick={onDismiss}
+          className="shrink-0 w-6 h-6 rounded-md flex items-center justify-center
+            text-text-muted/40 hover:text-text-muted hover:bg-white/5
+            transition-all duration-150 cursor-pointer"
+        >
+          <X size={13} strokeWidth={2} />
+        </button>
+      </div>
+    </motion.div>
   );
 }
