@@ -1,6 +1,6 @@
 import { type Editor, createShapeId } from "tldraw";
 import { SHAPE_CONFIGS } from "./design-shapes";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Puzzle, X } from "lucide-react";
 
 interface ComponentPaletteProps {
@@ -28,6 +28,7 @@ const CATEGORIES = [
 
 export function ComponentPalette({ editor }: ComponentPaletteProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const addCountRef = useRef(0);
 
   function addComponent(shapeType: string) {
     if (!editor) return;
@@ -35,29 +36,38 @@ export function ComponentPalette({ editor }: ComponentPaletteProps) {
     const config = SHAPE_CONFIGS.find((c) => c.type === shapeType);
     if (!config) return;
 
-    // Get center of current viewport
-    const viewportCenter = editor.getViewportScreenCenter();
-    const pagePoint = editor.screenToPage(viewportCenter);
+    // Grid-based placement: arrange components in a grid so they don't overlap
+    const shapeW = 140;
+    const shapeH = 100;
+    const gap = 30;
+    const cols = 4;
+    const cellW = shapeW + gap;
+    const cellH = shapeH + gap;
 
-    // Add some randomness so shapes don't stack exactly
-    const offsetX = (Math.random() - 0.5) * 100;
-    const offsetY = (Math.random() - 0.5) * 100;
+    const idx = addCountRef.current++;
+    const col = idx % cols;
+    const row = Math.floor(idx / cols);
+
+    // Place relative to viewport center, offset so grid grows from center
+    const bounds = editor.getViewportPageBounds();
+    const startX = bounds.center.x - ((cols - 1) * cellW) / 2;
+    const startY = bounds.center.y - cellH / 2;
 
     const id = createShapeId();
 
     editor.createShape({
       id,
       type: shapeType as any,
-      x: pagePoint.x + offsetX - 70,
-      y: pagePoint.y + offsetY - 50,
+      x: startX + col * cellW,
+      y: startY + row * cellH,
       props: {
-        w: 140,
-        h: 100,
+        w: shapeW,
+        h: shapeH,
         label: config.defaultLabel,
       },
     });
 
-    // Select the new shape
+    // Select the new shape without zooming
     editor.select(id);
   }
 
