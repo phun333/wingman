@@ -60,6 +60,9 @@ export function InterviewRoomPage() {
 
   // Debounced code update ref
   const codeUpdateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Keep codeLanguage in a ref so handleProblemLoaded can read it without re-creating
+  const codeLanguageRef = useRef(codeLanguage);
+  codeLanguageRef.current = codeLanguage;
 
   // Whiteboard ref — used to flush state before voice pipeline
   const whiteboardRef = useRef<WhiteboardCanvasHandle>(null);
@@ -128,6 +131,14 @@ export function InterviewRoomPage() {
 
       setProblem(p);
       setProblemLoading(false);
+
+      // Directly set code — the code-update effect may not fire reliably
+      // on the first render due to Monaco Editor mounting timing
+      const lang = codeLanguageRef.current;
+      const starter = p.starterCode?.[lang] ?? "";
+      if (starter) {
+        setCode(starter);
+      }
     },
     [searchParams],
   );
@@ -615,6 +626,7 @@ export function InterviewRoomPage() {
                     left={
                       <div className="h-full">
                         <CodeEditor
+                          key={`${problem?._id ?? "none"}-${codeLanguage}`}
                           language={codeLanguage}
                           value={code}
                           onChange={handleCodeChange}
