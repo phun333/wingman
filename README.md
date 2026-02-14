@@ -14,6 +14,8 @@
   Yapay zeka destekli sesli teknik mülakat platformu
 </p>
 
+https://github.com/user-attachments/assets/201563ec-225c-40d5-82e3-99fc86f9cd4c
+
 <p align="center">
   <a href="#özellikler">Özellikler</a> •
   <a href="#mimari">Mimari</a> •
