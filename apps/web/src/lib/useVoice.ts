@@ -5,6 +5,7 @@ import { AudioQueuePlayer, decodePCM16, createVolumeMeter } from "./audio";
 interface UseVoiceOptions {
   interviewId?: string;
   problemId?: string;
+  pttMode?: boolean; // Push-to-talk mode: disables VAD auto-stop & auto-restart
   onProblemLoaded?: (problem: Problem) => void;
   onDesignProblemLoaded?: (problem: DesignProblem) => void;
 }
@@ -111,6 +112,11 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
   const unmountedRef = useRef(false);
   // Ref to track state for VAD (avoids stale closure in volume meter callback)
   const stateRef = useRef<VoicePipelineState>("idle");
+  // Ref to track PTT mode (avoids stale closure)
+  const pttModeRef = useRef(!!options.pttMode);
+  // Callback refs to avoid stale closure in WS onmessage
+  const onProblemLoadedRef = useRef(options.onProblemLoaded);
+  const onDesignProblemLoadedRef = useRef(options.onDesignProblemLoaded);
 
   // ─── WebSocket (with auto-reconnect) ─────────────────
 
@@ -167,10 +173,19 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [options.interviewId, options.problemId]);
 
-  // Keep stateRef in sync with React state (for VAD closure)
+  // Keep refs in sync
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+  useEffect(() => {
+    pttModeRef.current = !!options.pttMode;
+  }, [options.pttMode]);
+  useEffect(() => {
+    onProblemLoadedRef.current = options.onProblemLoaded;
+  }, [options.onProblemLoaded]);
+  useEffect(() => {
+    onDesignProblemLoadedRef.current = options.onDesignProblemLoaded;
+  }, [options.onDesignProblemLoaded]);
 
   function handleServerMessage(msg: ServerMessage): void {
     switch (msg.type) {
@@ -191,10 +206,7 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
           setAiText(aiTextAccRef.current);
         } else {
           aiTextAccRef.current += msg.text;
-          // Throttle UI updates to prevent re-render storm
-          if (aiTextAccRef.current.length % 10 === 0 || msg.text.includes(' ')) {
-            setAiText(aiTextAccRef.current);
-          }
+          setAiText(aiTextAccRef.current);
         }
         break;
 
@@ -246,11 +258,12 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
 
       case "problem_loaded":
         console.log("Problem received from WebSocket:", msg.problem);
-        options.onProblemLoaded?.(msg.problem);
+        onProblemLoadedRef.current?.(msg.problem);
         break;
 
       case "design_problem_loaded":
-        options.onDesignProblemLoaded?.(msg.problem);
+        console.log("[useVoice] design_problem_loaded received:", msg.problem?.title);
+        onDesignProblemLoadedRef.current?.(msg.problem);
         break;
 
       case "hint_given":
@@ -315,7 +328,6 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
           },
         });
         mediaStreamRef.current = stream;
-        setMicActive(true);
         setError(null);
         setTranscript("");
         aiTextAccRef.current = "";
@@ -328,11 +340,20 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
             setVolume(rms);
             lastVolumeUpdate = now;
           }
-          handleVAD(rms);
+          if (!pttModeRef.current) {
+            handleVAD(rms);
+          }
         });
 
-        startRecording(stream);
-        send({ type: "start_listening" });
+        if (pttModeRef.current) {
+          // PTT mode: mic stream ready but NOT recording yet.
+          // micActive stays false — user must press PTT button to record.
+          send({ type: "start_listening" });
+        } else {
+          setMicActive(true);
+          startRecording(stream);
+          send({ type: "start_listening" });
+        }
       } catch {
         setError("Mikrofon erişimi reddedildi");
         setVoiceStarted(false);
@@ -344,6 +365,27 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
   // ─── Mic control ─────────────────────────────────────
 
   const toggleMic = useCallback(async () => {
+    if (pttModeRef.current) {
+      // PTT mode: toggle recording on existing stream
+      if (micActive) {
+        stopRecording();
+        setMicActive(false);
+        send({ type: "stop_listening" });
+      } else {
+        const stream = mediaStreamRef.current;
+        if (stream && stream.active) {
+          setTranscript("");
+          aiTextAccRef.current = "";
+          setAiText("");
+          startRecording(stream);
+          setMicActive(true);
+          send({ type: "start_listening" });
+        }
+      }
+      return;
+    }
+
+    // Normal (VAD) mode
     if (micActive) {
       stopRecording();
       stopMicStream();
@@ -507,6 +549,9 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
   // ─── Auto-restart mic after AI finishes ──────────────
 
   useEffect(() => {
+    // PTT mode: no auto-restart — user manually presses button
+    if (pttModeRef.current) return;
+
     // Add a small delay to prevent re-render loops
     const timeoutId = setTimeout(() => {
       if (state === "idle" && micActive && !recorderRef.current) {
