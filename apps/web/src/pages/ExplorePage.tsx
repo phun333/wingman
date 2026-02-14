@@ -15,6 +15,8 @@ import {
   Globe,
   ChevronDown,
   Sparkles,
+  Bookmark,
+  BookmarkCheck,
   Code2,
   Layers,
   MessageSquare,
@@ -486,22 +488,29 @@ function JobCard({
           {/* Right Actions */}
           <div className="flex flex-col items-end gap-2 flex-shrink-0">
             {path ? (
-              <div className="text-right">
-                <div className="text-xs font-bold text-amber tabular-nums">{path.progress}%</div>
-                <div className="text-[10px] text-text-muted">hazırlık</div>
-              </div>
-            ) : (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={(e) => { e.stopPropagation(); onStartPath(); }}
-                loading={isCreatingPath}
-                loadingText="..."
-                className="text-xs"
+              <button
+                type="button"
+                onClick={onToggleExpand}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-success/10 border border-success/25 text-success hover:bg-success/15 transition-colors cursor-pointer"
               >
-                <Sparkles size={12} className="mr-1" />
-                Hazırlan
-              </Button>
+                <BookmarkCheck size={14} />
+                <span className="text-xs font-medium">Kaydedildi</span>
+                <span className="text-xs font-bold tabular-nums">{path.progress}%</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onStartPath(); }}
+                disabled={isCreatingPath}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber/10 border border-amber/25 text-amber hover:bg-amber/20 hover:border-amber/40 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isCreatingPath ? (
+                  <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-amber border-t-transparent" />
+                ) : (
+                  <Bookmark size={14} />
+                )}
+                <span className="text-xs font-medium">{isCreatingPath ? "Kaydediliyor..." : "Kaydet"}</span>
+              </button>
             )}
 
             <button
@@ -616,11 +625,11 @@ function JobCard({
                     <Button
                       onClick={onStartPath}
                       loading={isCreatingPath}
-                      loadingText="Hazırlanıyor..."
+                      loadingText="Kaydediliyor..."
                       className="w-full"
                     >
-                      <Sparkles size={16} className="mr-2" />
-                      Bu İlan İçin Mülakat Yol Haritası Oluştur
+                      <Bookmark size={16} className="mr-2" />
+                      Kaydet ve Mülakat Yol Haritası Oluştur
                     </Button>
                   </div>
                 )}

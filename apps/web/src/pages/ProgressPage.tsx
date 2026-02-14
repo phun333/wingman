@@ -4,9 +4,10 @@ import { usePageTitle } from "@/lib/usePageTitle";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { createInterview } from "@/lib/api";
-import { useInterviewsStore, useJobsStore } from "@/stores";
+import { useInterviewsStore, useJobsStore, useExploreStore } from "@/stores";
 import { typeLabels, typeColors, hireLabels, difficultyLabels, formatDate, formatFullDate } from "@/lib/constants";
 import { JobPaths } from "@/components/JobPaths";
+import { ExplorePathsList } from "@/components/ExplorePathsList";
 import { TrendingUp, Flame, CheckCircle2, AlertTriangle } from "lucide-react";
 import {
   LineChart,
@@ -61,6 +62,11 @@ export function ProgressPage() {
   const fetchJobs = useJobsStore((s) => s.fetchData);
   const loadingJobs = useJobsStore((s) => s.loading);
 
+  // Explore paths (saved jobs from Explore page)
+  const explorePaths = useExploreStore((s) => s.paths);
+  const fetchExplorePaths = useExploreStore((s) => s.fetchPaths);
+  const removeExplorePath = useExploreStore((s) => s.removePath);
+
   const progressFetchedAt = useInterviewsStore((s) => s.progressFetchedAt);
   const jobsFetchedAt = useJobsStore((s) => s.fetchedAt);
 
@@ -72,10 +78,13 @@ export function ProgressPage() {
   const [filter, setFilter] = useState<string>("all");
   const [activeTab, setActiveTab] = useState<"overview" | "job-paths">("overview");
 
+  const totalSavedPaths = jobPaths.length + explorePaths.length;
+
   useEffect(() => {
     fetchProgressData();
     fetchJobs();
-  }, [fetchProgressData, fetchJobs]);
+    fetchExplorePaths();
+  }, [fetchProgressData, fetchJobs, fetchExplorePaths]);
 
   if (loading && progressFetchedAt === 0) {
     return (
@@ -178,10 +187,10 @@ export function ProgressPage() {
                 : "bg-surface-raised text-text-secondary hover:text-text"
             }`}
           >
-            İş İlanı Yolları
-            {jobPaths.length > 0 && (
+            Kaydedilen İlanlar
+            {totalSavedPaths > 0 && (
               <span className="ml-2 px-2 py-0.5 rounded-full bg-amber/20 text-xs">
-                {jobPaths.length}
+                {totalSavedPaths}
               </span>
             )}
           </button>
@@ -490,54 +499,108 @@ export function ProgressPage() {
       )}
         </>
       ) : (
-      /* Job Paths Tab */
-      <div className="mt-8">
-        <JobPaths
-          paths={jobPaths}
-          onDeletePath={removePath}
-          onStartInterview={async (path, question, category) => {
-            try {
-              // Fetch fresh interviews to avoid stale data
-              const freshInterviews = await fetchAll(true);
-
-              // Check if question already has an in-progress/created interview
-              if (question.interviewId) {
-                const existing = freshInterviews.find(
-                  (iv) =>
-                    iv._id === question.interviewId &&
-                    (iv.status === "created" || iv.status === "in-progress"),
-                );
-                if (existing) {
-                  navigate(`/interview/${existing._id}`);
-                  return;
+      /* Saved Paths Tab */
+      <div className="mt-8 space-y-8">
+        {/* Explore paths (saved from Explore page) */}
+        {explorePaths.length > 0 && (
+          <div>
+            <h3 className="text-sm font-medium text-text-muted uppercase tracking-wider mb-4">
+              Keşfet'ten Kaydedilenler
+            </h3>
+            <ExplorePathsList
+              paths={explorePaths}
+              onDeletePath={removeExplorePath}
+              onStartInterview={async (path, question, category) => {
+                try {
+                  const interview = await createInterview({
+                    type: category.type,
+                    difficulty: question.difficulty,
+                    language: "tr",
+                    questionCount: 1,
+                  });
+                  navigate(`/interview/${interview._id}`);
+                } catch (error) {
+                  console.error("Failed to create interview:", error);
                 }
-              }
+              }}
+            />
+          </div>
+        )}
 
-              // Also check if there's any active interview for this job posting + type combo
-              const activeInterview = freshInterviews.find(
-                (iv) =>
-                  iv.jobPostingId === path.jobPostingId &&
-                  iv.type === category.type &&
-                  (iv.status === "created" || iv.status === "in-progress"),
-              );
-              if (activeInterview) {
-                navigate(`/interview/${activeInterview._id}`);
-                return;
-              }
+        {/* Job paths (from manual job postings) */}
+        {jobPaths.length > 0 && (
+          <div>
+            {explorePaths.length > 0 && (
+              <h3 className="text-sm font-medium text-text-muted uppercase tracking-wider mb-4">
+                Manuel İş İlanları
+              </h3>
+            )}
+            <JobPaths
+              paths={jobPaths}
+              onDeletePath={removePath}
+              onStartInterview={async (path, question, category) => {
+                try {
+                  const freshInterviews = await fetchAll(true);
 
-              const interview = await createInterview({
-                type: category.type,
-                difficulty: question.difficulty,
-                language: "tr",
-                questionCount: 1,
-                jobPostingId: path.jobPostingId,
-              });
-              navigate(`/interview/${interview._id}`);
-            } catch (error) {
-              console.error("Failed to create interview:", error);
-            }
-          }}
-        />
+                  if (question.interviewId) {
+                    const existing = freshInterviews.find(
+                      (iv) =>
+                        iv._id === question.interviewId &&
+                        (iv.status === "created" || iv.status === "in-progress"),
+                    );
+                    if (existing) {
+                      navigate(`/interview/${existing._id}`);
+                      return;
+                    }
+                  }
+
+                  const activeInterview = freshInterviews.find(
+                    (iv) =>
+                      iv.jobPostingId === path.jobPostingId &&
+                      iv.type === category.type &&
+                      (iv.status === "created" || iv.status === "in-progress"),
+                  );
+                  if (activeInterview) {
+                    navigate(`/interview/${activeInterview._id}`);
+                    return;
+                  }
+
+                  const interview = await createInterview({
+                    type: category.type,
+                    difficulty: question.difficulty,
+                    language: "tr",
+                    questionCount: 1,
+                    jobPostingId: path.jobPostingId,
+                  });
+                  navigate(`/interview/${interview._id}`);
+                } catch (error) {
+                  console.error("Failed to create interview:", error);
+                }
+              }}
+            />
+          </div>
+        )}
+
+        {/* Empty state */}
+        {explorePaths.length === 0 && jobPaths.length === 0 && (
+          <Card className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="h-14 w-14 rounded-2xl bg-info/15 border border-info/30 flex items-center justify-center mb-4">
+              <Flame size={24} className="text-info" strokeWidth={1.8} />
+            </div>
+            <p className="text-text-secondary text-sm">
+              Henüz kaydedilmiş iş ilanı yok
+            </p>
+            <p className="text-text-muted text-xs mt-1">
+              Keşfet sayfasından iş ilanlarını kaydederek mülakat yol haritası oluştur
+            </p>
+            <Link
+              to="/dashboard/explore"
+              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-amber/10 border border-amber/20 px-4 py-2 text-sm font-medium text-amber hover:bg-amber/15 transition-colors"
+            >
+              İş Keşfet
+            </Link>
+          </Card>
+        )}
       </div>
     )}
     </div>
