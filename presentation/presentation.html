@@ -1354,123 +1354,110 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
         <h2 style="font-size:40px;">Wingman'ın <span class="t-amber">Arkasındaki Ekip</span></h2>
       </div>
 
-      <!-- Team Members -->
-      <div class="reveal flex gap-8 justify-center" style="margin-top:8px;">
-        <!-- Mehmet Ali -->
-        <div class="card" style="flex:1; max-width:380px; border-color:rgba(229,161,14,0.2); background:linear-gradient(180deg, rgba(229,161,14,0.04), var(--color-surface));">
-          <div class="flex items-center gap-4" style="margin-bottom:16px;">
-            <div style="width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg, rgba(229,161,14,0.15), rgba(229,161,14,0.05)); border:2px solid rgba(229,161,14,0.3); display:flex; align-items:center; justify-content:center; font-size:28px; flex-shrink:0;">
+      <!-- Top row: Team members + Big stats -->
+      <div class="reveal flex gap-6 items-stretch">
+        <!-- Team Members -->
+        <div class="flex flex-col gap-4" style="flex:0 0 auto; width:340px;">
+          <!-- Mehmet Ali -->
+          <div class="card flex items-center gap-4" style="padding:16px 20px; border-color:rgba(229,161,14,0.2); background:linear-gradient(135deg, rgba(229,161,14,0.04), var(--color-surface));">
+            <div style="width:52px; height:52px; border-radius:50%; background:linear-gradient(135deg, rgba(229,161,14,0.15), rgba(229,161,14,0.05)); border:2px solid rgba(229,161,14,0.3); display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0;">
               👨‍💻
             </div>
             <div>
-              <h3 style="font-size:18px; font-weight:700;">Mehmet Ali Selvet</h3>
-              <p class="t-amber" style="font-size:13px; font-weight:600;">Fullstack Developer</p>
+              <h3 style="font-size:16px; font-weight:700;">Mehmet Ali Selvet</h3>
+              <p class="t-amber" style="font-size:12px; font-weight:600;">Fullstack Developer</p>
             </div>
           </div>
-        </div>
-
-        <!-- Barış Cem -->
-        <div class="card" style="flex:1; max-width:380px; border-color:rgba(229,161,14,0.2); background:linear-gradient(180deg, rgba(229,161,14,0.04), var(--color-surface));">
-          <div class="flex items-center gap-4" style="margin-bottom:16px;">
-            <div style="width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg, rgba(229,161,14,0.15), rgba(229,161,14,0.05)); border:2px solid rgba(229,161,14,0.3); display:flex; align-items:center; justify-content:center; font-size:28px; flex-shrink:0;">
+          <!-- Barış Cem -->
+          <div class="card flex items-center gap-4" style="padding:16px 20px; border-color:rgba(229,161,14,0.2); background:linear-gradient(135deg, rgba(229,161,14,0.04), var(--color-surface));">
+            <div style="width:52px; height:52px; border-radius:50%; background:linear-gradient(135deg, rgba(229,161,14,0.15), rgba(229,161,14,0.05)); border:2px solid rgba(229,161,14,0.3); display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0;">
               👨‍💻
             </div>
             <div>
-              <h3 style="font-size:18px; font-weight:700;">Barış Cem Bayburtlu</h3>
-              <p class="t-amber" style="font-size:13px; font-weight:600;">Fullstack Developer</p>
+              <h3 style="font-size:16px; font-weight:700;">Barış Cem Bayburtlu</h3>
+              <p class="t-amber" style="font-size:12px; font-weight:600;">Fullstack Developer</p>
+            </div>
+          </div>
+          <!-- HACKGDG -->
+          <div class="card flex items-center gap-3" style="padding:12px 20px; border-color:rgba(139,91,246,0.25); background:linear-gradient(135deg, rgba(139,91,246,0.06), var(--color-surface));">
+            <span style="font-size:22px;">⭐</span>
+            <div>
+              <p style="font-size:13px; font-weight:700; color:var(--color-purple);">Creators of HACKGDG</p>
+              <p class="t-muted" style="font-size:10px;">Kendi hackathon'umuzu organize ediyoruz</p>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Achievements Grid -->
-      <div class="reveal">
-        <div style="text-align:center; margin-bottom:12px;">
-          <span class="badge badge-amber" style="font-size:12px; padding:4px 14px;"><i class="ri-trophy-line icon-xs"></i> Birlikte 13 Yarışma — 9 Birincilik</span>
-        </div>
-      </div>
-
-      <div class="reveal" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;">
-        <!-- Gold achievements -->
-        <div style="padding:10px 14px; border-radius:10px; border:1px solid rgba(229,161,14,0.2); background:rgba(229,161,14,0.03); display:flex; align-items:center; gap:8px;">
-          <span style="font-size:16px;">🏆</span>
-          <div>
-            <p style="font-size:12px; font-weight:600; color:var(--color-text); line-height:1.3;">TEKNOFEST Blockchain 2025</p>
-            <p class="t-amber" style="font-size:10px; font-weight:600;">4.677 takım içinde 5. sıra</p>
+        <!-- Big Stats -->
+        <div class="flex flex-col gap-4" style="flex:0 0 auto; width:180px;">
+          <div class="card flex flex-col items-center justify-center" style="flex:1; border-color:rgba(229,161,14,0.25); background:linear-gradient(180deg, rgba(229,161,14,0.06), var(--color-surface)); text-align:center;">
+            <span style="font-size:56px; font-family:var(--font-display); font-weight:800; color:var(--color-amber); line-height:1;">13</span>
+            <span class="t-muted" style="font-size:12px; margin-top:4px;">yarışma</span>
+          </div>
+          <div class="card flex flex-col items-center justify-center" style="flex:1; border-color:rgba(34,197,94,0.25); background:linear-gradient(180deg, rgba(34,197,94,0.06), var(--color-surface)); text-align:center;">
+            <span style="font-size:56px; font-family:var(--font-display); font-weight:800; color:var(--color-success); line-height:1;">9</span>
+            <span class="t-muted" style="font-size:12px; margin-top:4px;">birincilik 🏆</span>
           </div>
         </div>
 
-        <div style="padding:10px 14px; border-radius:10px; border:1px solid rgba(229,161,14,0.2); background:rgba(229,161,14,0.03); display:flex; align-items:center; gap:8px;">
-          <span style="font-size:16px;">🏆</span>
-          <div>
-            <p style="font-size:12px; font-weight:600; color:var(--color-text); line-height:1.3;">HACKMETU</p>
-            <p class="t-amber" style="font-size:10px; font-weight:600;">1. — Birincilik</p>
+        <!-- Wins table -->
+        <div class="card" style="flex:1; padding:0; overflow:hidden; border-color:rgba(229,161,14,0.15);">
+          <!-- Table header -->
+          <div class="flex justify-between items-center" style="padding:10px 18px; background:rgba(229,161,14,0.06); border-bottom:1px solid var(--color-border-subtle);">
+            <span style="font-size:13px; font-weight:700; color:var(--color-amber);"><i class="ri-trophy-line icon-xs" style="margin-right:5px;"></i>Başarılar</span>
+            <span class="t-muted t-mono" style="font-size:10px;">2024–2025</span>
           </div>
-        </div>
-
-        <div style="padding:10px 14px; border-radius:10px; border:1px solid rgba(229,161,14,0.2); background:rgba(229,161,14,0.03); display:flex; align-items:center; gap:8px;">
-          <span style="font-size:16px;">🏆</span>
-          <div>
-            <p style="font-size:12px; font-weight:600; color:var(--color-text); line-height:1.3;">HUCKATHON25</p>
-            <p class="t-amber" style="font-size:10px; font-weight:600;">1. — Birincilik</p>
+          <!-- Rows -->
+          <div style="display:flex; flex-direction:column;">
+            <div class="flex items-center" style="padding:7px 18px; border-bottom:1px solid var(--color-border-subtle);">
+              <span style="font-size:14px; width:24px; flex-shrink:0;">🥇</span>
+              <span style="font-size:13px; font-weight:600; color:var(--color-text); flex:1;">TEKNOFEST Blockchain</span>
+              <span class="t-amber t-mono" style="font-size:11px; font-weight:600;">5. / 4.677</span>
+            </div>
+            <div class="flex items-center" style="padding:7px 18px; border-bottom:1px solid var(--color-border-subtle);">
+              <span style="font-size:14px; width:24px; flex-shrink:0;">🏆</span>
+              <span style="font-size:13px; font-weight:600; color:var(--color-text); flex:1;">HACKMETU</span>
+              <span class="t-amber t-mono" style="font-size:11px; font-weight:600;">1. sıra</span>
+            </div>
+            <div class="flex items-center" style="padding:7px 18px; border-bottom:1px solid var(--color-border-subtle);">
+              <span style="font-size:14px; width:24px; flex-shrink:0;">🏆</span>
+              <span style="font-size:13px; font-weight:600; color:var(--color-text); flex:1;">HUCKATHON25</span>
+              <span class="t-amber t-mono" style="font-size:11px; font-weight:600;">1. sıra</span>
+            </div>
+            <div class="flex items-center" style="padding:7px 18px; border-bottom:1px solid var(--color-border-subtle);">
+              <span style="font-size:14px; width:24px; flex-shrink:0;">🏆</span>
+              <span style="font-size:13px; font-weight:600; color:var(--color-text); flex:1;">Ostim Solana Hackathon</span>
+              <span class="t-amber t-mono" style="font-size:11px; font-weight:600;">1. sıra</span>
+            </div>
+            <div class="flex items-center" style="padding:7px 18px; border-bottom:1px solid var(--color-border-subtle);">
+              <span style="font-size:14px; width:24px; flex-shrink:0;">🏆</span>
+              <span style="font-size:13px; font-weight:600; color:var(--color-text); flex:1;">BTK Ankara AI Hackathon</span>
+              <span class="t-amber t-mono" style="font-size:11px; font-weight:600;">1. sıra</span>
+            </div>
+            <div class="flex items-center" style="padding:7px 18px; border-bottom:1px solid var(--color-border-subtle);">
+              <span style="font-size:14px; width:24px; flex-shrink:0;">🏆</span>
+              <span style="font-size:13px; font-weight:600; color:var(--color-text); flex:1;">Turkcell Code Night</span>
+              <span class="t-amber t-mono" style="font-size:11px; font-weight:600;">1. sıra</span>
+            </div>
+            <div class="flex items-center" style="padding:7px 18px; border-bottom:1px solid var(--color-border-subtle);">
+              <span style="font-size:14px; width:24px; flex-shrink:0;">🏆</span>
+              <span style="font-size:13px; font-weight:600; color:var(--color-text); flex:1;">Çankaya Planathon</span>
+              <span class="t-amber t-mono" style="font-size:11px; font-weight:600;">1. sıra</span>
+            </div>
+            <div class="flex items-center" style="padding:7px 18px; border-bottom:1px solid var(--color-border-subtle);">
+              <span style="font-size:14px; width:24px; flex-shrink:0;">🏆</span>
+              <span style="font-size:13px; font-weight:600; color:var(--color-text); flex:1;">IT-ISQS Erasmus · TEDU Jam</span>
+              <span class="t-amber t-mono" style="font-size:11px; font-weight:600;">1. sıra</span>
+            </div>
           </div>
-        </div>
-
-        <div style="padding:10px 14px; border-radius:10px; border:1px solid rgba(229,161,14,0.2); background:rgba(229,161,14,0.03); display:flex; align-items:center; gap:8px;">
-          <span style="font-size:16px;">🏆</span>
-          <div>
-            <p style="font-size:12px; font-weight:600; color:var(--color-text); line-height:1.3;">Ostim Solana Hackathon</p>
-            <p class="t-amber" style="font-size:10px; font-weight:600;">1. — Birincilik</p>
+          <!-- Silver/Investment row -->
+          <div style="padding:8px 18px; background:rgba(139,91,246,0.04); border-top:1px solid rgba(139,91,246,0.15);">
+            <div class="flex items-center gap-2">
+              <span style="font-size:14px;">🏅</span>
+              <span style="font-size:12px; color:var(--color-purple); font-weight:600;">+4 derece & yatırım kazanımı</span>
+              <span class="t-muted" style="font-size:10px; margin-left:auto;">Securitas · Lifezone · Hematohack · Ostim AI</span>
+            </div>
           </div>
-        </div>
-
-        <div style="padding:10px 14px; border-radius:10px; border:1px solid rgba(229,161,14,0.2); background:rgba(229,161,14,0.03); display:flex; align-items:center; gap:8px;">
-          <span style="font-size:16px;">🏆</span>
-          <div>
-            <p style="font-size:12px; font-weight:600; color:var(--color-text); line-height:1.3;">BTK Ankara AI Hackathon</p>
-            <p class="t-amber" style="font-size:10px; font-weight:600;">1. — Birincilik</p>
-          </div>
-        </div>
-
-        <div style="padding:10px 14px; border-radius:10px; border:1px solid rgba(229,161,14,0.2); background:rgba(229,161,14,0.03); display:flex; align-items:center; gap:8px;">
-          <span style="font-size:16px;">🏆</span>
-          <div>
-            <p style="font-size:12px; font-weight:600; color:var(--color-text); line-height:1.3;">Turkcell Code Night</p>
-            <p class="t-amber" style="font-size:10px; font-weight:600;">1. — Birincilik</p>
-          </div>
-        </div>
-
-        <div style="padding:10px 14px; border-radius:10px; border:1px solid rgba(229,161,14,0.2); background:rgba(229,161,14,0.03); display:flex; align-items:center; gap:8px;">
-          <span style="font-size:16px;">🏆</span>
-          <div>
-            <p style="font-size:12px; font-weight:600; color:var(--color-text); line-height:1.3;">Çankaya 2. Planathon</p>
-            <p class="t-amber" style="font-size:10px; font-weight:600;">1. — Birincilik</p>
-          </div>
-        </div>
-
-        <div style="padding:10px 14px; border-radius:10px; border:1px solid rgba(229,161,14,0.2); background:rgba(229,161,14,0.03); display:flex; align-items:center; gap:8px;">
-          <span style="font-size:16px;">🏆</span>
-          <div>
-            <p style="font-size:12px; font-weight:600; color:var(--color-text); line-height:1.3;">IT-ISQS Erasmus & TEDU Jam</p>
-            <p class="t-amber" style="font-size:10px; font-weight:600;">1. — Birincilik</p>
-          </div>
-        </div>
-
-        <div style="padding:10px 14px; border-radius:10px; border:1px solid rgba(139,91,246,0.2); background:rgba(139,91,246,0.03); display:flex; align-items:center; gap:8px;">
-          <span style="font-size:16px;">🏅</span>
-          <div>
-            <p style="font-size:12px; font-weight:600; color:var(--color-text); line-height:1.3;">4 yarışmada derece + yatırım</p>
-            <p class="t-purple" style="font-size:10px; font-weight:600;">Securitas · Lifezone · Hematohack · Ostim AI</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- HACKGDG badge -->
-      <div class="reveal flex justify-center">
-        <div style="display:inline-flex; align-items:center; gap:10px; padding:10px 24px; border-radius:100px; border:1.5px solid rgba(229,161,14,0.3); background:linear-gradient(135deg, rgba(229,161,14,0.08), rgba(229,161,14,0.02));">
-          <span style="font-size:18px;">⭐</span>
-          <span style="font-size:14px; font-weight:700; color:var(--color-amber);">Creators of HACKGDG</span>
-          <span class="t-muted" style="font-size:12px;">— Kendi hackathon'umuzu da organize ediyoruz</span>
         </div>
       </div>
     </div>
