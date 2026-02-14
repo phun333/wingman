@@ -5,6 +5,7 @@ import { AudioQueuePlayer, decodePCM16, createVolumeMeter } from "./audio";
 interface UseVoiceOptions {
   interviewId?: string;
   problemId?: string;
+  customQuestion?: string; // Specific question text for phone-screen/system-design
   pttMode?: boolean; // Push-to-talk mode: disables VAD auto-stop & auto-restart
   onProblemLoaded?: (problem: Problem) => void;
   onDesignProblemLoaded?: (problem: DesignProblem) => void;
@@ -55,12 +56,13 @@ interface UseVoiceReturn {
   dismissError: () => void;
 }
 
-function buildWsUrl(interviewId?: string, problemId?: string): string {
+function buildWsUrl(interviewId?: string, problemId?: string, customQuestion?: string): string {
   // Development için doğrudan API portuna bağlan
   const base = `ws://localhost:3001/ws/voice`;
   const params = new URLSearchParams();
   if (interviewId) params.set("interviewId", interviewId);
   if (problemId) params.set("problemId", problemId);
+  if (customQuestion) params.set("customQuestion", customQuestion);
   return params.toString() ? `${base}?${params.toString()}` : base;
 }
 
@@ -126,7 +128,7 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
     function connect() {
       if (unmountedRef.current) return;
 
-      const wsUrl = buildWsUrl(options.interviewId, options.problemId);
+      const wsUrl = buildWsUrl(options.interviewId, options.problemId, options.customQuestion);
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
@@ -171,7 +173,7 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
       playerRef.current.destroy();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [options.interviewId, options.problemId]);
+  }, [options.interviewId, options.problemId, options.customQuestion]);
 
   // Keep refs in sync
   useEffect(() => {

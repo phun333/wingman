@@ -65,6 +65,7 @@ export class VoiceSession {
   private processing = false; // Guards against concurrent pipeline runs
   private consecutiveErrors = 0; // Track consecutive pipeline errors for connection fallback
   private currentWhiteboardState: WhiteboardState | null = null;
+  private customQuestion: string | null = null; // Specific question from explore path
 
 
 
@@ -110,8 +111,9 @@ export class VoiceSession {
   /**
    * Initialize with interview data — loads config, prompt, and history from Convex.
    */
-  async init(interviewId: string, problemId?: string): Promise<void> {
+  async init(interviewId: string, problemId?: string, customQuestion?: string): Promise<void> {
     if (this.initialized) return;
+    this.customQuestion = customQuestion || null;
 
     try {
       const interview = await convex.query(api.interviews.getById, {
@@ -158,10 +160,26 @@ export class VoiceSession {
       // For system-design interviews, load a design problem
       if (this.interview.type === "system-design") {
         try {
-          let designProblem = await convex.query(api.designProblems.getRandom, {
-            difficulty: this.interview.difficulty as any,
-            seed: Math.random(),
-          });
+          let designProblem: any = null;
+
+          // If customQuestion is set (from explore path), try to match by title
+          if (customQuestion) {
+            const searchTerm = customQuestion.toLowerCase();
+            const allDesignProblems = await convex.query(api.designProblems.list, {});
+            designProblem = allDesignProblems?.find((p: any) =>
+              searchTerm.includes(p.title.toLowerCase()) ||
+              p.title.toLowerCase().includes(searchTerm)
+            ) ?? null;
+            console.log(`[init] System design custom question: "${customQuestion}", matched: ${designProblem?.title ?? "none"}`);
+          }
+
+          // Fallback to random
+          if (!designProblem) {
+            designProblem = await convex.query(api.designProblems.getRandom, {
+              difficulty: this.interview.difficulty as any,
+              seed: Math.random(),
+            });
+          }
 
           // If no design problems exist, seed the table and retry
           if (!designProblem) {
@@ -203,6 +221,14 @@ export class VoiceSession {
             } catch {
               // Non-fatal
             }
+          } else if (customQuestion) {
+            // No DB match but have a custom topic — inject as context
+            console.log(`[init] No design problem matched, using custom topic: "${customQuestion}"`);
+            this.currentDesignProblem = { title: customQuestion } as any;
+            this.conversationHistory.push({
+              role: "system",
+              content: `[Atanan sistem tasarım konusu]\nKonu: ${customQuestion}\n\nBu konu hakkında adayla bir sistem tasarım mülakatı yap. Gereksinimlerini tartış, bileşenleri ve bağlantıları whiteboard'a çizmesini iste.`,
+            });
           } else {
             console.error("[init] No design problems available even after seeding");
           }
@@ -535,10 +561,18 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
             this.generateIntroAudio(introText);
 
             // Guide LLM: greeting is done, respond concisely to candidate's answer
-            this.conversationHistory.push({
-              role: "system",
-              content: `[SYSTEM_NOTE: Tanışma ve format açıklaması zaten yapıldı. Adayın yanıtına çok kısa bir onay ver (ör. "Harika!") ve hemen ilk soruyu sor. Geçiş cümlesi, format tekrarı veya ek açıklama yapma. Tek cümle onay + tek soru, bu kadar.]`,
-            });
+            if (this.customQuestion) {
+              // Specific question from explore path — ask THIS question first
+              this.conversationHistory.push({
+                role: "system",
+                content: `[SYSTEM_NOTE: Tanışma zaten yapıldı. Adayın yanıtına çok kısa bir onay ver ve hemen şu ÖZEL soruyu sor: "${this.customQuestion}". Bu soruyu kelimesi kelimesine okuma, doğal bir şekilde kendi cümlelerinle sor. Tek cümle onay + bu soru, bu kadar.]`,
+              });
+            } else {
+              this.conversationHistory.push({
+                role: "system",
+                content: `[SYSTEM_NOTE: Tanışma ve format açıklaması zaten yapıldı. Adayın yanıtına çok kısa bir onay ver (ör. "Harika!") ve hemen ilk soruyu sor. Geçiş cümlesi, format tekrarı veya ek açıklama yapma. Tek cümle onay + tek soru, bu kadar.]`,
+              });
+            }
           }
         }
         break;

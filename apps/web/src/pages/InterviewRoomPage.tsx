@@ -172,6 +172,7 @@ export function InterviewRoomPage() {
   } = useVoice({
     interviewId: id,
     problemId: searchParams.get("problemId") || undefined,
+    customQuestion: searchParams.get("customQuestion") || undefined,
     pttMode: true, // Push-to-talk for all interview types
     onProblemLoaded: handleProblemLoaded,
     onDesignProblemLoaded: handleDesignProblemLoaded,

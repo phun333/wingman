@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { usePageTitle } from "@/lib/usePageTitle";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { createInterview } from "@/lib/api";
+import { createInterview, getLeetcodeProblem } from "@/lib/api";
 import { useInterviewsStore, useJobsStore, useExploreStore } from "@/stores";
 import { typeLabels, typeColors, hireLabels, difficultyLabels, formatDate, formatFullDate } from "@/lib/constants";
 import { JobPaths } from "@/components/JobPaths";
@@ -516,9 +516,27 @@ export function ProgressPage() {
                     type: category.type,
                     difficulty: question.difficulty,
                     language: "tr",
-                    questionCount: 1,
+                    questionCount: category.type === "phone-screen" ? 1 : undefined,
                   });
-                  navigate(`/interview/${interview._id}`);
+
+                  // Build URL params based on interview type
+                  const params = new URLSearchParams();
+
+                  if (category.type === "live-coding" && question.leetcodeId) {
+                    // Look up Convex ID from leetcodeId
+                    try {
+                      const lc = await getLeetcodeProblem(question.leetcodeId);
+                      if (lc?._id) params.set("problemId", lc._id);
+                    } catch {
+                      console.warn("Failed to look up leetcode problem:", question.leetcodeId);
+                    }
+                  } else if (category.type === "phone-screen" || category.type === "system-design") {
+                    // Pass the specific question text
+                    params.set("customQuestion", question.question);
+                  }
+
+                  const qs = params.toString();
+                  navigate(`/interview/${interview._id}${qs ? `?${qs}` : ""}`);
                 } catch (error) {
                   console.error("Failed to create interview:", error);
                 }
@@ -569,10 +587,26 @@ export function ProgressPage() {
                     type: category.type,
                     difficulty: question.difficulty,
                     language: "tr",
-                    questionCount: 1,
+                    questionCount: category.type === "phone-screen" ? 1 : undefined,
                     jobPostingId: path.jobPostingId,
                   });
-                  navigate(`/interview/${interview._id}`);
+
+                  // Build URL params based on interview type
+                  const params = new URLSearchParams();
+
+                  if (category.type === "live-coding" && question.leetcodeId) {
+                    try {
+                      const lc = await getLeetcodeProblem(question.leetcodeId);
+                      if (lc?._id) params.set("problemId", lc._id);
+                    } catch {
+                      console.warn("Failed to look up leetcode problem:", question.leetcodeId);
+                    }
+                  } else if (category.type === "phone-screen" || category.type === "system-design") {
+                    params.set("customQuestion", question.question);
+                  }
+
+                  const qs = params.toString();
+                  navigate(`/interview/${interview._id}${qs ? `?${qs}` : ""}`);
                 } catch (error) {
                   console.error("Failed to create interview:", error);
                 }
