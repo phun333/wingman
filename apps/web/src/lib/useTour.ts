@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { driver, type DriveStep, type Driver } from "driver.js";
 import "driver.js/dist/driver.css";
 import "./tour-theme.css";
@@ -97,6 +98,8 @@ const tourSteps: DriveStep[] = [
 export function useTour(options?: { autoStart?: boolean }) {
   const autoStart = options?.autoStart ?? true;
   const driverRef = useRef<Driver | null>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const startTour = useCallback(() => {
     // Clean up any existing instance
@@ -113,8 +116,8 @@ export function useTour(options?: { autoStart?: boolean }) {
       prevBtnText: "← Geri",
       doneBtnText: "Hadi Başlayalım! 🚀",
       popoverClass: "wingman-tour",
-      overlayColor: "rgba(7, 7, 10, 0.82)",
-      overlayOpacity: 1,
+      overlayColor: "#07070a",
+      overlayOpacity: 0.55,
       stagePadding: 12,
       stageRadius: 12,
       smoothScroll: true,
@@ -132,9 +135,16 @@ export function useTour(options?: { autoStart?: boolean }) {
 
   const restartTour = useCallback(() => {
     localStorage.removeItem(TOUR_STORAGE_KEY);
-    // Small delay to ensure DOM is ready
-    setTimeout(startTour, 100);
-  }, [startTour]);
+
+    // If not on dashboard, navigate there first then start
+    if (location.pathname !== "/dashboard") {
+      navigate("/dashboard");
+      // Wait for navigation + render
+      setTimeout(startTour, 800);
+    } else {
+      setTimeout(startTour, 100);
+    }
+  }, [startTour, navigate, location.pathname]);
 
   // Auto-start on first visit (only when autoStart is true)
   useEffect(() => {
