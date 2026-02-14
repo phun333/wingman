@@ -169,8 +169,11 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
 
       case "ai_text":
         if (msg.done) {
-          // Keep accumulated text visible
-          setAiText(aiTextAccRef.current); // Final update
+          // If done message carries full text (e.g. intro), use it directly
+          if (msg.text) {
+            aiTextAccRef.current = msg.text;
+          }
+          setAiText(aiTextAccRef.current);
         } else {
           aiTextAccRef.current += msg.text;
           // Throttle UI updates to prevent re-render storm

@@ -36,11 +36,19 @@ export function ChatThread({ transcript, aiText, state }: ChatThreadProps) {
     }
   }, [transcript]);
 
-  // Commit user message when state transitions to processing
+  // Track AI text: accumulate
+  useEffect(() => {
+    if (aiText) {
+      aiAccumulatorRef.current = aiText;
+    }
+  }, [aiText]);
+
+  // Handle state transitions: commit user and AI messages
   useEffect(() => {
     const prev = prevStateRef.current;
     prevStateRef.current = state;
 
+    // Commit user message when state transitions to processing
     if (state === "processing" && prev === "listening" && lastTranscriptRef.current) {
       const text = lastTranscriptRef.current;
       setMessages((msgs) => [
@@ -56,20 +64,8 @@ export function ChatThread({ transcript, aiText, state }: ChatThreadProps) {
       lastTranscriptRef.current = "";
       aiAccumulatorRef.current = "";
     }
-  }, [state]);
 
-  // Track AI text: accumulate and commit when AI finishes
-  useEffect(() => {
-    if (aiText) {
-      aiAccumulatorRef.current = aiText;
-    }
-  }, [aiText]);
-
-  // Commit AI message when speaking ends
-  useEffect(() => {
-    const prev = prevStateRef.current;
-    // Already updated above, but we also check transitions here
-
+    // Commit AI message when speaking/processing ends
     if (
       (state === "idle" || state === "listening") &&
       (prev === "speaking" || prev === "processing") &&

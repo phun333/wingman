@@ -424,8 +424,23 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
         if (this.isFirstInteraction && this.interview) {
           this.isFirstInteraction = false;
 
-          if (this.interview.type === "live-coding" || this.interview.type === "practice") {
-            console.log("[start_listening] Playing pre-generated intro audio...");
+          if (this.interview.type === "live-coding") {
+            // Live-coding: problem is visible in the panel, just greet briefly
+            console.log("[start_listening] Live-coding — short greeting...");
+
+            const introText = "Selam! Soruyu sol tarafta görüyorsun, takıldığın yer olursa yardımcı olurum.";
+
+            this.send({ type: "ai_text", text: introText, done: true });
+
+            // Persist intro to conversation history
+            this.conversationHistory.push({ role: "assistant", content: introText });
+            this.persistMessage("assistant", introText);
+
+            // Generate TTS audio
+            this.generateIntroAudio(introText);
+
+          } else if (this.interview.type === "practice") {
+            console.log("[start_listening] Practice — playing problem intro audio...");
 
             // Check if problem is loaded
             if (this.currentProblem?.slug) {
@@ -438,6 +453,10 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
               // Send the intro text to the client immediately
               this.send({ type: "ai_text", text: introText, done: true });
 
+              // Persist intro to conversation history
+              this.conversationHistory.push({ role: "assistant", content: introText });
+              this.persistMessage("assistant", introText);
+
               // Generate TTS audio
               this.generateIntroAudio(introText);
             } else {
@@ -448,6 +467,8 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
                   const problemSlug = this.currentProblem.slug;
                   const introText = getProblemIntro(problemSlug, this.currentProblem);
                   this.send({ type: "ai_text", text: introText, done: true });
+                  this.conversationHistory.push({ role: "assistant", content: introText });
+                  this.persistMessage("assistant", introText);
                   this.generateIntroAudio(introText);
                 } else {
                   // Fallback to LLM
@@ -1273,9 +1294,14 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
   }
 
   /**
-   * Generate and stream intro audio for problems
+   * Generate and stream intro audio for problems.
+   * Uses abortController so interrupts can cancel it.
    */
   private async generateIntroAudio(text: string): Promise<void> {
+    this.processing = true;
+    this.abortController = new AbortController();
+    const { signal } = this.abortController;
+
     try {
       this.setState("speaking");
 
@@ -1290,25 +1316,31 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
         done?: boolean;
         error?: { message: string };
       }>) {
+        if (signal.aborted) return;
         if (event.audio) {
           this.send({ type: "ai_audio", data: event.audio });
         }
         if (event.error) {
           this.send({ type: "error", message: event.error.message });
         }
-        if (event.done) {
-          this.setState("idle");
-        }
       }
     } catch (error) {
+      if (signal.aborted) return;
       console.error("Error generating intro audio:", error);
-      this.setState("idle");
       // Fallback to LLM if TTS fails
       this.conversationHistory.push({
         role: "user",
         content: "[SYSTEM: Kullanıcı hazır, problemi açıklamaya başla]",
       });
       this.triggerAIResponse();
+      return;
+    } finally {
+      this.processing = false;
+      if (!signal.aborted) {
+        this.send({ type: "ai_audio_done" });
+        this.setState("idle");
+      }
+      this.abortController = null;
     }
   }
 }
