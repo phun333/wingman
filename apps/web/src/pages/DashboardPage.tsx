@@ -51,7 +51,7 @@ const motivationalMessages = [
 
 function getMotivationalMessage(): string {
   const day = new Date().getDate();
-  return motivationalMessages[day % motivationalMessages.length];
+  return motivationalMessages[day % motivationalMessages.length]!;
 }
 
 // ─── Animated Counter ────────────────────────────────────
@@ -177,6 +177,8 @@ const interviewTypes: {
 
 // ─── Stagger Animations ─────────────────────────────────
 
+const cubicEase: [number, number, number, number] = [0.22, 1, 0.36, 1];
+
 const stagger = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.06, delayChildren: 0.1 } },
@@ -187,7 +189,7 @@ const fadeUp = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 0.5, ease: cubicEase },
   },
 };
 
@@ -196,7 +198,7 @@ const scaleIn = {
   visible: {
     opacity: 1,
     scale: 1,
-    transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 0.5, ease: cubicEase },
   },
 };
 
@@ -216,7 +218,7 @@ function TypingPlaceholder() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    const current = placeholderTexts[textIndex];
+    const current = placeholderTexts[textIndex]!;
     let timeout: ReturnType<typeof setTimeout>;
 
     if (!isDeleting && charIndex < current.length) {
@@ -238,7 +240,7 @@ function TypingPlaceholder() {
 
   return (
     <span className="text-text-muted pointer-events-none select-none">
-      {placeholderTexts[textIndex].substring(0, charIndex)}
+      {placeholderTexts[textIndex]!.substring(0, charIndex)}
       <span className="animate-pulse text-amber">|</span>
     </span>
   );

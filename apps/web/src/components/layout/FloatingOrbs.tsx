@@ -100,7 +100,7 @@ function generateOrbs(pathname: string): Orb[] {
       x,
       y,
       size,
-      color: ORB_COLORS[colorIdx],
+      color: ORB_COLORS[colorIdx]!,
       opacity,
       duration,
       dx,
