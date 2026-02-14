@@ -159,6 +159,31 @@ body::before {
   background-color: var(--color-text-muted);
 }
 
+/* Heatmap — ince scrollbar ile yatay scroll ────────── */
+
+.heatmap-stretch .react-activity-calendar__scroll-container {
+  overflow-x: auto !important;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
+.heatmap-stretch .react-activity-calendar__scroll-container::-webkit-scrollbar {
+  height: 4px;
+}
+
+.heatmap-stretch .react-activity-calendar__scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.heatmap-stretch .react-activity-calendar__scroll-container::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 2px;
+}
+
+.heatmap-stretch .react-activity-calendar__scroll-container::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-text-muted);
+}
+
 /* Reduced Motion ───────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {

@@ -24,7 +24,6 @@ import {
   X,
   ArrowRight,
   Target,
-  Loader2,
   Globe,
 } from "lucide-react";
 import { useJobsStore } from "@/stores";
@@ -290,19 +289,12 @@ export function JobsPage() {
                 <div className="flex items-center gap-3">
                   <Button
                     onClick={handleParseJob}
-                    disabled={parsing || (!jobUrl && !jobRawText)}
+                    disabled={!jobUrl && !jobRawText}
+                    loading={parsing}
+                    loadingText="Analiz ediliyor…"
                   >
-                    {parsing ? (
-                      <>
-                        <Loader2 size={16} className="mr-1.5 animate-spin" />
-                        Analiz ediliyor…
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles size={16} className="mr-1.5" />
-                        AI ile Analiz Et
-                      </>
-                    )}
+                    <Sparkles size={16} className="mr-1.5" />
+                    AI ile Analiz Et
                   </Button>
 
                   {parsing && (

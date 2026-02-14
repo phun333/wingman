@@ -17,6 +17,12 @@ import {
   Clock,
   Code2,
   Star,
+  Award,
+  Globe,
+  Target,
+  Rocket,
+  Trophy,
+  Wrench,
 } from "lucide-react";
 import { StreakHeatmap } from "@/components/ui/StreakHeatmap";
 import { Link } from "react-router-dom";
@@ -50,9 +56,9 @@ function ResumeDetailCard({
   return (
     <div className="rounded-xl border border-border-subtle bg-surface-raised overflow-hidden">
       {/* Header — always visible */}
-      <div className="flex items-start justify-between px-4 py-3">
+      <div className="flex items-start justify-between px-5 py-4">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2.5 flex-wrap">
             <h3 className="text-sm font-semibold text-text truncate">
               {resume.name || resume.fileName}
             </h3>
@@ -68,11 +74,11 @@ function ResumeDetailCard({
           </div>
 
           {/* Skills — always show */}
-          <div className="flex flex-wrap gap-1 mt-2">
+          <div className="flex flex-wrap gap-1.5 mt-3">
             {resume.skills.map((s) => (
               <span
                 key={s}
-                className="inline-flex items-center rounded-md bg-amber/8 border border-amber/15 text-amber px-1.5 py-0.5 text-[11px] font-medium"
+                className="inline-flex items-center rounded-md bg-amber/8 border border-amber/15 text-amber px-2 py-0.5 text-[11px] font-medium"
               >
                 {s}
               </span>
@@ -80,11 +86,11 @@ function ResumeDetailCard({
           </div>
         </div>
 
-        <div className="flex items-center gap-1 ml-3 shrink-0">
+        <div className="flex items-center gap-1.5 ml-4 shrink-0">
           <button
             type="button"
             onClick={() => setExpanded(!expanded)}
-            className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-surface transition-colors cursor-pointer"
+            className="p-2 rounded-lg text-text-muted hover:text-text hover:bg-surface transition-colors cursor-pointer"
             title={expanded ? "Daralt" : "Detayları Göster"}
           >
             {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -92,7 +98,7 @@ function ResumeDetailCard({
           <button
             type="button"
             onClick={onDelete}
-            className="p-1.5 rounded-lg text-danger/50 hover:text-danger hover:bg-danger/10 transition-colors cursor-pointer text-xs"
+            className="p-2 rounded-lg text-danger/50 hover:text-danger hover:bg-danger/10 transition-colors cursor-pointer text-xs"
             title="Sil"
           >
             ×
@@ -110,7 +116,19 @@ function ResumeDetailCard({
             transition={{ duration: 0.25, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            <div className="border-t border-border-subtle px-4 py-4 space-y-5">
+            <div className="border-t border-border-subtle px-5 py-5 space-y-6">
+              {/* ── Summary ── */}
+              {resume.summary && (
+                <div>
+                  <h4 className="flex items-center gap-1.5 text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
+                    <FileText size={13} /> Profesyonel Özet
+                  </h4>
+                  <p className="text-xs text-text-secondary leading-relaxed bg-surface rounded-lg px-3 py-2 border border-border-subtle">
+                    {resume.summary}
+                  </p>
+                </div>
+              )}
+
               {/* ── Experience ── */}
               {resume.experience.length > 0 && (
                 <div>
@@ -132,6 +150,18 @@ function ResumeDetailCard({
                           <span className="mx-1.5 text-border">•</span>
                           {exp.duration}
                         </p>
+                        {exp.technologies && exp.technologies.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {exp.technologies.map((t) => (
+                              <span
+                                key={t}
+                                className="inline-flex items-center rounded bg-info/8 border border-info/15 text-info px-1 py-0 text-[9px] font-medium"
+                              >
+                                {t}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                         {exp.highlights.length > 0 && (
                           <ul className="mt-1.5 space-y-0.5">
                             {exp.highlights.map((h, j) => (
@@ -143,6 +173,48 @@ function ResumeDetailCard({
                                   size={10}
                                   className="text-amber/50 mt-0.5 shrink-0"
                                 />
+                                <span>{h}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Projects ── */}
+              {resume.projects && resume.projects.length > 0 && (
+                <div>
+                  <h4 className="flex items-center gap-1.5 text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
+                    <Rocket size={13} /> Projeler
+                  </h4>
+                  <div className="space-y-3">
+                    {resume.projects.map((proj, i) => (
+                      <div
+                        key={i}
+                        className="rounded-lg bg-surface px-3 py-2.5 border border-border-subtle"
+                      >
+                        <p className="text-sm font-medium text-text">{proj.name}</p>
+                        <p className="text-xs text-text-secondary mt-0.5">{proj.description}</p>
+                        {proj.technologies.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            {proj.technologies.map((t) => (
+                              <span
+                                key={t}
+                                className="inline-flex items-center rounded bg-success/8 border border-success/15 text-success px-1 py-0 text-[9px] font-medium"
+                              >
+                                {t}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        {proj.highlights.length > 0 && (
+                          <ul className="mt-1.5 space-y-0.5">
+                            {proj.highlights.map((h, j) => (
+                              <li key={j} className="text-xs text-text-secondary flex gap-1.5">
+                                <Star size={10} className="text-success/50 mt-0.5 shrink-0" />
                                 <span>{h}</span>
                               </li>
                             ))}
@@ -176,6 +248,8 @@ function ResumeDetailCard({
                           </p>
                           <p className="text-xs text-text-secondary">
                             {edu.degree}
+                            {edu.year && <span className="ml-1.5 text-text-muted">({edu.year})</span>}
+                            {edu.gpa && <span className="ml-1.5 text-text-muted">GPA: {edu.gpa}</span>}
                           </p>
                         </div>
                       </div>
@@ -184,46 +258,176 @@ function ResumeDetailCard({
                 </div>
               )}
 
-              {/* ── Skills Summary ── */}
-              {resume.skills.length > 0 && (
+              {/* ── Certifications ── */}
+              {resume.certifications && resume.certifications.length > 0 && (
                 <div>
                   <h4 className="flex items-center gap-1.5 text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
-                    <Code2 size={13} /> Yetenekler ({resume.skills.length})
+                    <Award size={13} /> Sertifikalar
                   </h4>
-                  <div className="flex flex-wrap gap-1.5">
-                    {resume.skills.map((s) => (
-                      <Badge key={s} variant="amber">
-                        {s}
-                      </Badge>
+                  <div className="space-y-1.5">
+                    {resume.certifications.map((cert, i) => (
+                      <div key={i} className="flex items-center gap-2 text-xs text-text-secondary">
+                        <Award size={11} className="text-amber/60 shrink-0" />
+                        <span className="font-medium text-text">{cert.name}</span>
+                        <span className="text-text-muted">— {cert.issuer}</span>
+                        {cert.year && <span className="text-text-muted">({cert.year})</span>}
+                      </div>
                     ))}
                   </div>
                 </div>
               )}
 
+              {/* ── Key Achievements ── */}
+              {resume.keyAchievements && resume.keyAchievements.length > 0 && (
+                <div>
+                  <h4 className="flex items-center gap-1.5 text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
+                    <Trophy size={13} /> Öne Çıkan Başarılar
+                  </h4>
+                  <ul className="space-y-1">
+                    {resume.keyAchievements.map((a, i) => (
+                      <li key={i} className="text-xs text-text-secondary flex gap-1.5">
+                        <Trophy size={10} className="text-amber/50 mt-0.5 shrink-0" />
+                        <span>{a}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* ── Categorized Skills ── */}
+              {resume.categorizedSkills && (
+                <div>
+                  <h4 className="flex items-center gap-1.5 text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
+                    <Wrench size={13} /> Teknik Yetenekler (Kategorize)
+                  </h4>
+                  <div className="space-y-2">
+                    {resume.categorizedSkills.programmingLanguages.length > 0 && (
+                      <div>
+                        <p className="text-[10px] text-text-muted uppercase tracking-wider mb-1">Programlama Dilleri</p>
+                        <div className="flex flex-wrap gap-1">
+                          {resume.categorizedSkills.programmingLanguages.map((s) => (
+                            <Badge key={s} variant="amber">{s}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {resume.categorizedSkills.frameworks.length > 0 && (
+                      <div>
+                        <p className="text-[10px] text-text-muted uppercase tracking-wider mb-1">Framework'ler</p>
+                        <div className="flex flex-wrap gap-1">
+                          {resume.categorizedSkills.frameworks.map((s) => (
+                            <Badge key={s} variant="info">{s}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {resume.categorizedSkills.databases.length > 0 && (
+                      <div>
+                        <p className="text-[10px] text-text-muted uppercase tracking-wider mb-1">Veritabanları</p>
+                        <div className="flex flex-wrap gap-1">
+                          {resume.categorizedSkills.databases.map((s) => (
+                            <Badge key={s} variant="success">{s}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {resume.categorizedSkills.cloud.length > 0 && (
+                      <div>
+                        <p className="text-[10px] text-text-muted uppercase tracking-wider mb-1">Cloud / DevOps</p>
+                        <div className="flex flex-wrap gap-1">
+                          {resume.categorizedSkills.cloud.map((s) => (
+                            <Badge key={s} variant="info">{s}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {resume.categorizedSkills.tools.length > 0 && (
+                      <div>
+                        <p className="text-[10px] text-text-muted uppercase tracking-wider mb-1">Araçlar</p>
+                        <div className="flex flex-wrap gap-1">
+                          {resume.categorizedSkills.tools.map((s) => (
+                            <Badge key={s} variant="amber">{s}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {resume.categorizedSkills.methodologies.length > 0 && (
+                      <div>
+                        <p className="text-[10px] text-text-muted uppercase tracking-wider mb-1">Metodolojiler</p>
+                        <div className="flex flex-wrap gap-1">
+                          {resume.categorizedSkills.methodologies.map((s) => (
+                            <Badge key={s} variant="success">{s}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Languages ── */}
+              {resume.languages && resume.languages.length > 0 && (
+                <div>
+                  <h4 className="flex items-center gap-1.5 text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
+                    <Globe size={13} /> Diller
+                  </h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {resume.languages.map((l) => (
+                      <Badge key={l} variant="info">{l}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Interview Topics ── */}
+              {resume.interviewTopics && resume.interviewTopics.length > 0 && (
+                <div>
+                  <h4 className="flex items-center gap-1.5 text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
+                    <Target size={13} /> Önerilen Mülakat Konuları
+                  </h4>
+                  <ul className="space-y-1">
+                    {resume.interviewTopics.map((t, i) => (
+                      <li key={i} className="text-xs text-text-secondary flex gap-1.5">
+                        <Target size={10} className="text-info/50 mt-0.5 shrink-0" />
+                        <span>{t}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               {/* ── Quick Stats ── */}
-              <div className="grid grid-cols-3 gap-2">
-                <div className="rounded-lg bg-surface border border-border-subtle p-2.5 text-center">
-                  <p className="text-lg font-bold text-amber tabular-nums">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="rounded-xl bg-surface border border-border-subtle p-3.5 text-center">
+                  <p className="text-xl font-bold text-amber tabular-nums">
                     {resume.yearsOfExperience ?? "—"}
                   </p>
-                  <p className="text-[10px] text-text-muted uppercase tracking-wider">
+                  <p className="text-[10px] text-text-muted uppercase tracking-wider mt-1">
                     Yıl Deneyim
                   </p>
                 </div>
-                <div className="rounded-lg bg-surface border border-border-subtle p-2.5 text-center">
-                  <p className="text-lg font-bold text-info tabular-nums">
+                <div className="rounded-xl bg-surface border border-border-subtle p-3.5 text-center">
+                  <p className="text-xl font-bold text-info tabular-nums">
                     {resume.skills.length}
                   </p>
-                  <p className="text-[10px] text-text-muted uppercase tracking-wider">
+                  <p className="text-[10px] text-text-muted uppercase tracking-wider mt-1">
                     Yetenek
                   </p>
                 </div>
-                <div className="rounded-lg bg-surface border border-border-subtle p-2.5 text-center">
-                  <p className="text-lg font-bold text-success tabular-nums">
+                <div className="rounded-xl bg-surface border border-border-subtle p-3.5 text-center">
+                  <p className="text-xl font-bold text-success tabular-nums">
                     {resume.experience.length}
                   </p>
-                  <p className="text-[10px] text-text-muted uppercase tracking-wider">
+                  <p className="text-[10px] text-text-muted uppercase tracking-wider mt-1">
                     İş Deneyimi
+                  </p>
+                </div>
+                <div className="rounded-xl bg-surface border border-border-subtle p-3.5 text-center">
+                  <p className="text-xl font-bold text-amber tabular-nums">
+                    {resume.projects?.length ?? 0}
+                  </p>
+                  <p className="text-[10px] text-text-muted uppercase tracking-wider mt-1">
+                    Proje
                   </p>
                 </div>
               </div>
@@ -374,61 +578,67 @@ export function SettingsPage() {
       initial="hidden"
       animate="visible"
       variants={stagger}
-      className="max-w-3xl mx-auto space-y-8"
+      className="max-w-4xl mx-auto space-y-10 pb-8"
     >
-      <motion.div variants={fadeUp}>
-        <h1 className="font-display text-2xl font-bold text-text">Profil & Ayarlar</h1>
-        <p className="mt-1 text-sm text-text-secondary">
+      {/* ─── Page Header ─── */}
+      <motion.div variants={fadeUp} className="space-y-2">
+        <h1 className="font-display text-3xl font-bold text-text">Profil & Ayarlar</h1>
+        <p className="text-sm text-text-secondary leading-relaxed">
           Kişisel bilgilerini ve mülakat tercihlerini yönet
         </p>
       </motion.div>
 
       {/* ─── Profile Card ─── */}
       <motion.div variants={fadeUp}>
-        <Card>
-          <h2 className="font-display font-semibold text-text mb-4">
-            <User size={16} className="inline mr-1.5" /> Profil Bilgileri
+        <Card className="!p-7">
+          <h2 className="font-display text-lg font-semibold text-text mb-6 flex items-center gap-2">
+            <User size={18} className="text-amber" /> Profil Bilgileri
           </h2>
 
-          <div className="space-y-4">
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <label className="block text-xs text-text-muted uppercase tracking-wider mb-1">
+          <div className="space-y-6">
+            {/* Name & Email in two columns */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="space-y-1.5">
+                <label className="block text-xs text-text-muted uppercase tracking-wider">
                   İsim
                 </label>
-                <p className="text-text font-medium">{profile?.name}</p>
+                <p className="text-text font-medium text-base">{profile?.name}</p>
               </div>
-              <div className="flex-1">
-                <label className="block text-xs text-text-muted uppercase tracking-wider mb-1">
+              <div className="space-y-1.5">
+                <label className="block text-xs text-text-muted uppercase tracking-wider">
                   Email
                 </label>
-                <p className="text-text font-medium">{profile?.email}</p>
+                <p className="text-text font-medium text-base">{profile?.email}</p>
               </div>
             </div>
 
+            <div className="border-t border-border-subtle" />
+
             {/* Interests */}
-            <div>
-              <label className="block text-xs text-text-muted uppercase tracking-wider mb-2">
+            <div className="space-y-3">
+              <label className="block text-xs text-text-muted uppercase tracking-wider">
                 İlgi Alanları
               </label>
-              <div className="flex flex-wrap gap-2 mb-2">
-                {interests.map((item) => (
-                  <span
-                    key={item}
-                    className="inline-flex items-center gap-1 rounded-md bg-amber/10 border border-amber/20 text-amber px-2 py-1 text-xs font-medium"
-                  >
-                    {item}
-                    <button
-                      type="button"
-                      onClick={() => removeInterest(item)}
-                      className="text-amber/60 hover:text-amber ml-1 cursor-pointer"
+              {interests.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {interests.map((item) => (
+                    <span
+                      key={item}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-amber/10 border border-amber/20 text-amber px-2.5 py-1.5 text-xs font-medium"
                     >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-              <div className="flex gap-2 items-center">
+                      {item}
+                      <button
+                        type="button"
+                        onClick={() => removeInterest(item)}
+                        className="text-amber/60 hover:text-amber ml-0.5 cursor-pointer"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-3 items-center">
                 <Input
                   value={newInterest}
                   onChange={(e) => setNewInterest(e.target.value)}
@@ -440,43 +650,47 @@ export function SettingsPage() {
                     }
                   }}
                 />
-                <Button size="sm" variant="secondary" onClick={addInterest} className="!h-7 !px-2.5 !text-xs">
+                <Button size="sm" variant="secondary" onClick={addInterest} className="!h-8 !px-3.5 !text-xs shrink-0">
                   Ekle
                 </Button>
               </div>
             </div>
 
+            <div className="border-t border-border-subtle" />
+
             {/* Goals */}
-            <div>
-              <label className="block text-xs text-text-muted uppercase tracking-wider mb-1">
+            <div className="space-y-2">
+              <label className="block text-xs text-text-muted uppercase tracking-wider">
                 Hedefler
               </label>
               <textarea
                 value={goals}
                 onChange={(e) => setGoals(e.target.value)}
                 placeholder="ör: FAANG'a girmek, Senior pozisyon almak..."
-                rows={2}
-                className="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-amber/50 transition-colors resize-none"
+                rows={3}
+                className="w-full rounded-lg border border-border bg-surface-raised px-4 py-3 text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-amber/50 transition-colors resize-none leading-relaxed"
               />
             </div>
 
-            <Button onClick={handleSaveProfile} disabled={saving}>
-              {saving ? "Kaydediliyor…" : "Profili Kaydet"}
-            </Button>
+            <div className="pt-2">
+              <Button onClick={handleSaveProfile} loading={saving} loadingText="Kaydediliyor…">
+                Profili Kaydet
+              </Button>
+            </div>
           </div>
         </Card>
       </motion.div>
 
       {/* ─── Resume Section ─── */}
       <motion.div variants={fadeUp}>
-        <Card>
-          <h2 className="font-display font-semibold text-text mb-4">
-            <FileText size={16} className="inline mr-1.5" /> Özgeçmiş
+        <Card className="!p-7">
+          <h2 className="font-display text-lg font-semibold text-text mb-6 flex items-center gap-2">
+            <FileText size={18} className="text-amber" /> Özgeçmiş
           </h2>
 
           {/* Existing resumes — expanded detail view */}
           {profile?.resumes && profile.resumes.length > 0 && (
-            <div className="space-y-4 mb-6">
+            <div className="space-y-4 mb-8">
               {profile.resumes.map((resume) => (
                 <ResumeDetailCard
                   key={resume._id}
@@ -493,9 +707,9 @@ export function SettingsPage() {
           )}
 
           {/* Upload */}
-          <div className="space-y-3">
-            <div>
-              <label className="block text-xs text-text-muted uppercase tracking-wider mb-1">
+          <div className="space-y-5">
+            <div className="space-y-2">
+              <label className="block text-xs text-text-muted uppercase tracking-wider">
                 PDF / TXT Dosya Yükle
               </label>
               <input
@@ -503,48 +717,60 @@ export function SettingsPage() {
                 accept=".pdf,.txt,.doc,.docx"
                 onChange={handleResumeFile}
                 disabled={uploadingResume}
-                className="block w-full text-sm text-text-secondary file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border file:border-border file:text-sm file:font-medium file:bg-surface-raised file:text-text hover:file:bg-surface-raised/80 file:cursor-pointer"
+                className="block w-full text-sm text-text-secondary file:mr-4 file:py-2.5 file:px-5 file:rounded-lg file:border file:border-border file:text-sm file:font-medium file:bg-surface-raised file:text-text hover:file:bg-surface-raised/80 file:cursor-pointer disabled:opacity-50"
               />
+              {uploadingResume && (
+                <div className="flex items-center gap-2 mt-3 text-xs text-amber">
+                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-amber border-t-transparent" />
+                  <span>CV analiz ediliyor, bu birkaç saniye sürebilir…</span>
+                </div>
+              )}
             </div>
-            <div className="relative">
-              <div className="absolute inset-x-0 top-1/2 border-t border-border-subtle" />
-              <p className="relative inline-block bg-surface px-3 text-xs text-text-muted">
-                veya metin olarak yapıştır
-              </p>
+
+            {/* Divider */}
+            <div className="relative flex items-center py-1">
+              <div className="flex-1 border-t border-border-subtle" />
+              <span className="px-4 text-xs text-text-muted">veya metin olarak yapıştır</span>
+              <div className="flex-1 border-t border-border-subtle" />
             </div>
-            <textarea
-              value={resumeText}
-              onChange={(e) => setResumeText(e.target.value)}
-              placeholder="Özgeçmişinizi buraya yapıştırın..."
-              rows={4}
-              className="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-amber/50 transition-colors resize-none"
-            />
-            <Button
-              size="sm"
-              onClick={handleResumeText}
-              disabled={uploadingResume || !resumeText.trim()}
-            >
-              {uploadingResume ? "Analiz ediliyor…" : "Analiz Et & Kaydet"}
-            </Button>
-            {resumeError && (
-              <p className="text-sm text-danger">{resumeError}</p>
-            )}
+
+            <div className="space-y-3">
+              <textarea
+                value={resumeText}
+                onChange={(e) => setResumeText(e.target.value)}
+                placeholder="Özgeçmişinizi buraya yapıştırın..."
+                rows={5}
+                className="w-full rounded-lg border border-border bg-surface-raised px-4 py-3 text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-amber/50 transition-colors resize-none leading-relaxed"
+              />
+              <Button
+                size="sm"
+                onClick={handleResumeText}
+                disabled={!resumeText.trim()}
+                loading={uploadingResume}
+                loadingText="Analiz ediliyor…"
+              >
+                Analiz Et & Kaydet
+              </Button>
+              {resumeError && (
+                <p className="text-sm text-danger mt-2">{resumeError}</p>
+              )}
+            </div>
           </div>
         </Card>
       </motion.div>
 
       {/* ─── Job Postings Link ─── */}
       <motion.div variants={fadeUp}>
-        <Card>
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="font-display font-semibold text-text mb-1">
-                <Briefcase size={16} className="inline mr-1.5" /> İş İlanları
+        <Card className="!p-7">
+          <div className="flex items-center justify-between gap-4">
+            <div className="space-y-1.5">
+              <h2 className="font-display text-lg font-semibold text-text flex items-center gap-2">
+                <Briefcase size={18} className="text-amber" /> İş İlanları
               </h2>
-              <p className="text-sm text-text-secondary">
+              <p className="text-sm text-text-secondary leading-relaxed">
                 İş ilanlarını ve mülakat yol haritanı ayrı sayfadan yönet
                 {profile?.jobPostings && profile.jobPostings.length > 0 && (
-                  <span className="text-amber ml-1">
+                  <span className="text-amber ml-1.5">
                     ({profile.jobPostings.length} ilan kayıtlı)
                   </span>
                 )}
@@ -552,7 +778,7 @@ export function SettingsPage() {
             </div>
             <Link
               to="/dashboard/jobs"
-              className="inline-flex items-center gap-2 rounded-lg bg-amber/10 border border-amber/20 px-4 py-2 text-sm font-medium text-amber hover:bg-amber/15 transition-colors"
+              className="inline-flex items-center gap-2 rounded-lg bg-amber/10 border border-amber/20 px-5 py-2.5 text-sm font-medium text-amber hover:bg-amber/15 transition-colors shrink-0"
             >
               İlanlara Git →
             </Link>
@@ -567,24 +793,24 @@ export function SettingsPage() {
 
       {/* ─── Memory / Performance Section ─── */}
       <motion.div variants={fadeUp}>
-        <Card>
-          <h2 className="font-display font-semibold text-text mb-4">
-            <Brain size={16} className="inline mr-1.5" /> Performans Hafızası
+        <Card className="!p-7">
+          <h2 className="font-display text-lg font-semibold text-text mb-6 flex items-center gap-2">
+            <Brain size={18} className="text-amber" /> Performans Hafızası
           </h2>
 
           {profile?.memory && profile.memory.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-5">
               {/* Stats */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-lg bg-surface-raised border border-border-subtle p-3">
-                  <p className="text-xs text-text-muted">Toplam Mülakat</p>
-                  <p className="text-lg font-bold text-text tabular-nums">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="rounded-xl bg-surface-raised border border-border-subtle p-4">
+                  <p className="text-xs text-text-muted mb-1">Toplam Mülakat</p>
+                  <p className="text-2xl font-bold text-text tabular-nums">
                     {getMemoryValue("total_interviews") ?? "0"}
                   </p>
                 </div>
-                <div className="rounded-lg bg-surface-raised border border-border-subtle p-3">
-                  <p className="text-xs text-text-muted">Ortalama Skor</p>
-                  <p className="text-lg font-bold text-amber tabular-nums">
+                <div className="rounded-xl bg-surface-raised border border-border-subtle p-4">
+                  <p className="text-xs text-text-muted mb-1">Ortalama Skor</p>
+                  <p className="text-2xl font-bold text-amber tabular-nums">
                     {getMemoryValue("avg_score") ?? "—"}
                   </p>
                 </div>
@@ -595,11 +821,11 @@ export function SettingsPage() {
                 const strong = getMemoryValue("strong_topics");
                 if (!Array.isArray(strong) || strong.length === 0) return null;
                 return (
-                  <div>
-                    <p className="text-xs text-text-muted uppercase tracking-wider mb-1">
+                  <div className="space-y-2">
+                    <p className="text-xs text-text-muted uppercase tracking-wider">
                       Güçlü Yönler
                     </p>
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-1.5">
                       {(strong as string[]).map((s) => (
                         <Badge key={s} variant="success">{s}</Badge>
                       ))}
@@ -613,11 +839,11 @@ export function SettingsPage() {
                 const weak = getMemoryValue("weak_topics");
                 if (!Array.isArray(weak) || weak.length === 0) return null;
                 return (
-                  <div>
-                    <p className="text-xs text-text-muted uppercase tracking-wider mb-1">
+                  <div className="space-y-2">
+                    <p className="text-xs text-text-muted uppercase tracking-wider">
                       Geliştirilmesi Gereken Alanlar
                     </p>
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-1.5">
                       {(weak as string[]).map((w) => (
                         <Badge key={w} variant="danger">{w}</Badge>
                       ))}
@@ -627,7 +853,7 @@ export function SettingsPage() {
               })()}
             </div>
           ) : (
-            <p className="text-sm text-text-secondary">
+            <p className="text-sm text-text-secondary leading-relaxed">
               Henüz hafıza verisi yok. Mülakatları tamamlayıp rapor oluşturdukça,
               AI performansını hatırlayacak.
             </p>

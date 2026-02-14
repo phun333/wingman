@@ -1,6 +1,6 @@
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { motion, useScroll, useTransform, useInView, type Variants } from "motion/react";
+import { motion, useScroll, useTransform, useInView, AnimatePresence, type Variants } from "motion/react";
 import {
   Code2,
   Waypoints,
@@ -15,7 +15,6 @@ import {
   ArrowRight,
   Star,
   Shield,
-  Clock,
   MessageSquare,
   Volume2,
   FileCode,
@@ -30,8 +29,10 @@ import {
   Layers,
   GitBranch,
   Database,
+  FileText,
   type LucideIcon,
 } from "lucide-react";
+import { WingLogo } from "@/components/icons/WingLogo";
 
 /* ────────────────────────────────────────────────── */
 /*  Helpers                                          */
@@ -84,9 +85,7 @@ function Nav() {
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <Link to="/" className="flex items-center gap-3 group">
-          <div className="h-9 w-9 rounded-xl bg-amber/15 border border-amber/20 flex items-center justify-center glow-amber-sm group-hover:glow-amber transition-shadow duration-300">
-            <span className="font-display text-lg font-bold text-amber">W</span>
-          </div>
+          <WingLogo size={36} className="glow-amber-sm group-hover:glow-amber transition-shadow duration-300" />
           <span className="font-display text-xl font-bold tracking-tight text-text">
             Wingman
           </span>
@@ -800,6 +799,676 @@ function FeatureCard({
   );
 }
 
+/* ── Voice Waveform Animation ─────────────────────── */
+function VoiceWaveform({ active }: { active: boolean }) {
+  const bars = 12;
+  return (
+    <div className="flex items-center justify-center gap-[2px] h-8">
+      {Array.from({ length: bars }, (_, i) => (
+        <motion.div
+          key={i}
+          className="w-[2.5px] rounded-full bg-amber"
+          animate={
+            active
+              ? {
+                  height: [4, 8 + Math.sin(i * 0.8) * 14, 6, 12 + Math.cos(i * 1.2) * 10, 4],
+                  opacity: [0.4, 0.9, 0.5, 0.8, 0.4],
+                }
+              : { height: 4, opacity: 0.2 }
+          }
+          transition={{
+            duration: 1.2,
+            delay: i * 0.06,
+            repeat: active ? Infinity : 0,
+            ease: "easeInOut",
+          }}
+          style={{ height: 4 }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/* ── Typing Text Animation ───────────────────────── */
+function TypingText({ active, texts }: { active: boolean; texts: string[] }) {
+  const [textIndex, setTextIndex] = useState(0);
+  const [charIndex, setCharIndex] = useState(0);
+
+  useEffect(() => {
+    if (!active) return;
+    const text = texts[textIndex % texts.length]!;
+    if (charIndex < text.length) {
+      const t = setTimeout(() => setCharIndex((c) => c + 1), 35);
+      return () => clearTimeout(t);
+    }
+    // Reset after a pause
+    const t = setTimeout(() => {
+      setTextIndex((i) => (i + 1) % texts.length);
+      setCharIndex(0);
+    }, 1200);
+    return () => clearTimeout(t);
+  }, [active, charIndex, textIndex, texts]);
+
+  if (!active) return <span className="text-text-muted/40 text-xs font-mono">Bekleniyor…</span>;
+
+  const currentText = texts[textIndex % texts.length]!;
+  return (
+    <span className="text-xs font-mono text-text-secondary">
+      {currentText.slice(0, charIndex)}
+      <motion.span
+        animate={{ opacity: [1, 0] }}
+        transition={{ duration: 0.5, repeat: Infinity }}
+        className="text-amber"
+      >
+        |
+      </motion.span>
+    </span>
+  );
+}
+
+/* ── Neural Network Pulse Animation ──────────────── */
+function NeuralNetAnimation({ active }: { active: boolean }) {
+  // 3x3 grid of nodes with connections
+  const nodes = useMemo(
+    () => [
+      // Layer 1
+      { x: 6, y: 4, layer: 0 },
+      { x: 6, y: 16, layer: 0 },
+      { x: 6, y: 28, layer: 0 },
+      // Layer 2
+      { x: 22, y: 8, layer: 1 },
+      { x: 22, y: 22, layer: 1 },
+      // Layer 3
+      { x: 38, y: 4, layer: 2 },
+      { x: 38, y: 16, layer: 2 },
+      { x: 38, y: 28, layer: 2 },
+      // Layer 4
+      { x: 54, y: 10, layer: 3 },
+      { x: 54, y: 22, layer: 3 },
+    ],
+    [],
+  );
+
+  const connections = useMemo(() => {
+    const conns: { from: number; to: number }[] = [];
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        if (nodes[j]!.layer === nodes[i]!.layer + 1) {
+          conns.push({ from: i, to: j });
+        }
+      }
+    }
+    return conns;
+  }, [nodes]);
+
+  return (
+    <svg viewBox="0 0 60 32" className="w-full h-8">
+      {/* Connections */}
+      {connections.map((conn, i) => (
+        <motion.line
+          key={`conn-${i}`}
+          x1={nodes[conn.from]!.x}
+          y1={nodes[conn.from]!.y}
+          x2={nodes[conn.to]!.x}
+          y2={nodes[conn.to]!.y}
+          stroke="rgba(34,197,94,0.15)"
+          strokeWidth={0.5}
+          animate={
+            active
+              ? {
+                  stroke: [
+                    "rgba(34,197,94,0.1)",
+                    "rgba(34,197,94,0.5)",
+                    "rgba(34,197,94,0.1)",
+                  ],
+                  strokeWidth: [0.5, 1, 0.5],
+                }
+              : {}
+          }
+          transition={{
+            duration: 1.5,
+            delay: i * 0.08,
+            repeat: active ? Infinity : 0,
+            ease: "easeInOut",
+          }}
+        />
+      ))}
+      {/* Nodes */}
+      {nodes.map((node, i) => (
+        <motion.circle
+          key={`node-${i}`}
+          cx={node.x}
+          cy={node.y}
+          r={2}
+          fill="rgba(34,197,94,0.3)"
+          animate={
+            active
+              ? {
+                  r: [1.5, 2.5, 1.5],
+                  fill: [
+                    "rgba(34,197,94,0.3)",
+                    "rgba(34,197,94,0.8)",
+                    "rgba(34,197,94,0.3)",
+                  ],
+                }
+              : {}
+          }
+          transition={{
+            duration: 1.2,
+            delay: i * 0.12 + node.layer * 0.3,
+            repeat: active ? Infinity : 0,
+            ease: "easeInOut",
+          }}
+        />
+      ))}
+      {/* Data pulse traveling through */}
+      {active && (
+        <motion.circle
+          cx={6}
+          cy={16}
+          r={1.5}
+          fill="rgba(34,197,94,0.9)"
+          animate={{
+            cx: [6, 22, 38, 54, 54],
+            cy: [16, 8, 16, 10, 22],
+            opacity: [0, 1, 1, 1, 0],
+          }}
+          transition={{
+            duration: 2.5,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          style={{ filter: "drop-shadow(0 0 3px rgba(34,197,94,0.6))" }}
+        />
+      )}
+    </svg>
+  );
+}
+
+/* ── Chart Bars Animation ────────────────────────── */
+function ChartBarsAnimation({ active }: { active: boolean }) {
+  const barData = [0.3, 0.7, 0.5, 0.9, 0.6, 0.85, 0.4, 0.75];
+  return (
+    <div className="flex items-end justify-center gap-[3px] h-8">
+      {barData.map((height, i) => (
+        <motion.div
+          key={i}
+          className="w-[4px] rounded-t-sm"
+          initial={{ height: 2 }}
+          style={{
+            background:
+              i < 3
+                ? "rgba(229,161,14,0.6)"
+                : i < 6
+                  ? "rgba(59,130,246,0.6)"
+                  : "rgba(34,197,94,0.6)",
+          }}
+          animate={
+            active
+              ? {
+                  height: [0, height * 28, height * 28],
+                  opacity: [0, 1, 1],
+                }
+              : { height: 2, opacity: 0.2 }
+          }
+          transition={{
+            duration: 0.6,
+            delay: active ? i * 0.1 : 0,
+            ease: [0.22, 1, 0.36, 1],
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/* ── Pipeline Step Types ─────────────────────────── */
+const pipelineSteps = [
+  {
+    id: "voice",
+    icon: Mic,
+    label: "Ses Girişi",
+    sublabel: "Türkçe Konuşma",
+    color: "amber",
+    rgb: "229,161,14",
+    description: "Sesiniz yakalanıyor",
+  },
+  {
+    id: "stt",
+    icon: FileText,
+    label: "Konuşma → Metin",
+    sublabel: "Freya STT",
+    color: "info",
+    rgb: "59,130,246",
+    description: "Ses metne dönüştürülüyor",
+  },
+  {
+    id: "ai",
+    icon: Brain,
+    label: "AI Analiz",
+    sublabel: "GPT-4 + Değerlendirme",
+    color: "success",
+    rgb: "34,197,94",
+    description: "Yanıt oluşturuluyor",
+  },
+  {
+    id: "report",
+    icon: BarChart3,
+    label: "Rapor",
+    sublabel: "Detaylı Skor",
+    color: "amber",
+    rgb: "229,161,14",
+    description: "Performans raporlanıyor",
+  },
+] as const;
+
+/* ── Main Data Flow Pipeline Component ───────────── */
+function DataFlowPipeline({ isVisible }: { isVisible: boolean }) {
+  const [activeStep, setActiveStep] = useState(-1);
+  const [cycleCount, setCycleCount] = useState(0);
+
+  useEffect(() => {
+    if (!isVisible) return;
+    // Start after a brief delay
+    const startDelay = setTimeout(() => {
+      setActiveStep(0);
+    }, 600);
+    return () => clearTimeout(startDelay);
+  }, [isVisible]);
+
+  useEffect(() => {
+    if (activeStep < 0) return;
+    if (activeStep >= pipelineSteps.length) {
+      // Complete cycle - restart after pause
+      const t = setTimeout(() => {
+        setActiveStep(0);
+        setCycleCount((c) => c + 1);
+      }, 2000);
+      return () => clearTimeout(t);
+    }
+    // Advance to next step
+    const t = setTimeout(
+      () => setActiveStep((s) => s + 1),
+      activeStep === 2 ? 2200 : 1800, // AI step takes longer
+    );
+    return () => clearTimeout(t);
+  }, [activeStep]);
+
+  const sttTexts = [
+    "HashMap kullanarak çözebiliriz…",
+    "Zaman karmaşıklığı O(n) olur…",
+    "İki pointer yaklaşımı düşünüyorum…",
+  ];
+
+  return (
+    <div className="relative mb-16">
+      {/* Pipeline container */}
+      <div className="relative rounded-2xl border border-border-subtle/60 bg-surface/30 backdrop-blur-sm p-6 sm:p-8 overflow-hidden">
+        {/* Animated background grid */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.03]">
+          <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern
+                id="pipeline-grid"
+                width="24"
+                height="24"
+                patternUnits="userSpaceOnUse"
+              >
+                <circle cx="12" cy="12" r="0.5" fill="var(--color-amber)" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#pipeline-grid)" />
+          </svg>
+        </div>
+
+        {/* Subtle corner glow effect based on active step */}
+        <AnimatePresence>
+          {activeStep >= 0 && activeStep < pipelineSteps.length && (
+            <motion.div
+              key={`glow-${activeStep}`}
+              className="absolute inset-0 pointer-events-none rounded-2xl"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5 }}
+              style={{
+                background: `radial-gradient(600px circle at ${20 + activeStep * 25}% 50%, rgba(${pipelineSteps[activeStep]?.rgb}, 0.04), transparent 70%)`,
+              }}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Status bar */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <motion.div
+              className="w-2 h-2 rounded-full"
+              animate={
+                activeStep >= 0 && activeStep < pipelineSteps.length
+                  ? {
+                      backgroundColor: ["rgba(34,197,94,0.5)", "rgba(34,197,94,1)", "rgba(34,197,94,0.5)"],
+                      boxShadow: [
+                        "0 0 0 rgba(34,197,94,0)",
+                        "0 0 8px rgba(34,197,94,0.4)",
+                        "0 0 0 rgba(34,197,94,0)",
+                      ],
+                    }
+                  : { backgroundColor: "rgba(34,197,94,0.3)" }
+              }
+              transition={{ duration: 1.5, repeat: Infinity }}
+            />
+            <span className="text-[10px] font-mono text-text-muted uppercase tracking-widest">
+              {activeStep >= pipelineSteps.length
+                ? "Tamamlandı"
+                : activeStep >= 0
+                  ? "İşleniyor…"
+                  : "Hazır"}
+            </span>
+          </div>
+          <span className="text-[10px] font-mono text-text-muted/50">
+            Döngü #{cycleCount + 1}
+          </span>
+        </div>
+
+        {/* Pipeline nodes - horizontal on desktop, vertical on mobile */}
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 sm:gap-0 relative">
+          {/* Desktop connecting lines (between nodes) */}
+          <div className="hidden sm:block absolute top-1/2 left-0 right-0 -translate-y-1/2 pointer-events-none z-0">
+            {[0, 1, 2].map((i) => {
+              const fromStep = pipelineSteps[i]!;
+              const toStep = pipelineSteps[i + 1]!;
+              const isActive = activeStep > i;
+              const isTransitioning = activeStep === i;
+
+              return (
+                <div
+                  key={`line-${i}`}
+                  className="absolute h-[2px]"
+                  style={{
+                    left: `${(i + 1) * 25 - 5}%`,
+                    width: "10%",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                  }}
+                >
+                  {/* Background line */}
+                  <div className="absolute inset-0 bg-border-subtle/40 rounded-full" />
+
+                  {/* Active fill */}
+                  <motion.div
+                    className="absolute inset-0 rounded-full origin-left"
+                    style={{
+                      background: `linear-gradient(90deg, rgba(${fromStep.rgb}, 0.6), rgba(${toStep.rgb}, 0.6))`,
+                    }}
+                    animate={{
+                      scaleX: isActive ? 1 : isTransitioning ? [0, 1] : 0,
+                      opacity: isActive ? 0.8 : isTransitioning ? [0, 0.8] : 0,
+                    }}
+                    transition={{
+                      duration: isTransitioning ? 0.8 : 0.3,
+                      ease: "easeOut",
+                    }}
+                  />
+
+                  {/* Traveling dot */}
+                  {isTransitioning && (
+                    <>
+                      {[0, 1, 2].map((pi) => (
+                        <motion.div
+                          key={`particle-${i}-${pi}`}
+                          className="absolute top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full"
+                          style={{
+                            background: `rgba(${fromStep.rgb}, 0.9)`,
+                            boxShadow: `0 0 6px rgba(${fromStep.rgb}, 0.5)`,
+                          }}
+                          animate={{
+                            left: ["0%", "100%"],
+                            opacity: [0, 1, 0],
+                          }}
+                          transition={{
+                            duration: 0.8,
+                            delay: pi * 0.2,
+                            ease: "easeInOut",
+                          }}
+                        />
+                      ))}
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Pipeline step nodes */}
+          {pipelineSteps.map((step, i) => {
+            const isActive = activeStep >= i;
+            const isCurrent = activeStep === i;
+            const isCompleted = activeStep > i;
+            const StepIcon = step.icon;
+
+            return (
+              <div key={step.id} className="relative z-10">
+                {/* Mobile connecting arrow */}
+                {i > 0 && (
+                  <div className="sm:hidden flex justify-center -mt-1 -mb-1">
+                    <motion.div
+                      animate={{
+                        opacity: isActive ? [0.3, 0.7, 0.3] : 0.15,
+                        y: isActive ? [0, 2, 0] : 0,
+                      }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                    >
+                      <ChevronRight
+                        size={14}
+                        className="rotate-90"
+                        style={{ color: `rgba(${step.rgb}, 0.5)` }}
+                      />
+                    </motion.div>
+                  </div>
+                )}
+
+                <motion.div
+                  className={`relative rounded-xl border p-4 sm:p-3 transition-colors duration-500 ${
+                    isCurrent
+                      ? "border-opacity-40 bg-opacity-10"
+                      : isCompleted
+                        ? "border-opacity-20 bg-opacity-5"
+                        : "border-border-subtle/30 bg-surface/20"
+                  }`}
+                  style={{
+                    borderColor: isActive
+                      ? `rgba(${step.rgb}, ${isCurrent ? 0.4 : 0.2})`
+                      : undefined,
+                    backgroundColor: isActive
+                      ? `rgba(${step.rgb}, ${isCurrent ? 0.08 : 0.03})`
+                      : undefined,
+                  }}
+                  animate={
+                    isCurrent
+                      ? {
+                          boxShadow: [
+                            `0 0 0 rgba(${step.rgb}, 0)`,
+                            `0 0 20px rgba(${step.rgb}, 0.1)`,
+                            `0 0 0 rgba(${step.rgb}, 0)`,
+                          ],
+                        }
+                      : { boxShadow: `0 0 0 rgba(${step.rgb}, 0)` }
+                  }
+                  transition={{ duration: 2, repeat: isCurrent ? Infinity : 0 }}
+                >
+                  {/* Icon + Label */}
+                  <div className="flex items-center sm:flex-col sm:text-center gap-3 sm:gap-2 mb-3 sm:mb-2">
+                    <motion.div
+                      className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{
+                        backgroundColor: `rgba(${step.rgb}, ${isActive ? 0.15 : 0.06})`,
+                        borderWidth: 1,
+                        borderColor: `rgba(${step.rgb}, ${isActive ? 0.3 : 0.1})`,
+                      }}
+                      animate={
+                        isCurrent
+                          ? { scale: [1, 1.08, 1], rotate: [0, 2, -2, 0] }
+                          : { scale: 1 }
+                      }
+                      transition={{
+                        duration: 1.5,
+                        repeat: isCurrent ? Infinity : 0,
+                        ease: "easeInOut",
+                      }}
+                    >
+                      <StepIcon
+                        size={18}
+                        style={{
+                          color: `rgba(${step.rgb}, ${isActive ? 0.9 : 0.3})`,
+                        }}
+                        strokeWidth={1.8}
+                      />
+                    </motion.div>
+                    <div>
+                      <motion.p
+                        className="text-xs font-semibold"
+                        style={{
+                          color: isActive
+                            ? `rgba(${step.rgb}, 0.9)`
+                            : "var(--color-text-muted)",
+                        }}
+                      >
+                        {step.label}
+                      </motion.p>
+                      <p className="text-[10px] text-text-muted/50 mt-0.5">
+                        {step.sublabel}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Step-specific animation content */}
+                  <div className="min-h-[36px] flex items-center justify-center sm:justify-center">
+                    {step.id === "voice" && <VoiceWaveform active={isCurrent} />}
+                    {step.id === "stt" && (
+                      <div className="w-full max-w-[160px] sm:max-w-full overflow-hidden">
+                        <TypingText active={isCurrent} texts={sttTexts} />
+                      </div>
+                    )}
+                    {step.id === "ai" && <NeuralNetAnimation active={isCurrent} />}
+                    {step.id === "report" && <ChartBarsAnimation active={isCurrent} />}
+                  </div>
+
+                  {/* Status indicator */}
+                  <div className="mt-2 flex items-center justify-center gap-1.5">
+                    {isCompleted ? (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="flex items-center gap-1"
+                      >
+                        <CheckCircle2
+                          size={10}
+                          style={{ color: `rgba(${step.rgb}, 0.7)` }}
+                        />
+                        <span
+                          className="text-[9px] font-medium"
+                          style={{ color: `rgba(${step.rgb}, 0.6)` }}
+                        >
+                          Tamamlandı
+                        </span>
+                      </motion.div>
+                    ) : isCurrent ? (
+                      <div className="flex items-center gap-1.5">
+                        <motion.div
+                          className="w-1 h-1 rounded-full"
+                          style={{ backgroundColor: `rgba(${step.rgb}, 0.7)` }}
+                          animate={{ opacity: [0.4, 1, 0.4] }}
+                          transition={{
+                            duration: 1,
+                            repeat: Infinity,
+                          }}
+                        />
+                        <span
+                          className="text-[9px] font-medium"
+                          style={{ color: `rgba(${step.rgb}, 0.6)` }}
+                        >
+                          {step.description}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-[9px] text-text-muted/30">
+                        Bekliyor
+                      </span>
+                    )}
+                  </div>
+                </motion.div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Progress bar at bottom */}
+        <div className="mt-6 relative">
+          <div className="h-[2px] bg-border-subtle/30 rounded-full overflow-hidden">
+            <motion.div
+              className="h-full rounded-full origin-left"
+              style={{
+                background:
+                  "linear-gradient(90deg, rgba(229,161,14,0.8), rgba(59,130,246,0.8), rgba(34,197,94,0.8), rgba(229,161,14,0.8))",
+              }}
+              animate={{
+                scaleX:
+                  activeStep >= pipelineSteps.length
+                    ? 1
+                    : activeStep >= 0
+                      ? (activeStep + 0.5) / pipelineSteps.length
+                      : 0,
+              }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+            />
+          </div>
+          {/* Step markers */}
+          <div className="flex justify-between mt-1.5">
+            {pipelineSteps.map((step, i) => (
+              <div key={step.id} className="flex items-center gap-1">
+                <motion.div
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{
+                    backgroundColor:
+                      activeStep > i
+                        ? `rgba(${step.rgb}, 0.8)`
+                        : activeStep === i
+                          ? `rgba(${step.rgb}, 0.5)`
+                          : "rgba(255,255,255,0.08)",
+                  }}
+                  animate={
+                    activeStep === i
+                      ? {
+                          scale: [1, 1.4, 1],
+                          boxShadow: [
+                            `0 0 0 rgba(${step.rgb}, 0)`,
+                            `0 0 6px rgba(${step.rgb}, 0.4)`,
+                            `0 0 0 rgba(${step.rgb}, 0)`,
+                          ],
+                        }
+                      : {}
+                  }
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Decorative corner accents */}
+        <div className="absolute top-2 right-2 w-8 h-8 pointer-events-none">
+          <div className="absolute top-0 right-0 w-4 h-px bg-amber/20" />
+          <div className="absolute top-0 right-0 h-4 w-px bg-amber/20" />
+        </div>
+        <div className="absolute bottom-2 left-2 w-8 h-8 pointer-events-none">
+          <div className="absolute bottom-0 left-0 w-4 h-px bg-amber/20" />
+          <div className="absolute bottom-0 left-0 h-4 w-px bg-amber/20" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Features() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(sectionRef, { once: true, amount: 0.1 });
@@ -905,6 +1574,11 @@ function Features() {
             </>
           )}
         </div>
+
+        {/* Data Flow Pipeline Animation */}
+        <FadeIn delay={0.25}>
+          <DataFlowPipeline isVisible={isInView} />
+        </FadeIn>
 
         {/* Feature cards grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1217,9 +1891,7 @@ function Footer() {
     <footer className="border-t border-border-subtle/50 py-10">
       <div className="mx-auto max-w-6xl px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="h-7 w-7 rounded-lg bg-amber/15 border border-amber/20 flex items-center justify-center">
-            <span className="font-display text-sm font-bold text-amber">W</span>
-          </div>
+          <WingLogo size={28} />
           <span className="font-display text-sm font-semibold text-text-muted">
             Wingman AI
           </span>

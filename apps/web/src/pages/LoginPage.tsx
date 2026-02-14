@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { useAuth } from "@/lib/auth";
+import { WingLogo } from "@/components/icons/WingLogo";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
@@ -43,11 +44,7 @@ export function LoginPage() {
           className="relative z-10 text-center px-12"
         >
           {/* Orb */}
-          <div className="mx-auto mb-8 h-24 w-24 rounded-full bg-amber/10 border border-amber/20 flex items-center justify-center glow-amber">
-            <span className="font-display text-4xl font-bold text-amber">
-              F
-            </span>
-          </div>
+          <WingLogo size={96} className="mx-auto mb-8 !rounded-full glow-amber" />
           <h1 className="font-display text-4xl font-bold text-text text-balance">
             AI Mülakat
             <br />
@@ -81,9 +78,7 @@ export function LoginPage() {
         >
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-3 mb-10">
-            <div className="h-10 w-10 rounded-xl bg-amber/15 border border-amber/20 flex items-center justify-center glow-amber-sm">
-              <span className="font-display text-xl font-bold text-amber">W</span>
-            </div>
+            <WingLogo size={40} className="glow-amber-sm" />
             <span className="font-display text-2xl font-bold text-text">Wingman</span>
           </div>
 

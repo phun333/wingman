@@ -177,6 +177,7 @@ export function ConfirmModal({
                 size="sm"
                 onClick={handleConfirm}
                 loading={loading}
+                loadingText={confirmText}
                 className="flex-1"
               >
                 {confirmText}

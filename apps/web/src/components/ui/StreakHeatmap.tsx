@@ -109,15 +109,15 @@ export function StreakHeatmap() {
       </div>
 
       {/* Heatmap */}
-      <div className="overflow-x-hidden -mx-2 px-2 pb-1">
+      <div className="heatmap-stretch pb-1">
         <ActivityCalendar
           data={data.activity}
           theme={{ dark: THEME.dark }}
           colorScheme="dark"
           blockSize={12}
-          blockMargin={3}
-          blockRadius={3}
-          fontSize={12}
+          blockMargin={8}
+          blockRadius={2}
+          fontSize={13}
           showTotalCount={false}
           labels={{
             months: [
@@ -131,16 +131,14 @@ export function StreakHeatmap() {
               more: "Çok",
             },
           }}
-          renderBlock={(block, activity) => (
-            <g>
-              <title>
-                {activity.count === 0
+          tooltips={{
+            activity: {
+              text: (activity) =>
+                activity.count === 0
                   ? `${activity.date} — aktivite yok`
-                  : `${activity.date} — ${activity.count} mülakat`}
-              </title>
-              {block}
-            </g>
-          )}
+                  : `${activity.date} — ${activity.count} mülakat`,
+            },
+          }}
         />
       </div>
     </Card>

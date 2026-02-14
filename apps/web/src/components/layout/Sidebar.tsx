@@ -1,6 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { LayoutDashboard, Play, History, TrendingUp, Settings, Code, Briefcase } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { WingLogo } from "@/components/icons/WingLogo";
 
 interface NavItem {
   to: string;
@@ -24,9 +25,7 @@ export function Sidebar() {
     <aside className="hidden lg:flex w-64 flex-col border-r border-border-subtle bg-surface">
       {/* Brand */}
       <div className="flex items-center gap-3 px-6 h-16 border-b border-border-subtle">
-        <div className="h-8 w-8 rounded-lg bg-amber/20 flex items-center justify-center glow-amber-sm">
-          <span className="text-amber font-display font-bold text-sm">W</span>
-        </div>
+        <WingLogo size={32} className="glow-amber-sm" />
         <span className="font-display text-lg font-bold tracking-tight text-text">
           Wingman
         </span>

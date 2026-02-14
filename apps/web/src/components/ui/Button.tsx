@@ -8,6 +8,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
   size?: Size;
   loading?: boolean;
+  loadingText?: string;
   children: ReactNode;
 }
 
@@ -28,12 +29,20 @@ const sizeClasses: Record<Size, string> = {
   lg: "h-12 px-6 text-base gap-2.5",
 };
 
+export const Spinner = ({ className = "h-4 w-4" }: { className?: string }) => (
+  <span
+    className={`animate-spin rounded-full border-2 border-current border-t-transparent ${className}`}
+    aria-hidden="true"
+  />
+);
+
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   function Button(
     {
       variant = "primary",
       size = "md",
       loading = false,
+      loadingText,
       disabled,
       children,
       className = "",
@@ -58,11 +67,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       >
         {loading ? (
           <>
-            <span
-              className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
-              aria-hidden="true"
-            />
-            <span>Yükleniyor…</span>
+            <Spinner />
+            <span>{loadingText ?? "Yükleniyor…"}</span>
           </>
         ) : (
           children

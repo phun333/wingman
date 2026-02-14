@@ -1,5 +1,6 @@
 import { useAuth } from "@/lib/auth";
 import { LogOut } from "lucide-react";
+import { WingLogo } from "@/components/icons/WingLogo";
 
 export function Topbar() {
   const { user, logout } = useAuth();
@@ -8,9 +9,7 @@ export function Topbar() {
     <header className="flex h-16 items-center justify-between border-b border-border-subtle bg-surface/50 backdrop-blur-sm px-6 lg:px-8">
       {/* Mobile brand */}
       <div className="flex items-center gap-3 lg:hidden">
-        <div className="h-7 w-7 rounded-md bg-amber/20 flex items-center justify-center">
-          <span className="text-amber font-display font-bold text-xs">W</span>
-        </div>
+        <WingLogo size={28} />
         <span className="font-display font-bold text-text">Wingman</span>
       </div>
 

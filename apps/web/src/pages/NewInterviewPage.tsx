@@ -14,7 +14,7 @@ import { useInterviewsStore } from "@/stores";
 import { Code2, Waypoints, Phone, Dumbbell, Search, X, Check, Shuffle } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { InterviewType, Difficulty, LeetcodeProblem } from "@ffh/types";
-import { JavaScriptIcon, TypeScriptIcon, PythonIcon } from "@/components/icons/LanguageIcons";
+
 
 const types: {
   id: InterviewType;
@@ -69,8 +69,6 @@ export function NewInterviewPage() {
   );
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
   const [questionCount, setQuestionCount] = useState(1);
-  const [codeLanguage, setCodeLanguage] = useState<"javascript" | "typescript" | "python">("javascript");
-
   // Question selection
   const [selectedProblem, setSelectedProblem] = useState<LeetcodeProblem | null>(null);
   const [questionSearch, setQuestionSearch] = useState("");
@@ -139,7 +137,6 @@ export function NewInterviewPage() {
         difficulty: selectedProblem?.difficulty ?? difficulty,
         language: "tr",
         questionCount: selectedProblem ? 1 : questionCount,
-        codeLanguage: (selectedType === "live-coding" || selectedType === "practice") ? codeLanguage : undefined,
       });
 
       // Start the interview immediately
@@ -250,42 +247,7 @@ export function NewInterviewPage() {
         </div>
       </motion.div>
 
-      {/* Step 3 — Code Language (for Live Coding and Practice) */}
-      {(selectedType === "live-coding" || selectedType === "practice") && (
-        <motion.div
-          key={`code-lang-${selectedType}`}
-          variants={fadeUp}
-          className="mt-8"
-          initial="hidden"
-          animate="visible"
-        >
-          <h2 className="text-sm font-medium text-text-muted uppercase tracking-wider mb-3">
-            Kod Dili
-          </h2>
-          <div className="flex gap-2">
-            {[
-              { id: "javascript" as const, label: "JavaScript", icon: <JavaScriptIcon size={16} /> },
-              { id: "typescript" as const, label: "TypeScript", icon: <TypeScriptIcon size={16} /> },
-              { id: "python" as const, label: "Python", icon: <PythonIcon size={16} /> },
-            ].map((lang) => (
-              <button
-                key={lang.id}
-                type="button"
-                onClick={() => setCodeLanguage(lang.id)}
-                className={`
-                  rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-150 cursor-pointer flex items-center gap-2
-                  ${codeLanguage === lang.id ? "border-amber bg-amber/10 text-amber" : "border-border-subtle bg-surface text-text-secondary hover:border-border"}
-                `}
-              >
-                {lang.icon}
-                {lang.label}
-              </button>
-            ))}
-          </div>
-        </motion.div>
-      )}
-
-      {/* Step 4 — Question count */}
+      {/* Step 3 — Question count */}
       <motion.div variants={fadeUp} className="mt-8">
         <h2 className="text-sm font-medium text-text-muted uppercase tracking-wider mb-3">
           Soru Sayısı
@@ -485,16 +447,18 @@ export function NewInterviewPage() {
             <div>
               <p className="text-sm text-text-secondary">
                 {selectedType
-                  ? `${types.find((t) => t.id === selectedType)?.title} · ${difficulties.find((d) => d.id === difficulty)?.label} · ${selectedProblem ? `"${selectedProblem.title}"` : `${questionCount} Soru`}${(selectedType === "live-coding" || selectedType === "practice") ? ` · ${codeLanguage.toUpperCase()}` : ""}`
+                  ? `${types.find((t) => t.id === selectedType)?.title} · ${difficulties.find((d) => d.id === difficulty)?.label} · ${selectedProblem ? `"${selectedProblem.title}"` : `${questionCount} Soru`}`
                   : "Mülakat türü seçin"}
               </p>
             </div>
             <Button
               onClick={handleStart}
-              disabled={!selectedType || loading}
+              disabled={!selectedType}
+              loading={loading}
+              loadingText="Oluşturuluyor…"
               size="lg"
             >
-              {loading ? "Oluşturuluyor…" : "Mülakata Başla"}
+              Mülakata Başla
             </Button>
           </div>
           {error && (

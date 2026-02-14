@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, memo, useDeferredValue } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -29,6 +29,7 @@ import {
   ChevronsRight,
   X,
   Flame,
+  ChevronDown,
 } from "lucide-react";
 import type {
   Difficulty,
@@ -312,10 +313,15 @@ export function QuestionsPage() {
 
           {/* Results Count + Page Info */}
           <div className="flex items-center justify-between">
-            <p className="text-sm text-text-muted">
-              {loading
-                ? "Yükleniyor..."
-                : `${sortedProblems.length} soru bulundu`}
+            <p className="text-sm text-text-muted flex items-center gap-2">
+              {loading ? (
+                <>
+                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-text-muted border-t-transparent" />
+                  Yükleniyor...
+                </>
+              ) : (
+                `${sortedProblems.length} soru bulundu`
+              )}
             </p>
             {!loading && sortedProblems.length > 0 && (
               <p className="text-sm text-text-muted">
@@ -353,8 +359,8 @@ export function QuestionsPage() {
 
               {/* Rows */}
               <div className="divide-y divide-border-subtle/50">
-                {pageProblems.map((problem, i) => (
-                  <ProblemRow key={problem._id} problem={problem} index={i} />
+                {pageProblems.map((problem) => (
+                  <ProblemRow key={problem._id} problem={problem} />
                 ))}
               </div>
 
@@ -714,7 +720,7 @@ function TopicDropdown({
 
 // ─── Problem Row ────────────────────────────────────────
 
-function ProblemRow({ problem, index }: { problem: LeetcodeProblem; index: number }) {
+const ProblemRow = memo(function ProblemRow({ problem }: { problem: LeetcodeProblem }) {
   const navigate = useNavigate();
   const fetchAllInterviews = useInterviewsStore((s) => s.fetchAll);
   const [expanded, setExpanded] = useState(false);
@@ -754,11 +760,7 @@ function ProblemRow({ problem, index }: { problem: LeetcodeProblem; index: numbe
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: Math.min(index * 0.02, 0.5) }}
-    >
+    <div>
       <div
         onClick={() => setExpanded(!expanded)}
         className="grid grid-cols-[60px_1fr_90px_80px_80px_80px] gap-4 px-4 py-3 hover:bg-surface-raised/50 transition-colors cursor-pointer group"
@@ -907,13 +909,13 @@ function ProblemRow({ problem, index }: { problem: LeetcodeProblem; index: numbe
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
-}
+});
 
 // ─── Frequency Bar ──────────────────────────────────────
 
-function FrequencyBar({ value }: { value: number }) {
+const FrequencyBar = memo(function FrequencyBar({ value }: { value: number }) {
   const width = Math.min(value, 100);
   return (
     <div className="flex items-center gap-1.5 justify-center">
@@ -928,7 +930,7 @@ function FrequencyBar({ value }: { value: number }) {
       </span>
     </div>
   );
-}
+});
 
 // ─── Filter Tag ─────────────────────────────────────────
 
@@ -945,6 +947,42 @@ function FilterTag({ label, onRemove }: { label: string; onRemove: () => void })
 
 // ─── Companies Grid ─────────────────────────────────────
 
+const GRID_PAGE_SIZE = 24;
+
+const CompanyCard = memo(function CompanyCard({
+  company,
+  onSelect,
+}: {
+  company: CompanyStats;
+  onSelect: (c: string) => void;
+}) {
+  return (
+    <Card
+      hover
+      className="p-4 transition-transform hover:scale-[1.02]"
+      onClick={() => onSelect(company.name)}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Building2 size={16} className="text-amber" />
+          <span className="font-semibold text-sm text-text">
+            {company.name}
+          </span>
+        </div>
+        <span className="text-lg font-bold text-text">
+          {company.total}
+        </span>
+      </div>
+
+      <div className="space-y-1.5">
+        <DifficultyBar label="Kolay" value={company.easy} total={company.total} color="success" />
+        <DifficultyBar label="Orta" value={company.medium} total={company.total} color="amber" />
+        <DifficultyBar label="Zor" value={company.hard} total={company.total} color="danger" />
+      </div>
+    </Card>
+  );
+});
+
 function CompaniesGrid({
   companies,
   onSelect,
@@ -953,58 +991,70 @@ function CompaniesGrid({
   onSelect: (c: string) => void;
 }) {
   const [search, setSearch] = useState("");
+  const [visibleCount, setVisibleCount] = useState(GRID_PAGE_SIZE);
+  const deferredSearch = useDeferredValue(search);
 
-  const filtered = companies.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase()),
+  const filtered = useMemo(
+    () => {
+      if (!deferredSearch) return companies;
+      const q = deferredSearch.toLowerCase();
+      return companies.filter((c) => c.name.toLowerCase().includes(q));
+    },
+    [companies, deferredSearch],
   );
+
+  // Reset visible count when search changes
+  useEffect(() => {
+    setVisibleCount(GRID_PAGE_SIZE);
+  }, [deferredSearch]);
+
+  const visibleItems = filtered.slice(0, visibleCount);
+  const hasMore = visibleCount < filtered.length;
 
   return (
     <div className="space-y-4">
-      <div className="relative max-w-sm">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
-        <input
-          type="text"
-          placeholder="Şirket ara..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-9 pr-4 py-2 bg-surface border border-border-subtle rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-amber/50"
-        />
+      <div className="flex items-center justify-between">
+        <div className="relative max-w-sm flex-1">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+          <input
+            type="text"
+            placeholder="Şirket ara..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 bg-surface border border-border-subtle rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-amber/50"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text cursor-pointer"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+        <span className="text-sm text-text-muted ml-3">
+          {filtered.length} şirket
+        </span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-        {filtered.map((company) => (
-          <motion.div
-            key={company.name}
-            initial={{ opacity: 0, scale: 0.97 }}
-            animate={{ opacity: 1, scale: 1 }}
-            whileHover={{ scale: 1.02 }}
-          >
-            <Card
-              hover
-              className="p-4"
-              onClick={() => onSelect(company.name)}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Building2 size={16} className="text-amber" />
-                  <span className="font-semibold text-sm text-text">
-                    {company.name}
-                  </span>
-                </div>
-                <span className="text-lg font-bold text-text">
-                  {company.total}
-                </span>
-              </div>
-
-              <div className="space-y-1.5">
-                <DifficultyBar label="Kolay" value={company.easy} total={company.total} color="success" />
-                <DifficultyBar label="Orta" value={company.medium} total={company.total} color="amber" />
-                <DifficultyBar label="Zor" value={company.hard} total={company.total} color="danger" />
-              </div>
-            </Card>
-          </motion.div>
+        {visibleItems.map((company) => (
+          <CompanyCard key={company.name} company={company} onSelect={onSelect} />
         ))}
       </div>
+
+      {hasMore && (
+        <div className="flex justify-center pt-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setVisibleCount((c) => c + GRID_PAGE_SIZE)}
+          >
+            <ChevronDown size={15} />
+            Daha fazla göster ({filtered.length - visibleCount} kaldı)
+          </Button>
+        </div>
+      )}
 
       {filtered.length === 0 && (
         <p className="text-center text-text-muted py-8 text-sm">Şirket bulunamadı</p>
@@ -1015,6 +1065,40 @@ function CompaniesGrid({
 
 // ─── Topics Grid ────────────────────────────────────────
 
+const TopicCard = memo(function TopicCard({
+  topic,
+  onSelect,
+}: {
+  topic: TopicStats;
+  onSelect: (t: string) => void;
+}) {
+  return (
+    <Card
+      hover
+      className="p-4 transition-transform hover:scale-[1.02]"
+      onClick={() => onSelect(topic.name)}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Tag size={15} className="text-info" />
+          <span className="font-semibold text-sm text-text">
+            {topic.name}
+          </span>
+        </div>
+        <span className="text-lg font-bold text-text">
+          {topic.total}
+        </span>
+      </div>
+
+      <div className="space-y-1.5">
+        <DifficultyBar label="Kolay" value={topic.easy} total={topic.total} color="success" />
+        <DifficultyBar label="Orta" value={topic.medium} total={topic.total} color="amber" />
+        <DifficultyBar label="Zor" value={topic.hard} total={topic.total} color="danger" />
+      </div>
+    </Card>
+  );
+});
+
 function TopicsGrid({
   topics,
   onSelect,
@@ -1022,40 +1106,75 @@ function TopicsGrid({
   topics: TopicStats[];
   onSelect: (t: string) => void;
 }) {
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-      {topics.map((topic) => (
-        <motion.div
-          key={topic.name}
-          initial={{ opacity: 0, scale: 0.97 }}
-          animate={{ opacity: 1, scale: 1 }}
-          whileHover={{ scale: 1.02 }}
-        >
-          <Card
-            hover
-            className="p-4"
-            onClick={() => onSelect(topic.name)}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Tag size={15} className="text-info" />
-                <span className="font-semibold text-sm text-text">
-                  {topic.name}
-                </span>
-              </div>
-              <span className="text-lg font-bold text-text">
-                {topic.total}
-              </span>
-            </div>
+  const [search, setSearch] = useState("");
+  const [visibleCount, setVisibleCount] = useState(GRID_PAGE_SIZE);
+  const deferredSearch = useDeferredValue(search);
 
-            <div className="space-y-1.5">
-              <DifficultyBar label="Kolay" value={topic.easy} total={topic.total} color="success" />
-              <DifficultyBar label="Orta" value={topic.medium} total={topic.total} color="amber" />
-              <DifficultyBar label="Zor" value={topic.hard} total={topic.total} color="danger" />
-            </div>
-          </Card>
-        </motion.div>
-      ))}
+  const filtered = useMemo(
+    () => {
+      if (!deferredSearch) return topics;
+      const q = deferredSearch.toLowerCase();
+      return topics.filter((t) => t.name.toLowerCase().includes(q));
+    },
+    [topics, deferredSearch],
+  );
+
+  // Reset visible count when search changes
+  useEffect(() => {
+    setVisibleCount(GRID_PAGE_SIZE);
+  }, [deferredSearch]);
+
+  const visibleItems = filtered.slice(0, visibleCount);
+  const hasMore = visibleCount < filtered.length;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="relative max-w-sm flex-1">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+          <input
+            type="text"
+            placeholder="Konu ara..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 bg-surface border border-border-subtle rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-amber/50"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text cursor-pointer"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+        <span className="text-sm text-text-muted ml-3">
+          {filtered.length} konu
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+        {visibleItems.map((topic) => (
+          <TopicCard key={topic.name} topic={topic} onSelect={onSelect} />
+        ))}
+      </div>
+
+      {hasMore && (
+        <div className="flex justify-center pt-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setVisibleCount((c) => c + GRID_PAGE_SIZE)}
+          >
+            <ChevronDown size={15} />
+            Daha fazla göster ({filtered.length - visibleCount} kaldı)
+          </Button>
+        </div>
+      )}
+
+      {filtered.length === 0 && (
+        <p className="text-center text-text-muted py-8 text-sm">Konu bulunamadı</p>
+      )}
     </div>
   );
 }
@@ -1070,7 +1189,7 @@ const DIFF_BAR_COLORS = {
 
 type DiffBarColor = keyof typeof DIFF_BAR_COLORS;
 
-function DifficultyBar({
+const DifficultyBar = memo(function DifficultyBar({
   label,
   value,
   total,
@@ -1094,4 +1213,4 @@ function DifficultyBar({
       <span className="text-[10px] text-text-muted w-5 text-right">{value}</span>
     </div>
   );
-}
+});

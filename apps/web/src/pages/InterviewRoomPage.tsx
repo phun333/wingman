@@ -22,6 +22,7 @@ import { SolutionComparisonPanel } from "@/components/interview/SolutionComparis
 import { SystemDesignRoom } from "@/components/interview/SystemDesignRoom";
 import { AIChat } from "@/components/interview/AIChat";
 import { ChatThread } from "@/components/interview/ChatThread";
+import { WingLogo } from "@/components/icons/WingLogo";
 
 const stateLabels: Record<VoicePipelineState, string> = {
   idle: "Hazır",
@@ -425,9 +426,7 @@ export function InterviewRoomPage() {
       {/* Top bar */}
       <header className="flex h-12 items-center justify-between border-b border-border-subtle bg-surface/80 backdrop-blur-sm px-4">
         <div className="flex items-center gap-3">
-          <div className="h-6 w-6 rounded-md bg-amber/15 flex items-center justify-center">
-            <span className="text-amber font-display text-xs font-bold">W</span>
-          </div>
+          <WingLogo size={24} />
           <span className="text-sm font-medium text-text-secondary">
             {interview ? typeLabels[interview.type] ?? interview.type : "Mülakat"}
           </span>
@@ -629,9 +628,7 @@ function VoiceOnlyRoom({
       {/* ── Top bar ── */}
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-border-subtle bg-surface/80 backdrop-blur-sm px-5">
         <div className="flex items-center gap-3">
-          <div className="h-7 w-7 rounded-md bg-amber/15 flex items-center justify-center">
-            <span className="text-amber font-display text-xs font-bold">W</span>
-          </div>
+          <WingLogo size={28} />
           <span className="text-sm font-medium text-text-secondary">
             {interview ? typeLabels[interview.type] ?? interview.type : "Mülakat"}
           </span>

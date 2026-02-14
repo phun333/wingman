@@ -27,6 +27,7 @@ import type {
   Interview,
   Message,
 } from "@ffh/types";
+import { WingLogo } from "@/components/icons/WingLogo";
 import {
   RadarChart,
   Radar,
@@ -257,19 +258,11 @@ export function ReportPage() {
           <Button
             className="mt-6"
             onClick={handleGenerate}
-            disabled={generating}
+            loading={generating}
+            loadingText="Rapor oluşturuluyor…"
           >
-            {generating ? (
-              <span className="flex items-center gap-2">
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                Rapor oluşturuluyor…
-              </span>
-            ) : (
-              <span className="flex items-center gap-2">
-                <Bot size={16} />
-                Rapor Oluştur
-              </span>
-            )}
+            <Bot size={16} />
+            Rapor Oluştur
           </Button>
           <Link
             to="/dashboard"
@@ -305,8 +298,8 @@ export function ReportPage() {
       <header className="border-b border-border-subtle bg-surface/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link to="/dashboard" className="h-7 w-7 rounded-md bg-amber/15 flex items-center justify-center">
-              <span className="text-amber font-display text-xs font-bold">W</span>
+            <Link to="/dashboard">
+              <WingLogo size={28} />
             </Link>
             <span className="text-sm text-text-muted">
               {interview ? typeLabels[interview.type] ?? interview.type : "Mülakat"} Raporu
