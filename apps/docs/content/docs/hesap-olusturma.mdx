@@ -1,0 +1,60 @@
+---
+title: Hesap Oluşturma
+description: Wingman'e kayıt olma ve hesap yönetimi.
+---
+
+## Kayıt Olma
+
+Wingman'e kayıt olmak ücretsizdir ve saniyeler sürer.
+
+<Steps>
+  <Step number={1} title="Kayıt Sayfasını Aç">
+    Ana sayfada **Ücretsiz Başla** veya **Kayıt Ol** butonuna tıkla.
+  </Step>
+  <Step number={2} title="Bilgilerini Gir">
+    Adın, e-posta adresin ve şifreni gir. Şifre en az **8 karakter** olmalı.
+  </Step>
+  <Step number={3} title="Hesabını Oluştur">
+    **Hesap Oluştur** butonuna tıkla — otomatik olarak Dashboard'a yönlendirileceksin.
+  </Step>
+</Steps>
+
+---
+
+## Giriş Yapma
+
+Zaten hesabın varsa:
+
+<Steps>
+  <Step number={1} title="Giriş sayfasına git">
+    Navbar'daki **Giriş Yap** butonuna tıkla.
+  </Step>
+  <Step number={2} title="Kimlik bilgilerini gir">
+    E-posta ve şifreni gir, Dashboard'a yönlendirileceksin.
+  </Step>
+</Steps>
+
+---
+
+## Hesap Ayarları
+
+Giriş yaptıktan sonra <Kbd keys="Ctrl+K" /> ile komut paletini açıp "Ayarlar"a gidebilirsin:
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-3 my-6">
+  <FeatureCard icon="user" title="Profil Bilgileri">
+    Adını ve profil detaylarını güncelle.
+  </FeatureCard>
+  <FeatureCard icon="lock" title="Şifre Değiştirme">
+    Mevcut şifreni değiştir, güçlü bir şifre seç.
+  </FeatureCard>
+  <FeatureCard icon="code" title="Dil Tercihi">
+    Varsayılan programlama dilini seç: JavaScript, TypeScript veya Python.
+  </FeatureCard>
+  <FeatureCard icon="bell" title="Bildirimler">
+    Bildirim tercihlerini ve hatırlatıcıları ayarla.
+  </FeatureCard>
+</div>
+
+<Callout type="info" title="Güvenlik">
+  Şifren **better-auth** altyapısıyla güvenli bir şekilde hashlenerek saklanır. Düz metin olarak hiçbir zaman tutulmaz.
+</Callout>

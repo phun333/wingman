@@ -1,0 +1,76 @@
+@import "tailwindcss";
+@import "fumadocs-ui/style.css";
+
+/* ─── Wingman Dark Theme Override ─────────────────────── */
+
+:root {
+  --color-fd-background: #07070a;
+  --color-fd-foreground: #ededef;
+  --color-fd-muted: #0f0f14;
+  --color-fd-muted-foreground: #8b8b96;
+  --color-fd-popover: #0f0f14;
+  --color-fd-popover-foreground: #ededef;
+  --color-fd-card: #0f0f14;
+  --color-fd-card-foreground: #ededef;
+  --color-fd-border: #27272f;
+  --color-fd-primary: #e5a10e;
+  --color-fd-primary-foreground: #07070a;
+  --color-fd-secondary: #16161d;
+  --color-fd-secondary-foreground: #ededef;
+  --color-fd-accent: #1c1c25;
+  --color-fd-accent-foreground: #ededef;
+  --color-fd-ring: #e5a10e;
+}
+
+.dark,
+:root[data-theme="dark"] {
+  --color-fd-background: #07070a;
+  --color-fd-foreground: #ededef;
+  --color-fd-muted: #0f0f14;
+  --color-fd-muted-foreground: #8b8b96;
+  --color-fd-popover: #0f0f14;
+  --color-fd-popover-foreground: #ededef;
+  --color-fd-card: #0f0f14;
+  --color-fd-card-foreground: #ededef;
+  --color-fd-border: #27272f;
+  --color-fd-primary: #e5a10e;
+  --color-fd-primary-foreground: #07070a;
+  --color-fd-secondary: #16161d;
+  --color-fd-secondary-foreground: #ededef;
+  --color-fd-accent: #1c1c25;
+  --color-fd-accent-foreground: #ededef;
+  --color-fd-ring: #e5a10e;
+}
+
+/* ─── Force dark mode always ──────────────────────────── */
+html {
+  color-scheme: dark;
+}
+
+/* ─── Scrollbar ───────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #27272f;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #55555f;
+}
+
+/* ─── Selection ───────────────────────────────────────── */
+::selection {
+  background: #e5a10e;
+  color: #07070a;
+}
+
+/* Sidebar active item amber accent */
+nav [aria-current="page"],
+nav [data-active="true"] {
+  color: #e5a10e !important;
+  border-color: #e5a10e !important;
+}

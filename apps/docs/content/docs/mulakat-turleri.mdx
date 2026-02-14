@@ -1,0 +1,112 @@
+---
+title: Mülakat Türleri
+description: Wingman'de bulunan dört farklı mülakat türü ve özellikleri.
+---
+
+Wingman, yazılım mühendisliği mülakatlarının farklı aşamalarına hazırlanman için **dört farklı mülakat türü** sunar.
+
+---
+
+## Live Coding
+
+<InterviewTypeCard icon="code" title="Live Coding" color="amber">
+  Gerçek bir teknik mülakatta olduğu gibi, AI mülakatçı sana algoritmik bir problem verir ve gerçek zamanlı olarak kod yazmanı ister.
+</InterviewTypeCard>
+
+### Özellikler
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-3 my-4">
+  <FeatureCard icon="terminal" title="Monaco Editör">
+    VS Code motoruyla tam özellikli kod editörü — syntax highlighting, IntelliSense.
+  </FeatureCard>
+  <FeatureCard icon="mic" title="Sesli İletişim">
+    Çözümünü sesli olarak açıkla, mülakatçıdan ipucu iste.
+  </FeatureCard>
+</div>
+
+```ts title="Örnek: İki sayının toplamını bulan fonksiyon"
+function twoSum(nums: number[], target: number): number[] {
+  const map = new Map<number, number>();
+
+  for (let i = 0; i < nums.length; i++) {
+    const complement = target - nums[i];
+    if (map.has(complement)) {
+      return [map.get(complement)!, i];
+    }
+    map.set(nums[i], i);
+  }
+
+  return [];
+}
+```
+
+<Callout type="tip" title="Düşünceni Seslendir">
+  Gerçek mülakatlarda düşünce sürecin kodun kadar önemli. Yaklaşımını AI mülakatçıya açıkla, adım adım ilerle.
+</Callout>
+
+---
+
+## System Design
+
+<InterviewTypeCard icon="system-design" title="System Design" color="blue">
+  Büyük ölçekli sistemlerin nasıl tasarlanacağını öğren. Whiteboard desteğiyle diyagramlar çiz ve tasarım kararlarını açıkla.
+</InterviewTypeCard>
+
+### Mülakat Akışı
+
+<Steps>
+  <Step number={1} title="Gereksinim Analizi (5 dk)">
+    Fonksiyonel ve non-fonksiyonel gereksinimleri netleştir. *"Günlük kaç kullanıcı?" "Okuma/yazma oranı nedir?"*
+  </Step>
+  <Step number={2} title="Üst Düzey Tasarım (10 dk)">
+    Whiteboard'da genel mimariyi çiz — Client, API Gateway, Servisler, DB, Cache.
+  </Step>
+  <Step number={3} title="Detaylı Tasarım (15 dk)">
+    Veritabanı şeması, API endpoint'leri, veri akışı ve ölçeklendirme stratejisi.
+  </Step>
+  <Step number={4} title="Trade-off Tartışması (5 dk)">
+    SQL vs NoSQL, Monolith vs Microservice, Push vs Pull gibi kararları tartış.
+  </Step>
+</Steps>
+
+---
+
+## Phone Screen
+
+<InterviewTypeCard icon="phone" title="Phone Screen" color="green">
+  Teknik telefon mülakatlarına hazırlan. AI mülakatçı, gerçek bir recruiter/engineer gibi seninle sesli görüşme yapar.
+</InterviewTypeCard>
+
+### Kapsam
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-3 my-4">
+  <FeatureCard icon="chat" title="Davranışsal Sorular">
+    STAR metodu ile geçmiş deneyimlerini anlat. *"Bir zorlukla nasıl başa çıktın?"*
+  </FeatureCard>
+  <FeatureCard icon="brain" title="Teknik Sorular">
+    Veri yapıları, algoritmalar, OOP prensipleri gibi teorik konular.
+  </FeatureCard>
+</div>
+
+---
+
+## Practice
+
+<InterviewTypeCard icon="practice" title="Practice" color="purple">
+  Stressiz bir ortamda serbest pratik yap. Puan veya değerlendirme olmadan, sadece öğrenmek ve geliştirmek için.
+</InterviewTypeCard>
+
+<Callout type="info">
+  Pratik modunda zaman baskısı yoktur. İstediğin konuda soru sorabilir, adım adım rehberlik alabilirsin.
+</Callout>
+
+---
+
+## Hangi Türü Seçmeliyim?
+
+| Seviye | Önerilen Yol |
+|--------|-------------|
+| **Junior** | Practice → Live Coding (Easy) |
+| **Mid-level** | Live Coding (Medium) → Phone Screen |
+| **Senior** | System Design → Live Coding (Hard) |
+| **Lead/Staff** | System Design (Hard) → Phone Screen |

@@ -1,0 +1,87 @@
+---
+title: Başlangıç Rehberi
+description: Wingman'i kullanmaya başlamak için adım adım rehber.
+---
+
+Wingman'i kullanmaya başlamak sadece birkaç dakika sürer. Bu rehber seni ilk mülakatına kadar yönlendirecek.
+
+## Hızlı Başlangıç
+
+<Steps>
+  <Step number={1} title="Hesap Oluştur">
+    Uygulamaya ilk girişinde **Ücretsiz Başla** butonuna tıkla. E-posta adresin ve bir şifre ile hızlıca kayıt ol.
+  </Step>
+  <Step number={2} title="Dashboard'a Göz At">
+    Giriş yaptıktan sonra Dashboard'a yönlendirileceksin. Genel istatistiklerini, streak'ini ve son mülakatlarını görebilirsin.
+  </Step>
+  <Step number={3} title="İlk Mülakatını Başlat">
+    **Yeni Mülakat** butonuna tıkla veya <Kbd keys="Ctrl+K" /> kısayoluyla komut paletini aç.
+  </Step>
+</Steps>
+
+---
+
+## Mülakat Türünü Seç
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-3 my-6">
+  <InterviewTypeCard icon="code" title="Live Coding" color="amber">
+    Algoritmik problemleri gerçek zamanlı çöz. Monaco editör, syntax highlighting, AI mülakatçı ile sesli iletişim.
+  </InterviewTypeCard>
+  <InterviewTypeCard icon="system-design" title="System Design" color="blue">
+    Büyük ölçekli sistemler tasarla. Whiteboard ile diyagram çiz, trade-off'ları tartış.
+  </InterviewTypeCard>
+  <InterviewTypeCard icon="phone" title="Phone Screen" color="green">
+    Teknik telefon mülakatı simülasyonu. Davranışsal sorular, STAR metodu pratiği.
+  </InterviewTypeCard>
+  <InterviewTypeCard icon="practice" title="Practice" color="purple">
+    Stressiz ortamda serbest pratik. Zaman baskısı yok, adım adım rehberlik.
+  </InterviewTypeCard>
+</div>
+
+## Zorluk Seviyeleri
+
+| Seviye | Açıklama | Kime Uygun |
+|--------|----------|------------|
+| **Easy** | Temel veri yapıları ve algoritmalar | Başlangıç seviyesi, yeni mezunlar |
+| **Medium** | Orta düzey problem çözme | Çoğu mülakatta karşılaşacağın zorluk |
+| **Hard** | Dinamik programlama, graf algoritmaları | FAANG seviyesi, senior pozisyonlar |
+
+## Desteklenen Diller
+
+```ts title="Wingman şu programlama dillerini destekler:"
+const languages = ["JavaScript", "TypeScript", "Python"] as const;
+
+// Her dil için:
+// - Syntax highlighting
+// - Otomatik tamamlama (IntelliSense)
+// - Kod çalıştırma
+```
+
+---
+
+## Mülakata Başla
+
+Ayarlarını yaptıktan sonra **Başlat** butonuna tıkla. AI mülakatçı seni karşılayacak.
+
+<Callout type="warning" title="Mikrofon İzni">
+  Wingman sesli çalıştığı için tarayıcının mikrofon erişimi gereklidir. İlk mülakatta otomatik olarak izin istenir. **Chrome** veya **Firefox** önerilir.
+</Callout>
+
+## Raporunu İncele
+
+Mülakat bittiğinde detaylı bir rapor oluşturulur:
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-3 my-6">
+  <FeatureCard icon="check" title="Doğru Yaklaşımlar">
+    Hangi adımları doğru attığını ve güçlü yanlarını gör.
+  </FeatureCard>
+  <FeatureCard icon="warning" title="Gelişim Alanları">
+    Kaçırdığın optimizasyonlar ve geliştirilmesi gereken noktalar.
+  </FeatureCard>
+  <FeatureCard icon="file-code" title="Kod Kalitesi">
+    Okunabilirlik, yapı, edge case handling değerlendirmesi.
+  </FeatureCard>
+  <FeatureCard icon="chat" title="İletişim Puanı">
+    Düşünce sürecini ne kadar iyi aktardığının değerlendirmesi.
+  </FeatureCard>
+</div>

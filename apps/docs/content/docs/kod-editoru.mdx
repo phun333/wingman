@@ -1,0 +1,109 @@
+---
+title: Kod Editörü
+description: Monaco tabanlı gerçek zamanlı kod editörünün özellikleri ve kullanımı.
+---
+
+Wingman, **Monaco Editor** (VS Code'un editör motoru) tabanlı tam özellikli bir kod editörü sunar. Live Coding mülakatlarında ve pratik modunda kullanırsın.
+
+## Temel Özellikler
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-3 my-6">
+  <FeatureCard icon="sparkles" title="Syntax Highlighting">
+    JavaScript, TypeScript ve Python için tam renklendirme desteği.
+  </FeatureCard>
+  <FeatureCard icon="zap" title="Otomatik Tamamlama">
+    IntelliSense benzeri akıllı kod önerileri ve imza yardımı.
+  </FeatureCard>
+  <FeatureCard icon="terminal" title="Kod Çalıştırma">
+    Yazdığın kodu doğrudan çalıştır ve sonuçları gör.
+  </FeatureCard>
+  <FeatureCard icon="search" title="Bul ve Değiştir">
+    Metin arama ve toplu değiştirme özellikleri.
+  </FeatureCard>
+</div>
+
+---
+
+## Desteklenen Diller
+
+| Dil | Özellikler |
+|-----|------------|
+| **JavaScript** | Full syntax highlighting, IntelliSense, otomatik import |
+| **TypeScript** | Tip kontrolü, IntelliSense, hata gösterimi |
+| **Python** | Syntax highlighting, indentation, temel otomatik tamamlama |
+
+---
+
+## Editör Düzeni
+
+Mülakat odasında editör alanı şu şekilde düzenlenmiştir:
+
+```
+┌─────────────────────────────────────────────────┐
+│  Soru Paneli (üstte, resize edilebilir)        │
+├──────────────────────┬──────────────────────────┤
+│                      │                          │
+│   Kod Editörü        │   Sesli Asistan          │
+│   (Monaco)           │   + Chat Paneli          │
+│                      │                          │
+├──────────────────────┼──────────────────────────┤
+│  Test Sonuçları      │   Çalıştırma Kontrolleri │
+└──────────────────────┴──────────────────────────┘
+```
+
+---
+
+## Kod Yazma İpuçları
+
+<Callout type="tip" title="Önce Planla, Sonra Kodla">
+  AI mülakatçıya yaklaşımını sesli olarak açıkla. Brute-force çözümden bahset, sonra optimize et.
+</Callout>
+
+<Callout type="tip" title="Düşünceni Seslendir">
+  Gerçek mülakatlarda düşünce sürecin kodun kadar önemli. Her adımda ne yaptığını anlat.
+</Callout>
+
+<Callout type="tip" title="Edge Case'leri Düşün">
+  Boş array, tek eleman, negatif sayılar, overflow — mülakatçı bunları soracaktır.
+</Callout>
+
+---
+
+## Örnek Kod
+
+```ts title="Binary Search implementasyonu"
+function binarySearch(nums: number[], target: number): number {
+  let left = 0;
+  let right = nums.length - 1;
+
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2);
+
+    if (nums[mid] === target) return mid;
+    if (nums[mid] < target) left = mid + 1;
+    else right = mid - 1;
+  }
+
+  return -1; // target bulunamadı
+}
+
+// Zaman karmaşıklığı: O(log n)
+// Alan karmaşıklığı: O(1)
+```
+
+---
+
+## Klavye Kısayolları
+
+| Kısayol | İşlev |
+|---------|-------|
+| <Kbd keys="Ctrl+Space" /> | Otomatik tamamlama |
+| <Kbd keys="Ctrl+F" /> | Bul |
+| <Kbd keys="Ctrl+H" /> | Bul ve Değiştir |
+| <Kbd keys="Ctrl+Z" /> | Geri Al |
+| <Kbd keys="Ctrl+Shift+Z" /> | İleri Al |
+| <Kbd keys="Ctrl+/" /> | Satırı Yorumla |
+| <Kbd keys="Alt+↑" /> | Satırı Yukarı Taşı |
+| <Kbd keys="Alt+↓" /> | Satırı Aşağı Taşı |
+| <Kbd keys="Ctrl+D" /> | Kelimeyi Seç |
+| <Kbd keys="Ctrl+Shift+K" /> | Satırı Sil |

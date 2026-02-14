@@ -1,0 +1,106 @@
+---
+title: Sistem Tasarımı
+description: Whiteboard destekli sistem tasarımı mülakatları hakkında bilgi.
+---
+
+Sistem tasarımı mülakatları, büyük ölçekli yazılım sistemlerinin nasıl tasarlanacağını test eder. Wingman, bu tür mülakatlar için **interaktif whiteboard** desteği sunar.
+
+## Whiteboard
+
+Wingman, [tldraw](https://tldraw.com) tabanlı bir whiteboard kullanır:
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-3 my-6">
+  <FeatureCard icon="layers" title="Şekiller ve Kutular">
+    Servisler, veritabanları, cache katmanları için kutular ve şekiller çiz.
+  </FeatureCard>
+  <FeatureCard icon="zap" title="Oklar ve Bağlantılar">
+    Veri akışını, API çağrılarını ve bağımlılıkları göster.
+  </FeatureCard>
+  <FeatureCard icon="file" title="Metin ve Notlar">
+    Açıklamalar, notlar ve etiketler ekle.
+  </FeatureCard>
+  <FeatureCard icon="palette" title="Renkler">
+    Farklı bileşenleri renk kodlarıyla ayırt et.
+  </FeatureCard>
+</div>
+
+---
+
+## Mülakat Akışı
+
+<Steps>
+  <Step number={1} title="Gereksinim Analizi (5 dk)">
+    AI mülakatçı bir problem tanımlar. Fonksiyonel ve non-fonksiyonel gereksinimleri netleştir.
+
+    ```
+    Örnek sorular:
+    → "Twitter benzeri bir sosyal medya platformu tasarla"
+    → "URL kısaltma servisi tasarla"
+    → "Gerçek zamanlı chat uygulaması tasarla"
+
+    Sorulacak sorular:
+    → "Günlük kaç kullanıcı bekliyoruz?"
+    → "Okuma/yazma oranı nedir?"
+    → "Gecikme toleransı ne kadar?"
+    ```
+  </Step>
+  <Step number={2} title="Üst Düzey Tasarım (10 dk)">
+    Whiteboard'da sistemin genel mimarisini çiz:
+
+    ```
+    Client → Load Balancer → API Gateway
+                                  │
+                    ┌─────────────┼─────────────┐
+                    ▼             ▼             ▼
+              Auth Service  Core Service  Notification
+                    │             │             │
+                    ▼             ▼             ▼
+                User DB      Main DB       Queue (Kafka)
+                              Cache (Redis)
+    ```
+  </Step>
+  <Step number={3} title="Detaylı Tasarım (15 dk)">
+    Kritik bileşenleri derinleştir — veritabanı şeması, API endpoint'leri, ölçeklendirme stratejisi.
+  </Step>
+  <Step number={4} title="Trade-off Tartışması (5 dk)">
+    Tasarım kararlarının artılarını ve eksilerini tartış.
+  </Step>
+</Steps>
+
+---
+
+## Trade-off Örnekleri
+
+| Karar | Seçenek A | Seçenek B | Durum |
+|-------|-----------|-----------|-------|
+| **Veritabanı** | SQL (PostgreSQL) | NoSQL (MongoDB) | İlişkisel veri → SQL, esnek şema → NoSQL |
+| **Mimari** | Monolith | Microservice | Küçük ekip → Monolith, ölçek → Microservice |
+| **Mesajlaşma** | Push (WebSocket) | Pull (Polling) | Gerçek zamanlı → Push, basitlik → Pull |
+| **Cache** | Write-through | Write-back | Tutarlılık → Through, performans → Back |
+
+---
+
+## Değerlendirme Kriterleri
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-3 my-6">
+  <FeatureCard icon="search" title="Gereksinim Analizi (%15)">
+    Doğru soruları sorma, kapsamı belirleme becerisi.
+  </FeatureCard>
+  <FeatureCard icon="waypoints" title="Üst Düzey Tasarım (%30)">
+    Genel mimari kalitesi, bileşen seçimi.
+  </FeatureCard>
+  <FeatureCard icon="database" title="Detaylı Tasarım (%30)">
+    Derinlik, teknik doğruluk, şema tasarımı.
+  </FeatureCard>
+  <FeatureCard icon="chat" title="İletişim (%25)">
+    Düşünce sürecini açıklama, trade-off değerlendirme.
+  </FeatureCard>
+</div>
+
+<Callout type="tip" title="Basit Başla">
+  İlk önce basit bir tasarımla başla, sonra ölçeklendir. "Premature optimization is the root of all evil."
+</Callout>
+
+<Callout type="tip" title="Rakamları Kullan">
+  "Günlük 10M istek", "99.9% uptime", "200ms latency" gibi somut rakamlarla çalış — bu seni diğer adaylardan ayırır.
+</Callout>

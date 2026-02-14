@@ -1,0 +1,67 @@
+---
+title: İş İlanları
+description: İş ilanları modülü ve kişiselleştirilmiş mülakat hazırlığı.
+---
+
+Wingman'in **İş İlanları** modülü, belirli bir pozisyona yönelik hedefli mülakat hazırlığı yapmanı sağlar.
+
+## Nasıl Çalışır?
+
+<Steps>
+  <Step number={1} title="İlan Ekle">
+    Başvurmayı düşündüğün iş ilanının detaylarını gir — şirket, pozisyon, gereksinimler.
+  </Step>
+  <Step number={2} title="Analiz">
+    Wingman, ilanın gereksinimlerini analiz eder ve hangi konulara odaklanman gerektiğini belirler.
+  </Step>
+  <Step number={3} title="Özelleştirilmiş Sorular">
+    İlana uygun mülakat soruları otomatik olarak oluşturulur.
+  </Step>
+  <Step number={4} title="Hedefli Pratik">
+    Pozisyona özel mülakatlar yaparak hazırlığını tamamla.
+  </Step>
+</Steps>
+
+---
+
+## İlan Detayları
+
+Bir iş ilanı eklerken şu bilgileri girebilirsin:
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-3 my-6">
+  <FeatureCard icon="building" title="Şirket Bilgisi">
+    Şirket adı ve sektörü — AI mülakatçı şirket kültürüne göre sorular sorar.
+  </FeatureCard>
+  <FeatureCard icon="briefcase" title="Pozisyon">
+    Pozisyon ve seviye — Junior, Mid, Senior, Lead düzeyine göre zorluk ayarlanır.
+  </FeatureCard>
+  <FeatureCard icon="terminal" title="Teknolojiler">
+    Gerekli teknolojiler — React, Node.js, Python, AWS gibi spesifik konularda sorular.
+  </FeatureCard>
+  <FeatureCard icon="file" title="İlan Açıklaması">
+    İlanın tam açıklaması — AI bunu analiz ederek en uygun soruları üretir.
+  </FeatureCard>
+</div>
+
+---
+
+## Kişiselleştirme Etkisi
+
+İş ilanları modülü, AI mülakatçının davranışını doğrudan etkiler:
+
+```ts title="İlan bazlı mülakat kişiselleştirmesi"
+const customization = {
+  // İlandaki teknolojilere göre soru seçimi
+  techStack: ["React", "TypeScript", "Node.js", "PostgreSQL"],
+
+  // Pozisyon seviyesine göre zorluk
+  level: "senior", // → Hard sorular + System Design ağırlıklı
+
+  // Şirket kültürüne göre davranışsal sorular
+  culture: "startup", // → Hızlı karar verme, çok yönlülük
+};
+```
+
+<Callout type="tip" title="Odaklı Hazırlık">
+  Genel pratik yerine hedefe yönelik çalışmak başarı oranını önemli ölçüde artırır. Her başvuru için ayrı bir ilan ekle ve ona özel pratik yap.
+</Callout>

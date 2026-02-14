@@ -12,6 +12,7 @@
     "dev": "bun run --filter '*' dev",
     "dev:web": "bun run --filter @ffh/web dev",
     "dev:api": "bun run --filter @ffh/api dev",
+    "dev:docs": "bun run --filter @ffh/docs dev",
     "dev:convex": "bunx convex dev",
     "build": "bun run --filter '*' build",
     "test": "bun test",

@@ -1,0 +1,106 @@
+---
+title: Sesli Mülakat
+description: Wingman'in Türkçe sesli AI mülakat deneyimi nasıl çalışır?
+---
+
+Wingman'in en güçlü özelliği **gerçek zamanlı sesli mülakat deneyimidir**. Gerçek bir mülakatçıyla konuşur gibi, Türkçe olarak sesli iletişim kurarsın.
+
+## Ses Pipeline'ı
+
+<VoicePipelineDiagram />
+
+<Steps>
+  <Step number={1} title="Dinleme (STT)">
+    Mikrofonundan gelen ses **Freya STT** modeli ile metne çevrilir. fal.ai altyapısında çalışan bu model, Türkçe konuşmayı yüksek doğrulukla tanır.
+  </Step>
+  <Step number={2} title="Düşünme (LLM)">
+    Metin AI mülakatçıya gönderilir. OpenRouter üzerinden güçlü bir LLM, mülakat bağlamına uygun yanıt üretir.
+  </Step>
+  <Step number={3} title="Konuşma (TTS)">
+    AI'ın yanıtı **Freya TTS** modeli ile doğal Türkçe sese çevrilir ve sana oynatılır.
+  </Step>
+</Steps>
+
+---
+
+## Freya — Türkçe Ses Modeli
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-3 my-6">
+  <FeatureCard icon="mic" title="Freya STT">
+    Türkçe konuşma tanıma (Speech-to-Text). Yüksek doğruluk, düşük gecikme.
+  </FeatureCard>
+  <FeatureCard icon="volume" title="Freya TTS">
+    Doğal Türkçe ses sentezi (Text-to-Speech). İnsan benzeri telaffuz ve tonlama.
+  </FeatureCard>
+</div>
+
+```ts title="Freya fal.ai entegrasyonu"
+// STT — Ses → Metin
+const transcript = await fal.subscribe("freya-mypsdi253hbk/freya-stt", {
+  input: { audio_url: audioUrl, language: "tr" },
+  path: "/generate",
+});
+
+// TTS — Metin → Ses
+const audio = await fal.subscribe("freya-mypsdi253hbk/freya-tts", {
+  input: { input: "Merhaba, mülakata başlayalım!", response_format: "wav" },
+  path: "/generate",
+});
+```
+
+---
+
+## Durum Göstergeleri
+
+Mülakat sırasında ekranda pipeline durumunu görebilirsin:
+
+<StatusIndicator items={[
+  { color: "#6b7280", label: "Idle", description: "AI bekleme modunda — konuşmaya başlayabilirsin" },
+  { color: "#22c55e", label: "Listening", description: "Seni dinliyor — konuşmaya devam et" },
+  { color: "#e5a10e", label: "Processing", description: "Yanıt üretiyor — birkaç saniye bekle" },
+  { color: "#3b82f6", label: "Speaking", description: "AI konuşuyor — dinle ve notlarını al" }
+]} />
+
+---
+
+## Mikrofon Kurulumu
+
+<Callout type="warning" title="Tarayıcı İzni">
+  Chrome veya Firefox önerilir. Tarayıcı mikrofon izni istediğinde **İzin Ver** seçeneğini tıkla.
+</Callout>
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-3 my-6">
+  <FeatureCard icon="headphones" title="Harici Mikrofon">
+    Harici mikrofon kullanman ses kalitesini ve tanıma doğruluğunu artırır.
+  </FeatureCard>
+  <FeatureCard icon="monitor" title="Sessiz Ortam">
+    Arka plan gürültüsü az olan bir ortamda çalış.
+  </FeatureCard>
+</div>
+
+---
+
+## Sesli İletişim İpuçları
+
+<Callout type="tip" title="Net Konuş">
+  AI mülakatçı net ve anlaşılır konuşmayı daha iyi anlar. Yavaş ve düzgün konuş.
+</Callout>
+
+<Callout type="tip" title="Düşünme Süresi Al">
+  "Bir saniye düşüneyim" diyerek düşünme süresi alabilirsin — gerçek mülakatlarda da böyle yapılır!
+</Callout>
+
+<Callout type="tip" title="Tekrar İste">
+  Soruyu anlamadıysan "Tekrar edebilir misiniz?" diyebilirsin. Mülakatçı soruyu yeniden açıklar.
+</Callout>
+
+---
+
+## Metin Alternatifi
+
+Sesli iletişim kuramadığın durumlarda mülakat panelindeki **mesaj kutusunu** kullanarak yazılı olarak da iletişim kurabilirsin.
+
+```
+Gürültülü ortam? → Metin moduna geç
+Mikrofon sorunu? → Chat panelini kullan
+```

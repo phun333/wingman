@@ -1,0 +1,73 @@
+---
+title: Geçmiş ve Raporlar
+description: Mülakat geçmişini görüntüleme ve detaylı raporları inceleme.
+---
+
+## Mülakat Geçmişi
+
+**Geçmiş** sayfasında tüm mülakatlarının kronolojik listesini görebilirsin. Sidebar'dan veya <Kbd keys="Ctrl+K" /> → "Geçmiş" ile ulaş.
+
+### Filtreler
+
+<div className="grid grid-cols-2 md:grid-cols-4 gap-3 my-4">
+  <FeatureCard icon="code" title="Türe Göre">
+    Live Coding, System Design, Phone Screen, Practice.
+  </FeatureCard>
+  <FeatureCard icon="gauge" title="Zorluğa Göre">
+    Easy, Medium, Hard.
+  </FeatureCard>
+  <FeatureCard icon="check" title="Duruma Göre">
+    Tamamlandı, Devam Ediyor, Terk Edildi.
+  </FeatureCard>
+  <FeatureCard icon="calendar" title="Tarihe Göre">
+    Belirli bir tarih aralığında filtrele.
+  </FeatureCard>
+</div>
+
+---
+
+## Detaylı Raporlar
+
+Her tamamlanan mülakatın sonunda detaylı bir **performans raporu** oluşturulur.
+
+### Rapor Bölümleri
+
+<Steps>
+  <Step number={1} title="Genel Değerlendirme">
+    Genel performans puanı (0-100), kategori bazlı puanlama ve AI mülakatçının genel yorumu.
+
+    ```ts title="Örnek rapor puanlaması"
+    const report = {
+      overall: 78,
+      categories: {
+        problemSolving: 82,
+        codeQuality: 75,
+        communication: 80,
+        edgeCases: 65,
+      },
+      summary: "İyi bir yaklaşım sergilendi. Edge case'lere daha fazla dikkat edilmeli.",
+    };
+    ```
+  </Step>
+  <Step number={2} title="Teknik Değerlendirme">
+    Doğru yaklaşımlar, kaçırılan optimizasyonlar, hata ve bug'lar, Big-O karmaşıklık analizi.
+  </Step>
+  <Step number={3} title="İletişim Değerlendirmesi">
+    Düşünce sürecini açıklama becerisi, soru sorma kalitesi, mülakatçıyla etkileşim.
+  </Step>
+  <Step number={4} title="Kod Kalitesi">
+    Okunabilirlik, yapı ve organizasyon, edge case handling, değişken isimlendirme.
+  </Step>
+</Steps>
+
+---
+
+## Rapordan Öğrenme
+
+<Callout type="tip" title="Trend Takibi">
+  Raporları düzenli olarak incele ve tekrarlayan zayıf noktalarına odaklan. Aynı hatayı iki kez yapma!
+</Callout>
+
+<Callout type="info" title="Tekrar Mülakatı">
+  Düşük puan aldığın konularda hemen yeni bir mülakat başlat. Hata yaptığın konuları taze tutarken tekrar çözmek en etkili öğrenme yöntemidir.
+</Callout>

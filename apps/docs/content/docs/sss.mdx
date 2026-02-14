@@ -1,0 +1,110 @@
+---
+title: Sıkça Sorulan Sorular
+description: Wingman hakkında en çok sorulan sorular ve cevapları.
+---
+
+## Genel
+
+### Wingman ücretsiz mi?
+
+Evet, Wingman şu an tamamen **ücretsiz** olarak kullanılabilir. Hesap oluştur ve hemen başla — kredi kartı gerekmez.
+
+### Wingman hangi dillerde çalışır?
+
+Sesli mülakat deneyimi **Türkçe** olarak sunulmaktadır. Kod yazarken JavaScript, TypeScript ve Python kullanabilirsin.
+
+### Hangi tarayıcılar destekleniyor?
+
+Wingman modern tarayıcıların tamamında çalışır:
+
+<StatusIndicator items={[
+  { color: "#22c55e", label: "Chrome", description: "Önerilen — en iyi performans ve mikrofon desteği" },
+  { color: "#22c55e", label: "Firefox", description: "Tam destek" },
+  { color: "#e5a10e", label: "Safari", description: "Çalışır, mikrofon izinleri farklı olabilir" },
+  { color: "#e5a10e", label: "Edge", description: "Chromium tabanlı — Chrome gibi çalışır" }
+]} />
+
+---
+
+## Teknik Sorunlar
+
+### Mikrofonum çalışmıyor
+
+<Steps>
+  <Step number={1} title="Tarayıcı izinlerini kontrol et">
+    Adres çubuğundaki kilit ikonuna tıkla → Mikrofon iznini "İzin Ver" yap.
+  </Step>
+  <Step number={2} title="Başka uygulama kontrol et">
+    Zoom, Discord gibi uygulamalar mikrofonu meşgul ediyor olabilir. Kapat ve tekrar dene.
+  </Step>
+  <Step number={3} title="Tarayıcıyı yeniden başlat">
+    Tüm sekmelerini kapat, tarayıcıyı yeniden aç.
+  </Step>
+  <Step number={4} title="Farklı mikrofon dene">
+    Harici mikrofon veya kulaklık mikrofonunu dene.
+  </Step>
+</Steps>
+
+### Ses gecikmesi yaşıyorum
+
+<Callout type="warning" title="Ağ Bağlantısı">
+  Ses pipeline'ı internet bağlantısına bağlıdır. Stabil bir Wi-Fi veya kablolu bağlantı kullan.
+</Callout>
+
+- VPN kullanıyorsan **kapat** — ekstra gecikme ekler
+- **Chrome** tarayıcısını tercih et
+- Bluetooth kulaklık yerine **kablolu kulaklık** kullan (Bluetooth codec gecikme ekler)
+
+### Yazdığım kod kaydediliyor mu?
+
+Evet! Mülakat sırasında yazdığın tüm kodlar **otomatik olarak kaydedilir**. Mülakat bittiğinde raporda kodun tam hali ve değişiklik geçmişi bulunur.
+
+---
+
+## Mülakatlar
+
+### Mülakat süresinin bir limiti var mı?
+
+Sabit bir süre limiti yoktur. Ancak gerçek mülakat koşullarını simüle etmek için önerilen süreler:
+
+| Tür | Önerilen Süre |
+|-----|---------------|
+| **Live Coding** | 30-45 dakika |
+| **System Design** | 35-45 dakika |
+| **Phone Screen** | 20-30 dakika |
+| **Practice** | Sınırsız |
+
+### Mülakatı yarıda bırakabilir miyim?
+
+Evet, istediğin zaman mülakatı sonlandırabilirsin. Yarıda bırakılan mülakatlar **"Terk Edildi"** olarak kaydedilir.
+
+### Aynı soruyu tekrar çözebilir miyim?
+
+Evet! İstediğin soruyu istediğin kadar tekrar çözebilirsin. Önceki çözümünle karşılaştırma yaparak gelişimini görebilirsin.
+
+---
+
+## Veri ve Gizlilik
+
+### Verilerim güvende mi?
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-3 my-6">
+  <FeatureCard icon="lock" title="Şifre Güvenliği">
+    Tüm şifreler better-auth ile hashlenmiş olarak saklanır.
+  </FeatureCard>
+  <FeatureCard icon="shield" title="Ses Verisi">
+    Ses kayıtları işlendikten sonra kalıcı olarak saklanmaz.
+  </FeatureCard>
+</div>
+
+### Hesabımı silebilir miyim?
+
+Evet — **Ayarlar** sayfasından hesap silme işlemini gerçekleştirebilirsin.
+
+---
+
+## Destek
+
+<Callout type="info" title="Geri Bildirim">
+  Hata bildirimi veya özellik önerisi için Ayarlar sayfasındaki **Geri Bildirim** formunu kullan. Her geri bildirim değerlendirilir.
+</Callout>

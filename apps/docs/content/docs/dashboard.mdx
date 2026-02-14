@@ -1,0 +1,87 @@
+---
+title: Dashboard
+description: Ana kontrol panelinin özellikleri ve kullanımı.
+---
+
+Dashboard, Wingman'e giriş yaptığında karşına çıkan ana sayfadır. Tüm önemli bilgiler ve hızlı erişim butonları burada bulunur.
+
+## Genel Bakış Kartları
+
+Dashboard'un üst kısmında üç temel metriği görebilirsin:
+
+<div className="grid grid-cols-1 md:grid-cols-3 gap-3 my-6">
+  <FeatureCard icon="target" title="Toplam Mülakat">
+    Bugüne kadar yaptığın toplam mülakat sayısı.
+  </FeatureCard>
+  <FeatureCard icon="check" title="Tamamlanan">
+    Başarıyla tamamladığın mülakatlar.
+  </FeatureCard>
+  <FeatureCard icon="calendar" title="Bu Hafta">
+    Bu hafta yaptığın mülakat sayısı ve haftalık hedefin.
+  </FeatureCard>
+</div>
+
+---
+
+## Streak Takibi
+
+<Callout type="fire" title="Günlük Streak">
+  Her gün en az bir mülakat yaparak streak'ini devam ettir! Streak'in motivasyonunu yüksek tutar ve düzenli pratik alışkanlığı kazandırır.
+</Callout>
+
+Dashboard'da günlük streak sayacı gösterilir:
+
+```ts title="Streak hesaplama mantığı"
+// Streak = ardışık gün sayısı
+// Her gün en az 1 mülakat yap
+const streak = {
+  current: 7,       // Mevcut ardışık gün
+  longest: 23,      // En uzun seri
+  todayDone: true,  // Bugün mülakat yapıldı mı?
+};
+```
+
+---
+
+## Hızlı Başlatma Kartları
+
+Dashboard'dan tek tıkla yeni mülakat başlatabilirsin:
+
+<div className="grid grid-cols-2 md:grid-cols-4 gap-3 my-6">
+  <InterviewTypeCard icon="code" title="Live Coding" color="amber">
+    Kodlama mülakatı
+  </InterviewTypeCard>
+  <InterviewTypeCard icon="system-design" title="System Design" color="blue">
+    Sistem tasarımı
+  </InterviewTypeCard>
+  <InterviewTypeCard icon="phone" title="Phone Screen" color="green">
+    Telefon mülakatı
+  </InterviewTypeCard>
+  <InterviewTypeCard icon="practice" title="Practice" color="purple">
+    Serbest pratik
+  </InterviewTypeCard>
+</div>
+
+---
+
+## Son Mülakatlar
+
+Sayfanın alt kısmında en son yaptığın mülakatları görebilirsin:
+
+| Bilgi | Açıklama |
+|-------|----------|
+| **Tür** | Live Coding, System Design, Phone Screen veya Practice |
+| **Zorluk** | Easy, Medium veya Hard |
+| **Durum** | Tamamlandı, Devam Ediyor, Değerlendirildi, Terk Edildi |
+| **Tarih** | Mülakatın yapıldığı tarih ve saat |
+| **Süre** | Toplam mülakat süresi |
+
+---
+
+## Activity Heatmap
+
+GitHub'daki contribution heatmap'e benzer şekilde, **günlük aktivite haritası** mülakat alışkanlıklarını görsel olarak takip etmeni sağlar.
+
+<Callout type="tip" title="Komut Paleti">
+  <Kbd keys="Ctrl+K" /> ile komut paletini açarak herhangi bir sayfaya hızlıca gidebilirsin.
+</Callout>

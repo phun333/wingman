@@ -1,0 +1,86 @@
+---
+title: İlerleme Takibi
+description: Performans istatistikleri, grafikler ve gelişim takibi.
+---
+
+**İlerleme** sayfası, mülakat performansını zaman içinde takip etmeni sağlar. Detaylı grafikler ve istatistiklerle gelişimini gör.
+
+## İstatistik Kartları
+
+<div className="grid grid-cols-2 md:grid-cols-4 gap-3 my-6">
+  <FeatureCard icon="target" title="Toplam Mülakat">
+    Tüm zamanların toplam mülakat sayısı.
+  </FeatureCard>
+  <FeatureCard icon="check" title="Başarı Oranı">
+    Tamamlanan mülakatların yüzdesi.
+  </FeatureCard>
+  <FeatureCard icon="clock" title="Ort. Süre">
+    Ortalama mülakat süresi.
+  </FeatureCard>
+  <FeatureCard icon="flame" title="En Uzun Streak">
+    En uzun ardışık gün serisi.
+  </FeatureCard>
+</div>
+
+---
+
+## Performans Grafikleri
+
+### Haftalık Aktivite
+
+```ts title="Haftalık aktivite verisi"
+const weeklyActivity = [
+  { week: "Hafta 1",  interviews: 3  },
+  { week: "Hafta 2",  interviews: 5  },
+  { week: "Hafta 3",  interviews: 4  },
+  { week: "Hafta 4",  interviews: 7  },
+  { week: "Hafta 5",  interviews: 6  },
+  { week: "Hafta 6",  interviews: 8  },
+  // 📈 Trend: Yukarı yönlü — harika gidiyorsun!
+];
+```
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-3 my-6">
+  <FeatureCard icon="chart" title="Haftalık Aktivite">
+    Son 12 haftanın mülakat aktivitesini bar chart olarak gösterir. Trend çizgisiyle gelişim yönünü takip et.
+  </FeatureCard>
+  <FeatureCard icon="target" title="Konu Bazlı Performans">
+    Her konu için ortalama performans puanı. Güçlü ve zayıf alanlarını radar chart ile karşılaştır.
+  </FeatureCard>
+</div>
+
+### Zorluk Dağılımı
+
+<StatusIndicator items={[
+  { color: "#22c55e", label: "Easy", description: "Temel konularda güven oluştur — %40 oranında çöz" },
+  { color: "#e5a10e", label: "Medium", description: "Asıl mülakat seviyesi — %45 oranında odaklan" },
+  { color: "#ef4444", label: "Hard", description: "Zirve performans — %15 oranında challenge yap" }
+]} />
+
+---
+
+## Activity Heatmap
+
+GitHub tarzı **contribution heatmap** ile günlük aktiviteni takip et. Koyu kareler yoğun günleri, açık kareler az aktiviteyi gösterir.
+
+---
+
+## Gelişim Stratejisi
+
+<Steps>
+  <Step number={1} title="Düzenli Pratik">
+    Her gün en az 1 mülakat yap. Tutarlılık, yoğunluktan daha önemli.
+  </Step>
+  <Step number={2} title="Çeşitlilik">
+    Farklı mülakat türlerini dene. Sadece Live Coding değil, System Design ve Phone Screen da yap.
+  </Step>
+  <Step number={3} title="Zorluk Artır">
+    Rahat hissettikçe bir üst seviyeye geç. Easy %90+ → Medium'a geç.
+  </Step>
+  <Step number={4} title="Zayıf Alanlara Odaklan">
+    Grafiklerde düşük olan konulara ağırlık ver. En çok gelişim burada olur.
+  </Step>
+  <Step number={5} title="Raporları İncele">
+    Her mülakatın raporunu oku, tekrarlayan hataları not al ve üzerinde çalış.
+  </Step>
+</Steps>

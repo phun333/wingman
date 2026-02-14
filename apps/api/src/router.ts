@@ -15,6 +15,7 @@ import { profileRoutes } from "./routes/profile";
 import { leetcodeRoutes } from "./routes/leetcode";
 import { studyPathRoutes } from "./routes/study-paths";
 import { recommendationRoutes } from "./routes/recommendations";
+import { docsSearchRoutes as searchRoutes } from "./routes/docs-search";
 
 export const apiRoutes = new Hono();
 
@@ -83,6 +84,12 @@ apiRoutes.route("/study-paths", studyPathRoutes);
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 apiRoutes.route("/recommendations", recommendationRoutes);
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  Docs search
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+apiRoutes.route("/search", searchRoutes);
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  Users

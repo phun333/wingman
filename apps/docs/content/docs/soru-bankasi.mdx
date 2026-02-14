@@ -1,0 +1,102 @@
+---
+title: Soru Bankası
+description: LeetCode entegrasyonu ve soru havuzu hakkında bilgi.
+---
+
+Wingman, geniş bir soru havuzuna sahiptir ve **LeetCode** entegrasyonu ile zenginleştirilmiştir.
+
+## LeetCode Entegrasyonu
+
+Mülakat başlatırken soru seçim ekranında:
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-3 my-6">
+  <FeatureCard icon="search" title="Soru Arama">
+    İsim, konu veya zorluk seviyesine göre arama yap.
+  </FeatureCard>
+  <FeatureCard icon="shuffle" title="Rastgele Soru">
+    Seçtiğin zorluk seviyesinde rastgele bir soru ile karşılaş.
+  </FeatureCard>
+</div>
+
+---
+
+## Zorluk Seviyeleri
+
+<StatusIndicator items={[
+  { color: "#22c55e", label: "Easy", description: "Temel veri yapıları ve algoritmalar — Array, String, Hash Table" },
+  { color: "#e5a10e", label: "Medium", description: "Orta düzey — Binary Search, BFS/DFS, Dynamic Programming giriş" },
+  { color: "#ef4444", label: "Hard", description: "İleri düzey — DP optimizasyon, Segment Tree, karmaşık graf algoritmaları" }
+]} />
+
+---
+
+## Konu Bazlı Sorular
+
+```ts title="Wingman'deki soru kategorileri"
+const topics = {
+  "Array & String":      "Dizi ve string manipülasyonu",
+  "Linked List":         "Bağlı liste işlemleri",
+  "Stack & Queue":       "Yığın ve kuyruk yapıları",
+  "Tree & Graph":        "Ağaç ve graf traversal (BFS, DFS)",
+  "Dynamic Programming": "Alt problem çözme, memoization, tabulation",
+  "Sorting & Searching": "QuickSort, MergeSort, Binary Search",
+  "Hash Table":          "Hash map kullanımı, çarpışma çözümleri",
+  "Two Pointers":        "İki işaretçi tekniği",
+  "Sliding Window":      "Kayan pencere optimizasyonu",
+  "Backtracking":        "Geri izleme, permütasyon, kombinasyon",
+} as const;
+```
+
+---
+
+## Örnek Soru: Two Sum
+
+```ts title="LeetCode #1 — Two Sum"
+/**
+ * İki sayının toplamı target'a eşit olan indeksleri bul.
+ *
+ * Input:  nums = [2, 7, 11, 15], target = 9
+ * Output: [0, 1]  (çünkü nums[0] + nums[1] = 2 + 7 = 9)
+ */
+function twoSum(nums: number[], target: number): number[] {
+  const map = new Map<number, number>();
+
+  for (let i = 0; i < nums.length; i++) {
+    const complement = target - nums[i];
+
+    if (map.has(complement)) {
+      return [map.get(complement)!, i];
+    }
+
+    map.set(nums[i], i);
+  }
+
+  return []; // Çözüm bulunamadı
+}
+
+// Zaman: O(n) — tek geçiş
+// Alan:  O(n) — hash map
+```
+
+---
+
+## Soru Seçme Stratejisi
+
+<Steps>
+  <Step number={1} title="Seviyene Uygun Başla">
+    Easy'den başla, rahat hissedince Medium'a geç. Temel veri yapılarını güçlendir.
+  </Step>
+  <Step number={2} title="Konu Bazlı Çalış">
+    Bir konuyu tamamla (örn. tüm Array soruları), sonra diğerine geç. Dağılma.
+  </Step>
+  <Step number={3} title="Tekrar Yap">
+    Daha önce çözdüğün soruları 1-2 hafta sonra tekrar çöz. Spaced repetition çalışır.
+  </Step>
+  <Step number={4} title="Zamanla Yarış">
+    Gerçek mülakat koşullarını simüle et — Easy: 15 dk, Medium: 25 dk, Hard: 40 dk.
+  </Step>
+</Steps>
+
+<Callout type="tip" title="Rastgele Soru Modu">
+  Mülakat başlatırken "Rastgele Soru" seçeneğini kullan — gerçek mülakatlardaki sürpriz faktörüne hazırlan.
+</Callout>

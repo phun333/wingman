@@ -28,6 +28,10 @@ export default defineConfig({
         changeOrigin: true,
         rewriteWsOrigin: true,
       },
+      "/docs": {
+        target: "http://localhost:3002",
+        changeOrigin: true,
+      },
     },
   },
 });
