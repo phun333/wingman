@@ -11,6 +11,7 @@ Bu dosya, bu repo üzerinde çalışan AI agent'ları (Claude, Copilot, Cursor, 
 - Use `tsgo` (typescript/native-preview) instead of `tsc` for TypeScript type checking.
 - Use `oxlint` instead of `eslint` for linting.
 - Use `bun` as the package manager and runtime instead of `npm`, `yarn`, `pnpm`, or `node`.
+- Use `bun run typecheck` in root for typecheck. Always.
 
 ## 🏗️ Proje Özeti
 
