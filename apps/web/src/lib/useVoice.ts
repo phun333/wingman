@@ -24,6 +24,7 @@ interface UseVoiceReturn {
   aiText: string;
   error: string | null;
   connected: boolean;
+  voiceStarted: boolean;
   hintLevel: number;
   totalHints: number;
   questionCurrent: number;
@@ -32,6 +33,7 @@ interface UseVoiceReturn {
   recommendedSeconds: number;
   timeWarning: number | null;
   solutionComparison: SolutionComparison | null;
+  startVoiceSession: () => void;
   toggleMic: () => void;
   interrupt: () => void;
   sendCodeUpdate: (code: string, language: CodeLanguage) => void;
@@ -56,6 +58,11 @@ const VAD_SILENCE_MS = 500; // 500ms silence → send (was 1200ms — too slow f
 const VAD_MIN_SPEECH_MS = 250; // 250ms speech to trigger interruption (was 400ms)
 const VAD_SPEECH_CONFIDENCE_MS = 40; // 40ms confidence for faster speech start (was 80ms)
 
+// VAD: higher thresholds during AI speaking to avoid echo/feedback false triggers
+const VAD_INTERRUPT_THRESHOLD = 0.07; // Much higher — only real speech triggers interrupt
+const VAD_INTERRUPT_SPEECH_MS = 500; // 500ms sustained speech needed to interrupt AI
+const VAD_INTERRUPT_CONFIDENCE_MS = 100; // Need 100ms confidence before counting speech
+
 export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
   const [state, setState] = useState<VoicePipelineState>("idle");
   const [micActive, setMicActive] = useState(false);
@@ -64,6 +71,7 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
   const [aiText, setAiText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
+  const [voiceStarted, setVoiceStarted] = useState(false);
   const [hintLevel, setHintLevel] = useState(0);
   const [totalHints, setTotalHints] = useState(0);
   const [questionCurrent, setQuestionCurrent] = useState(0);
@@ -86,6 +94,8 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const unmountedRef = useRef(false);
+  // Ref to track state for VAD (avoids stale closure in volume meter callback)
+  const stateRef = useRef<VoicePipelineState>("idle");
 
   // ─── WebSocket (with auto-reconnect) ─────────────────
 
@@ -141,6 +151,11 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [options.interviewId, options.problemId]);
+
+  // Keep stateRef in sync with React state (for VAD closure)
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   function handleServerMessage(msg: ServerMessage): void {
     switch (msg.type) {
@@ -221,6 +236,48 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
       ws.send(JSON.stringify(msg));
     }
   }
+
+  // ─── Start voice session (one-time action) ──────────
+
+  const startVoiceSession = useCallback(async () => {
+    if (voiceStarted) return;
+    setVoiceStarted(true);
+    // toggleMic will open mic and send start_listening (triggers backend intro)
+    if (!micActive) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            sampleRate: 16000,
+          },
+        });
+        mediaStreamRef.current = stream;
+        setMicActive(true);
+        setError(null);
+        setTranscript("");
+        aiTextAccRef.current = "";
+        setAiText("");
+
+        let lastVolumeUpdate = 0;
+        volumeMeterRef.current = createVolumeMeter(stream, (rms) => {
+          const now = Date.now();
+          if (now - lastVolumeUpdate > 50) {
+            setVolume(rms);
+            lastVolumeUpdate = now;
+          }
+          handleVAD(rms);
+        });
+
+        startRecording(stream);
+        send({ type: "start_listening" });
+      } catch {
+        setError("Mikrofon erişimi reddedildi");
+        setVoiceStarted(false);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voiceStarted, micActive]);
 
   // ─── Mic control ─────────────────────────────────────
 
@@ -307,7 +364,15 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
   // ─── VAD (improved with confidence checking) ─────────
 
   function handleVAD(rms: number): void {
-    if (rms > VAD_THRESHOLD) {
+    const currentState = stateRef.current;
+    const isAISpeaking = currentState === "speaking" || currentState === "processing";
+
+    // Use higher thresholds during AI speaking to prevent echo/feedback false triggers
+    const threshold = isAISpeaking ? VAD_INTERRUPT_THRESHOLD : VAD_THRESHOLD;
+    const minSpeechMs = isAISpeaking ? VAD_INTERRUPT_SPEECH_MS : VAD_MIN_SPEECH_MS;
+    const confidenceMs = isAISpeaking ? VAD_INTERRUPT_CONFIDENCE_MS : VAD_SPEECH_CONFIDENCE_MS;
+
+    if (rms > threshold) {
       // Reset consecutive silence counter
       consecutiveSilenceRef.current = 0;
 
@@ -321,15 +386,15 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
         const confidenceDuration = Date.now() - speechConfidenceTimeRef.current;
 
         // Only start tracking speech after confidence threshold
-        if (confidenceDuration >= VAD_SPEECH_CONFIDENCE_MS && !speechStartTimeRef.current) {
+        if (confidenceDuration >= confidenceMs && !speechStartTimeRef.current) {
           speechStartTimeRef.current = Date.now();
         }
       }
 
       // VAD Interruption: Only if confident speech is detected
-      if ((state === "speaking" || state === "processing") && speechStartTimeRef.current) {
+      if (isAISpeaking && speechStartTimeRef.current) {
         const speechDuration = Date.now() - speechStartTimeRef.current;
-        if (speechDuration >= VAD_MIN_SPEECH_MS) {
+        if (speechDuration >= minSpeechMs) {
           send({ type: "interrupt" });
           playerRef.current.flush();
           aiTextAccRef.current = "";
@@ -339,6 +404,9 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
             startRecording(mediaStreamRef.current);
             send({ type: "start_listening" });
           }
+          // Reset tracking after interrupt
+          speechStartTimeRef.current = null;
+          speechConfidenceTimeRef.current = null;
         }
       }
     } else {
@@ -436,6 +504,7 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
     aiText,
     error,
     connected,
+    voiceStarted,
     hintLevel,
     totalHints,
     questionCurrent,
@@ -444,6 +513,7 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
     recommendedSeconds,
     timeWarning,
     solutionComparison,
+    startVoiceSession,
     toggleMic,
     interrupt,
     sendCodeUpdate,

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Mic, Bot, User, Clock, MicOff, VolumeX, Square, Play } from "lucide-react";
+import { Mic, Bot, User, Clock, MicOff, VolumeX, Square, Play, Volume2, Hand } from "lucide-react";
 import Markdown from "react-markdown";
 
 interface Message {
@@ -19,6 +19,9 @@ interface AIChatProps {
   volume: number;
   onMicClick: () => void;
   connected: boolean;
+  voiceStarted?: boolean;
+  onStartVoice?: () => void;
+  onInterrupt?: () => void;
   onMute?: () => void;
   onStop?: () => void;
   isMuted?: boolean;
@@ -34,6 +37,9 @@ export function AIChat({
   volume,
   onMicClick,
   connected,
+  voiceStarted = true,
+  onStartVoice,
+  onInterrupt,
   onMute,
   onStop,
   isMuted,
@@ -169,164 +175,209 @@ export function AIChat({
         </div>
       </div>
 
-      {/* AI Orb */}
-      <div className="flex items-center gap-3">
-        <div className="relative w-16 h-16">
-          {/* Pulse effect when speaking */}
-          <AnimatePresence>
-            {state === "speaking" && (
-              <motion.div
-                className="absolute inset-0 rounded-full bg-amber/30"
-                initial={{ scale: 1, opacity: 0.5 }}
-                animate={{
-                  scale: [1, pulseScale, 1],
-                  opacity: [0.5, 0.2, 0.5]
-                }}
-                transition={{
-                  duration: 0.3,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-              />
-            )}
-          </AnimatePresence>
-
-          {/* Multiple rings when processing */}
-          {state === "processing" && (
-            <>
-              <motion.div
-                className="absolute inset-0 rounded-full border-2 border-amber/40"
-                animate={{
-                  scale: [1, 1.5],
-                  opacity: [0.6, 0]
-                }}
-                transition={{
-                  duration: 1,
-                  repeat: Infinity,
-                  ease: "easeOut"
-                }}
-              />
-              <motion.div
-                className="absolute inset-0 rounded-full border-2 border-amber/40"
-                animate={{
-                  scale: [1, 1.5],
-                  opacity: [0.6, 0]
-                }}
-                transition={{
-                  duration: 1,
-                  repeat: Infinity,
-                  ease: "easeOut",
-                  delay: 0.3
-                }}
-              />
-            </>
-          )}
-
-          {/* Main orb */}
-          <motion.div
-            onClick={onMicClick}
-            className={`
-              relative w-full h-full rounded-full flex items-center justify-center
-              transition-all duration-300 cursor-pointer
-              ${!connected
-                ? "bg-gradient-to-br from-surface-raised to-surface border border-border-subtle"
-                : micActive
-                ? "bg-gradient-to-br from-success to-success/80 shadow-[0_0_30px_rgba(34,197,94,0.3)]"
-                : state === "speaking"
-                ? "bg-gradient-to-br from-amber to-orange shadow-[0_0_30px_rgba(251,191,36,0.4)]"
-                : state === "processing"
-                ? "bg-gradient-to-br from-amber/80 to-orange/80"
-                : "bg-gradient-to-br from-surface-raised to-surface border border-border-subtle hover:border-text-muted"
-              }
-            `}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+      {/* AI Orb + Controls */}
+      {!voiceStarted && onStartVoice ? (
+        /* ── Start voice session ── */
+        <div className="flex items-center gap-3">
+          <motion.button
+            onClick={onStartVoice}
+            disabled={!connected}
+            className="flex items-center gap-2.5 px-5 py-3 rounded-full
+              bg-success/15 border-2 border-success/40 text-success
+              hover:bg-success/25 hover:border-success/60 hover:shadow-[0_0_20px_rgba(34,197,94,0.12)]
+              transition-all duration-200 cursor-pointer
+              disabled:opacity-40 disabled:cursor-not-allowed"
+            whileHover={connected ? { scale: 1.03 } : {}}
+            whileTap={connected ? { scale: 0.97 } : {}}
           >
-            {!connected ? (
-              <MicOff size={24} className="text-text-muted" />
-            ) : micActive ? (
-              <Mic size={24} className="text-background" />
-            ) : state === "speaking" || state === "processing" ? (
-              <Bot size={24} className="text-background" />
-            ) : (
-              <Mic size={24} className="text-text-muted" />
-            )}
-          </motion.div>
+            <Volume2 size={20} strokeWidth={2} />
+            <span className="text-sm font-medium">Sesli mülakatı başlat</span>
+          </motion.button>
+          <span className="text-[10px] text-text-muted">
+            {connected ? "Mikrofon izni istenecektir" : "Bağlanıyor…"}
+          </span>
         </div>
+      ) : (
+        /* ── Orb + interrupt ── */
+        <>
+          <div className="flex items-center gap-3">
+            <div className="relative w-16 h-16">
+              {/* Pulse effect when speaking */}
+              <AnimatePresence>
+                {state === "speaking" && (
+                  <motion.div
+                    className="absolute inset-0 rounded-full bg-amber/30"
+                    initial={{ scale: 1, opacity: 0.5 }}
+                    animate={{
+                      scale: [1, pulseScale, 1],
+                      opacity: [0.5, 0.2, 0.5]
+                    }}
+                    transition={{
+                      duration: 0.3,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                  />
+                )}
+              </AnimatePresence>
 
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <span className={`text-xs font-medium ${
-              state === "speaking" ? "text-amber" :
-              state === "processing" ? "text-amber/70" :
-              state === "listening" ? "text-success" :
-              "text-text-muted"
-            }`}>
-              {state === "speaking" ? "Konuşuyor" :
-               state === "processing" ? "Düşünüyor" :
-               state === "listening" ? "Dinliyor" :
-               "Hazır"}
-            </span>
+              {/* Multiple rings when processing */}
+              {state === "processing" && (
+                <>
+                  <motion.div
+                    className="absolute inset-0 rounded-full border-2 border-amber/40"
+                    animate={{
+                      scale: [1, 1.5],
+                      opacity: [0.6, 0]
+                    }}
+                    transition={{
+                      duration: 1,
+                      repeat: Infinity,
+                      ease: "easeOut"
+                    }}
+                  />
+                  <motion.div
+                    className="absolute inset-0 rounded-full border-2 border-amber/40"
+                    animate={{
+                      scale: [1, 1.5],
+                      opacity: [0.6, 0]
+                    }}
+                    transition={{
+                      duration: 1,
+                      repeat: Infinity,
+                      ease: "easeOut",
+                      delay: 0.3
+                    }}
+                  />
+                </>
+              )}
 
-            {/* Current latency display */}
-            {currentAIStart && state === "speaking" && (
-              <span className="text-xs text-text-muted">
-                {Date.now() - currentAIStart}ms
-              </span>
-            )}
+              {/* Main orb */}
+              <motion.div
+                onClick={onMicClick}
+                className={`
+                  relative w-full h-full rounded-full flex items-center justify-center
+                  transition-all duration-300 cursor-pointer
+                  ${!connected
+                    ? "bg-gradient-to-br from-surface-raised to-surface border border-border-subtle"
+                    : micActive
+                    ? "bg-gradient-to-br from-success to-success/80 shadow-[0_0_30px_rgba(34,197,94,0.3)]"
+                    : state === "speaking"
+                    ? "bg-gradient-to-br from-amber to-orange shadow-[0_0_30px_rgba(251,191,36,0.4)]"
+                    : state === "processing"
+                    ? "bg-gradient-to-br from-amber/80 to-orange/80"
+                    : "bg-gradient-to-br from-surface-raised to-surface border border-border-subtle hover:border-text-muted"
+                  }
+                `}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {!connected ? (
+                  <MicOff size={24} className="text-text-muted" />
+                ) : micActive ? (
+                  <Mic size={24} className="text-background" />
+                ) : state === "speaking" || state === "processing" ? (
+                  <Bot size={24} className="text-background" />
+                ) : (
+                  <MicOff size={24} className="text-text-muted" />
+                )}
+              </motion.div>
+            </div>
+
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <span className={`text-xs font-medium ${
+                  state === "speaking" ? "text-amber" :
+                  state === "processing" ? "text-amber/70" :
+                  state === "listening" ? "text-success" :
+                  "text-text-muted"
+                }`}>
+                  {state === "speaking" ? "Konuşuyor" :
+                   state === "processing" ? "Düşünüyor" :
+                   state === "listening" ? "Dinliyor" :
+                   "Hazır"}
+                </span>
+
+                {/* Current latency display */}
+                {currentAIStart && state === "speaking" && (
+                  <span className="text-xs text-text-muted">
+                    {Date.now() - currentAIStart}ms
+                  </span>
+                )}
+              </div>
+
+              {/* Volume meter */}
+              {micActive && (
+                <div className="mt-1 h-1 bg-surface-raised rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-success to-amber"
+                    style={{ width: `${volume * 100}%` }}
+                    transition={{ duration: 0.1 }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Volume meter */}
-          {micActive && (
-            <div className="mt-1 h-1 bg-surface-raised rounded-full overflow-hidden">
-              <motion.div
-                className="h-full bg-gradient-to-r from-success to-amber"
-                style={{ width: `${volume * 100}%` }}
-                transition={{ duration: 0.1 }}
-              />
-            </div>
-          )}
-        </div>
-      </div>
+          {/* Interrupt + Control Buttons */}
+          <div className="flex gap-2 justify-center">
+            {/* Interrupt button — visible when AI is speaking */}
+            <AnimatePresence>
+              {(state === "speaking" || state === "processing") && onInterrupt && (
+                <motion.button
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0, opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  onClick={onInterrupt}
+                  className="h-8 px-3 rounded-full flex items-center gap-1.5
+                    border border-danger/40 bg-danger/10 text-danger
+                    hover:bg-danger/20 hover:border-danger/60
+                    transition-colors duration-150 cursor-pointer"
+                  title="AI'ı sustur"
+                >
+                  <Hand size={12} strokeWidth={2} />
+                  <span className="text-[10px] font-medium">Sustur</span>
+                </motion.button>
+              )}
+            </AnimatePresence>
 
-      {/* Control Buttons */}
-      {connected && (onMute || onStop) && (
-        <div className="flex gap-2 justify-center">
-          {onMute && (
-            <motion.button
-              onClick={onMute}
-              className={`
-                w-8 h-8 rounded-full flex items-center justify-center
-                transition-all duration-200
-                ${isMuted
-                  ? "bg-red-500/20 border border-red-500/40 text-red-400"
-                  : "bg-surface-raised border border-border-subtle text-text-muted hover:border-text-muted"
-                }
-              `}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              title={isMuted ? "Sesi Aç" : "Sesi Kapat"}
-            >
-              <VolumeX size={14} />
-            </motion.button>
-          )}
+            {onMute && (
+              <motion.button
+                onClick={onMute}
+                className={`
+                  w-8 h-8 rounded-full flex items-center justify-center
+                  transition-all duration-200
+                  ${isMuted
+                    ? "bg-red-500/20 border border-red-500/40 text-red-400"
+                    : "bg-surface-raised border border-border-subtle text-text-muted hover:border-text-muted"
+                  }
+                `}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                title={isMuted ? "Sesi Aç" : "Sesi Kapat"}
+              >
+                <VolumeX size={14} />
+              </motion.button>
+            )}
 
-          {onStop && (
-            <motion.button
-              onClick={onStop}
-              className="
-                w-8 h-8 rounded-full flex items-center justify-center
-                bg-red-500/20 border border-red-500/40 text-red-400
-                hover:bg-red-500/30 transition-all duration-200
-              "
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              title="Durdur"
-            >
-              <Square size={12} />
-            </motion.button>
-          )}
-        </div>
+            {onStop && (
+              <motion.button
+                onClick={onStop}
+                className="
+                  w-8 h-8 rounded-full flex items-center justify-center
+                  bg-red-500/20 border border-red-500/40 text-red-400
+                  hover:bg-red-500/30 transition-all duration-200
+                "
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                title="Durdur"
+              >
+                <Square size={12} />
+              </motion.button>
+            )}
+          </div>
+        </>
       )}
 
       {/* Interview Start Button - Right Side */}

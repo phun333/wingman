@@ -3,7 +3,7 @@ import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { motion, AnimatePresence } from "motion/react";
 import { Badge } from "@/components/ui/Badge";
-import { Clock, HardDrive, Bot, Mic, Volume2, Brain, MessageSquare, Sparkles, Zap, User, GripHorizontal } from "lucide-react";
+import { Clock, HardDrive, Bot, Mic, MicOff, Volume2, Brain, MessageSquare, Sparkles, Zap, User, GripHorizontal, Hand } from "lucide-react";
 import type { Problem } from "@ffh/types";
 
 interface Message {
@@ -23,6 +23,9 @@ interface ProblemPanelProps {
   volume?: number;
   onMicClick?: () => void;
   connected?: boolean;
+  voiceStarted?: boolean;
+  onStartVoice?: () => void;
+  onInterrupt?: () => void;
   hintLevel?: number;
   totalHints?: number;
   onRequestHint?: () => void;
@@ -46,6 +49,9 @@ export function ProblemPanel({
   volume = 0,
   onMicClick,
   connected = false,
+  voiceStarted = false,
+  onStartVoice,
+  onInterrupt,
   hintLevel = 0,
   totalHints = 0,
   onRequestHint,
@@ -359,79 +365,113 @@ export function ProblemPanel({
 
           {/* Control Buttons */}
           <div className="flex items-center justify-center gap-3 flex-shrink-0">
-            {/* Main Mic Button */}
-            <motion.button
-              onClick={onMicClick}
-              disabled={!connected}
-              className={`
-                relative w-14 h-14 rounded-full flex items-center justify-center
-                transition-all duration-300 shadow-lg
-                ${!connected
-                  ? "bg-surface-raised border-2 border-border-subtle cursor-not-allowed opacity-50"
-                  : micActive
-                  ? "bg-gradient-to-br from-success to-emerald shadow-[0_0_20px_rgba(34,197,94,0.3)]"
-                  : state === "speaking"
-                  ? "bg-gradient-to-br from-amber to-orange shadow-[0_0_20px_rgba(251,191,36,0.3)]"
-                  : state === "processing"
-                  ? "bg-gradient-to-br from-amber/80 to-orange/80"
-                  : "bg-surface-raised border-2 border-border hover:border-amber hover:shadow-md"
-                }
-              `}
-              whileHover={connected ? { scale: 1.05 } : {}}
-              whileTap={connected ? { scale: 0.95 } : {}}
-            >
-              {!connected ? (
-                <Mic size={18} className="text-text-muted" />
-              ) : micActive ? (
-                <Mic size={18} className="text-white" />
-              ) : state === "speaking" ? (
-                <Volume2 size={18} className="text-white" />
-              ) : state === "processing" ? (
-                <Brain size={18} className="text-white" />
-              ) : (
-                <MessageSquare size={18} className="text-text-muted" />
-              )}
-            </motion.button>
-
-            {/* Volume indicator */}
-            {micActive && (
-              <div className="w-20 h-1 bg-surface-raised rounded-full overflow-hidden">
-                <motion.div
-                  className="h-full bg-gradient-to-r from-success to-amber"
-                  style={{ width: `${volume * 100}%` }}
-                  transition={{ duration: 0.05 }}
-                />
-              </div>
-            )}
-
-            {/* Start Interview Button */}
-            {interviewStatus === "created" && onStartInterview && (
+            {!voiceStarted ? (
+              /* ── Start voice session ── */
               <motion.button
-                onClick={onStartInterview}
-                className="
-                  px-4 py-2 rounded-lg
-                  bg-gradient-to-r from-green-500 to-emerald-500
-                  text-white text-xs font-medium
-                  shadow-md hover:shadow-lg
-                  transition-all duration-200
-                  flex items-center gap-1.5
-                "
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                onClick={onStartVoice}
+                disabled={!connected}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full
+                  bg-success/15 border-2 border-success/40 text-success
+                  hover:bg-success/25 hover:border-success/60
+                  transition-all duration-200 cursor-pointer
+                  disabled:opacity-40 disabled:cursor-not-allowed"
+                whileHover={connected ? { scale: 1.03 } : {}}
+                whileTap={connected ? { scale: 0.97 } : {}}
               >
-                <Zap size={12} />
-                Başlat
+                <Volume2 size={16} strokeWidth={2} />
+                <span className="text-xs font-medium">Sesli mülakatı başlat</span>
               </motion.button>
+            ) : (
+              /* ── Mic + interrupt ── */
+              <>
+                {/* Main Mic Button */}
+                <motion.button
+                  onClick={onMicClick}
+                  disabled={!connected}
+                  className={`
+                    relative w-14 h-14 rounded-full flex items-center justify-center
+                    transition-all duration-300 shadow-lg
+                    ${!connected
+                      ? "bg-surface-raised border-2 border-border-subtle cursor-not-allowed opacity-50"
+                      : micActive
+                      ? "bg-gradient-to-br from-success to-emerald shadow-[0_0_20px_rgba(34,197,94,0.3)]"
+                      : "bg-surface-raised border-2 border-border hover:border-amber hover:shadow-md"
+                    }
+                  `}
+                  whileHover={connected ? { scale: 1.05 } : {}}
+                  whileTap={connected ? { scale: 0.95 } : {}}
+                >
+                  {!connected ? (
+                    <MicOff size={18} className="text-text-muted" />
+                  ) : micActive ? (
+                    <Mic size={18} className="text-white" />
+                  ) : (
+                    <MicOff size={18} className="text-text-muted" />
+                  )}
+                </motion.button>
+
+                {/* Volume indicator */}
+                {micActive && (
+                  <div className="w-20 h-1 bg-surface-raised rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full bg-gradient-to-r from-success to-amber"
+                      style={{ width: `${volume * 100}%` }}
+                      transition={{ duration: 0.05 }}
+                    />
+                  </div>
+                )}
+
+                {/* Interrupt button — visible when AI is speaking */}
+                <AnimatePresence>
+                  {(state === "speaking" || state === "processing") && (
+                    <motion.button
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0, opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                      onClick={onInterrupt}
+                      className="h-10 px-3 rounded-full flex items-center gap-1.5
+                        border-2 border-danger/40 bg-danger/10 text-danger
+                        hover:bg-danger/20 hover:border-danger/60
+                        transition-colors duration-150 cursor-pointer"
+                      title="AI'ı sustur"
+                    >
+                      <Hand size={14} strokeWidth={2} />
+                      <span className="text-[10px] font-medium">Sustur</span>
+                    </motion.button>
+                  )}
+                </AnimatePresence>
+
+                {/* Start Interview Button */}
+                {interviewStatus === "created" && onStartInterview && (
+                  <motion.button
+                    onClick={onStartInterview}
+                    className="
+                      px-4 py-2 rounded-lg
+                      bg-gradient-to-r from-green-500 to-emerald-500
+                      text-white text-xs font-medium
+                      shadow-md hover:shadow-lg
+                      transition-all duration-200
+                      flex items-center gap-1.5
+                    "
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Zap size={12} />
+                    Başlat
+                  </motion.button>
+                )}
+              </>
             )}
           </div>
 
           <p className="text-center text-[10px] text-text-muted mt-2 flex-shrink-0">
-            {!connected
-              ? "Bağlantı kuruluyor..."
-              : state === "speaking"
-              ? "AI konuşuyor..."
-              : state === "processing"
-              ? "Yanıt hazırlanıyor..."
+            {!voiceStarted
+              ? connected
+                ? "Mikrofon izni istenecektir"
+                : "Bağlantı kuruluyor..."
+              : state === "speaking" || state === "processing"
+              ? "Konuşarak veya butona tıklayarak susturabilirsiniz"
               : state === "listening"
               ? "Konuşmaya devam edin..."
               : micActive

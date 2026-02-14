@@ -460,12 +460,11 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
               }, 500); // Wait 500ms for problem to load
             }
           } else if (this.interview.type === "system-design") {
-            // System design: AI introduces the design problem verbally
-            console.log("[start_listening] System design — triggering AI intro for design problem...");
+            // System design: short greeting, problem is visible in the panel
+            console.log("[start_listening] System design — playing short greeting...");
 
             if (this.currentDesignProblem?.title) {
-              // Generate a natural intro for the design problem
-              const introText = `Merhaba! Bugünkü system design mülakatımıza hoş geldin. Seninle "${this.currentDesignProblem.title}" konusunu tartışacağız. ${this.currentDesignProblem.description} Şimdi senden bu sistemi tasarlamanı istiyorum. Önce gereksinimleri birlikte netleştirelim. Sence bu sistemin en önemli fonksiyonel gereksinimleri neler olmalı?`;
+              const introText = `Selam! Bu mülakatında sana ben yardımcı olacağım. Problemi sol panelde görebilirsin. Hazır olduğunda başlayalım.`;
 
               this.send({ type: "ai_text", text: introText, done: true });
 

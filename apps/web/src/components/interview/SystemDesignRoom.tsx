@@ -8,7 +8,7 @@ import { WhiteboardCanvas } from "./whiteboard/WhiteboardCanvas";
 import { DesignProblemPanel } from "./whiteboard/DesignProblemPanel";
 import { ResizableSplitter } from "./ResizableSplitter";
 import { downloadWhiteboardPng, downloadWhiteboardSvg } from "@/lib/whiteboard-export";
-import { Mic, Hand, Download, Image, FileCode2, Bot, MessageCircle, Clock } from "lucide-react";
+import { Mic, MicOff, Hand, Download, Image, FileCode2, Bot, MessageCircle, Clock, Volume2 } from "lucide-react";
 import type {
   VoicePipelineState,
   Interview,
@@ -78,7 +78,9 @@ export function SystemDesignRoom({ interviewId }: SystemDesignRoomProps) {
     aiText,
     error,
     connected,
+    voiceStarted,
     timeWarning,
+    startVoiceSession,
     toggleMic,
     interrupt,
     sendWhiteboardUpdate,
@@ -252,90 +254,136 @@ export function SystemDesignRoom({ interviewId }: SystemDesignRoomProps) {
       {/* Voice bar at bottom */}
       <div className="border-t border-border-subtle bg-surface/80 backdrop-blur-sm shrink-0">
         <div className="flex items-center gap-4 px-5 py-3">
-          {/* Mic button */}
-          <div className="relative">
-            {micActive && (
-              <motion.div
-                animate={{
-                  scale: 1 + volume * 6,
-                  opacity: 0.3 + volume * 2,
-                }}
-                transition={{ duration: 0.1 }}
-                className="absolute inset-0 rounded-full bg-success/20 pointer-events-none"
-                style={{ margin: -6 }}
-              />
-            )}
-            <button
-              onClick={handleMicClick}
-              disabled={!connected}
-              className={`
-                relative h-12 w-12 rounded-full flex items-center justify-center
-                border-2 transition-all duration-200 cursor-pointer
-                disabled:opacity-40 disabled:cursor-not-allowed
-                ${
-                  state === "speaking" || state === "processing"
-                    ? "border-danger/60 bg-danger/15 text-danger hover:bg-danger/20"
-                    : micActive
-                      ? "border-success bg-success/15 text-success shadow-[0_0_20px_rgba(34,197,94,0.15)] hover:bg-success/20"
-                      : "border-border bg-surface-raised text-text-muted hover:border-text-muted hover:text-text"
-                }
-              `}
-            >
-              {state === "speaking" || state === "processing" ? (
-                <Hand size={18} strokeWidth={2} />
-              ) : (
-                <Mic size={18} strokeWidth={2} />
-              )}
-            </button>
-          </div>
-
-          {/* Status + texts */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <span
-                className={`h-1.5 w-1.5 rounded-full shrink-0
-                  ${state === "idle" ? "bg-text-muted" : ""}
-                  ${state === "listening" ? "bg-success animate-pulse" : ""}
-                  ${state === "processing" ? "bg-amber animate-pulse" : ""}
-                  ${state === "speaking" ? "bg-info animate-pulse" : ""}
-                `}
-              />
+          {!voiceStarted ? (
+            /* ── Start voice session button ── */
+            <div className="flex items-center gap-3 w-full">
+              <button
+                onClick={startVoiceSession}
+                disabled={!connected}
+                className="flex items-center gap-2.5 px-5 py-2.5 rounded-full
+                  bg-success/15 border-2 border-success/40 text-success
+                  hover:bg-success/25 hover:border-success/60 hover:shadow-[0_0_20px_rgba(34,197,94,0.12)]
+                  transition-all duration-200 cursor-pointer
+                  disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Volume2 size={18} strokeWidth={2} />
+                <span className="text-sm font-medium">Sesli mülakatı başlat</span>
+              </button>
               <span className="text-xs text-text-muted">
-                {stateLabels[state]}
+                {connected ? "Mikrofon izni istenecektir" : "Bağlantı kuruluyor…"}
               </span>
             </div>
-
-            <AnimatePresence mode="wait">
-              {aiText && (
-                <motion.p
-                  key="ai"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="text-sm text-text-secondary truncate flex items-center gap-1.5"
+          ) : (
+            /* ── Mic controls (after voice started) ── */
+            <>
+              <div className="relative">
+                {micActive && (
+                  <motion.div
+                    animate={{
+                      scale: 1 + volume * 6,
+                      opacity: 0.3 + volume * 2,
+                    }}
+                    transition={{ duration: 0.1 }}
+                    className="absolute inset-0 rounded-full bg-success/20 pointer-events-none"
+                    style={{ margin: -6 }}
+                  />
+                )}
+                <button
+                  onClick={handleMicClick}
+                  disabled={!connected}
+                  className={`
+                    relative h-12 w-12 rounded-full flex items-center justify-center
+                    border-2 transition-all duration-200 cursor-pointer
+                    disabled:opacity-40 disabled:cursor-not-allowed
+                    ${
+                      state === "speaking" || state === "processing"
+                        ? "border-danger/60 bg-danger/15 text-danger hover:bg-danger/20"
+                        : micActive
+                          ? "border-success bg-success/15 text-success shadow-[0_0_20px_rgba(34,197,94,0.15)] hover:bg-success/20"
+                          : "border-border bg-surface-raised text-text-muted hover:border-text-muted hover:text-text"
+                    }
+                  `}
                 >
-                  <Bot size={13} className="text-amber shrink-0" /> {aiText}
-                </motion.p>
-              )}
-              {!aiText && transcript && (
-                <motion.p
-                  key="user"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="text-sm text-text-muted truncate flex items-center gap-1.5"
-                >
-                  <MessageCircle size={13} className="text-info shrink-0" /> {transcript}
-                </motion.p>
-              )}
-            </AnimatePresence>
-          </div>
+                  {state === "speaking" || state === "processing" ? (
+                    <Hand size={18} strokeWidth={2} />
+                  ) : micActive ? (
+                    <Mic size={18} strokeWidth={2} />
+                  ) : (
+                    <MicOff size={18} strokeWidth={2} />
+                  )}
+                </button>
+              </div>
 
-          {/* Error */}
-          {error && (
-            <span className="text-xs text-danger bg-danger/10 border border-danger/20 rounded-md px-2 py-1 shrink-0">
-              {error}
-            </span>
+              {/* Interrupt button — visible when AI is speaking */}
+              <AnimatePresence>
+                {(state === "speaking" || state === "processing") && (
+                  <motion.button
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                    onClick={interrupt}
+                    className="h-10 px-3 rounded-full flex items-center gap-1.5
+                      border-2 border-danger/40 bg-danger/10 text-danger
+                      hover:bg-danger/20 hover:border-danger/60
+                      transition-colors duration-150 cursor-pointer shrink-0"
+                    title="AI'ı sustur"
+                  >
+                    <Hand size={14} strokeWidth={2} />
+                    <span className="text-xs font-medium">Sustur</span>
+                  </motion.button>
+                )}
+              </AnimatePresence>
+
+              {/* Status + texts */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full shrink-0
+                      ${state === "idle" ? "bg-text-muted" : ""}
+                      ${state === "listening" ? "bg-success animate-pulse" : ""}
+                      ${state === "processing" ? "bg-amber animate-pulse" : ""}
+                      ${state === "speaking" ? "bg-info animate-pulse" : ""}
+                    `}
+                  />
+                  <span className="text-xs text-text-muted">
+                    {stateLabels[state]}
+                  </span>
+                </div>
+
+                <AnimatePresence mode="wait">
+                  {aiText && (
+                    <motion.p
+                      key="ai"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="text-sm text-text-secondary truncate flex items-center gap-1.5"
+                    >
+                      <Bot size={13} className="text-amber shrink-0" /> {aiText}
+                    </motion.p>
+                  )}
+                  {!aiText && transcript && (
+                    <motion.p
+                      key="user"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="text-sm text-text-muted truncate flex items-center gap-1.5"
+                    >
+                      <MessageCircle size={13} className="text-info shrink-0" /> {transcript}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Error */}
+              {error && (
+                <span className="text-xs text-danger bg-danger/10 border border-danger/20 rounded-md px-2 py-1 shrink-0">
+                  {error}
+                </span>
+              )}
+            </>
           )}
         </div>
       </div>

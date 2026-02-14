@@ -6,7 +6,7 @@ import { useVoice } from "@/lib/useVoice";
 import { getInterview, completeInterview, abandonInterview, executeCode as executeCodeApi, getRandomProblem, getProblem, startInterview, getLeetcodeProblem } from "@/lib/api";
 import { useInterviewsStore } from "@/stores";
 import { typeLabels } from "@/lib/constants";
-import { Mic, Hand, Coffee, Clock, AlertTriangle, CheckCircle2, X } from "lucide-react";
+import { Mic, MicOff, Hand, Coffee, Clock, AlertTriangle, CheckCircle2, X, Volume2 } from "lucide-react";
 import type {
   VoicePipelineState,
   Interview,
@@ -124,6 +124,7 @@ export function InterviewRoomPage() {
     aiText,
     error,
     connected,
+    voiceStarted,
     hintLevel,
     totalHints,
     questionCurrent,
@@ -132,6 +133,7 @@ export function InterviewRoomPage() {
     recommendedSeconds,
     timeWarning,
     solutionComparison,
+    startVoiceSession,
     toggleMic,
     interrupt,
     sendCodeUpdate,
@@ -377,9 +379,12 @@ export function InterviewRoomPage() {
           aiText={aiText}
           error={error}
           connected={connected}
+          voiceStarted={voiceStarted}
           elapsed={elapsed}
           formatTime={formatTime}
           onMicClick={handleMicClick}
+          onStartVoice={startVoiceSession}
+          onInterrupt={interrupt}
           onEnd={() => setShowEndModal(true)}
           questionCurrent={questionCurrent}
           questionTotal={questionTotal}
@@ -471,6 +476,9 @@ export function InterviewRoomPage() {
                 volume={volume}
                 onMicClick={handleMicClick}
                 connected={connected}
+                voiceStarted={voiceStarted}
+                onStartVoice={startVoiceSession}
+                onInterrupt={interrupt}
                 hintLevel={hintLevel}
                 totalHints={totalHints}
                 onRequestHint={requestHint}
@@ -546,9 +554,12 @@ interface VoiceOnlyRoomProps {
   aiText: string;
   error: string | null;
   connected: boolean;
+  voiceStarted: boolean;
   elapsed: number;
   formatTime: (s: number) => string;
   onMicClick: () => void;
+  onStartVoice: () => void;
+  onInterrupt: () => void;
   onEnd: () => void;
   questionCurrent: number;
   questionTotal: number;
@@ -567,9 +578,12 @@ function VoiceOnlyRoom({
   aiText,
   error,
   connected,
+  voiceStarted,
   elapsed,
   formatTime,
   onMicClick,
+  onStartVoice,
+  onInterrupt,
   onEnd,
   questionCurrent,
   questionTotal,
@@ -677,6 +691,9 @@ function VoiceOnlyRoom({
           volume={volume}
           onMicClick={onMicClick}
           connected={connected}
+          voiceStarted={voiceStarted}
+          onStartVoice={onStartVoice}
+          onInterrupt={onInterrupt}
           interviewStatus={interview?.status}
           onStartInterview={onStartInterview}
         />
@@ -732,49 +749,90 @@ function VoiceOnlyRoom({
 
       {/* Bottom controls */}
       <div className="border-t border-border-subtle bg-surface/80 backdrop-blur-sm py-5">
-        <div className="flex items-center justify-center gap-6">
-          <div className="relative">
-            {micActive && (
-              <motion.div
-                animate={{ scale: 1 + volume * 6, opacity: 0.3 + volume * 2 }}
-                transition={{ duration: 0.1 }}
-                className="absolute inset-0 rounded-full bg-success/20 pointer-events-none"
-                style={{ margin: -8 }}
-              />
-            )}
+        {!voiceStarted ? (
+          /* ── Start voice session ── */
+          <div className="flex flex-col items-center gap-3">
             <button
-              onClick={onMicClick}
+              onClick={onStartVoice}
               disabled={!connected}
-              className={`
-                relative h-16 w-16 rounded-full flex items-center justify-center
-                border-2 transition-all duration-200 cursor-pointer
-                disabled:opacity-40 disabled:cursor-not-allowed
-                ${
-                  state === "speaking" || state === "processing"
-                    ? "border-danger/60 bg-danger/15 text-danger hover:bg-danger/20"
-                    : micActive
+              className="flex items-center gap-3 px-7 py-3.5 rounded-full
+                bg-success/15 border-2 border-success/40 text-success
+                hover:bg-success/25 hover:border-success/60 hover:shadow-[0_0_24px_rgba(34,197,94,0.15)]
+                transition-all duration-200 cursor-pointer
+                disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Volume2 size={22} strokeWidth={2} />
+              <span className="text-base font-medium">Sesli mülakatı başlat</span>
+            </button>
+            <p className="text-xs text-text-muted">
+              {connected ? "Mikrofon izni istenecektir" : "Bağlantı kuruluyor…"}
+            </p>
+          </div>
+        ) : (
+          /* ── Mic + interrupt controls ── */
+          <>
+            <div className="flex items-center justify-center gap-4">
+              {/* Mic button */}
+              <div className="relative">
+                {micActive && (
+                  <motion.div
+                    animate={{ scale: 1 + volume * 6, opacity: 0.3 + volume * 2 }}
+                    transition={{ duration: 0.1 }}
+                    className="absolute inset-0 rounded-full bg-success/20 pointer-events-none"
+                    style={{ margin: -8 }}
+                  />
+                )}
+                <button
+                  onClick={onMicClick}
+                  disabled={!connected}
+                  className={`
+                    relative h-16 w-16 rounded-full flex items-center justify-center
+                    border-2 transition-all duration-200 cursor-pointer
+                    disabled:opacity-40 disabled:cursor-not-allowed
+                    ${micActive
                       ? "border-success bg-success/15 text-success shadow-[0_0_30px_rgba(34,197,94,0.2)] hover:bg-success/20"
                       : "border-border bg-surface-raised text-text-muted hover:border-text-muted hover:text-text"
-                }
-              `}
-            >
-              {state === "speaking" || state === "processing" ? (
-                <Hand size={24} strokeWidth={2} />
-              ) : (
-                <Mic size={24} strokeWidth={2} />
-              )}
-            </button>
-          </div>
-        </div>
-        <p className="text-center text-xs text-text-muted mt-3">
-          {!connected
-            ? "Bağlantı kuruluyor…"
-            : state === "speaking" || state === "processing"
-              ? "Araya girmek için butona tıklayın"
-              : micActive
-                ? "Konuşun — sessizlikte otomatik gönderilir"
-                : "Mikrofonu açmak için butona tıklayın"}
-        </p>
+                    }
+                  `}
+                >
+                  {micActive ? (
+                    <Mic size={24} strokeWidth={2} />
+                  ) : (
+                    <MicOff size={24} strokeWidth={2} />
+                  )}
+                </button>
+              </div>
+
+              {/* Interrupt button — visible when AI is speaking */}
+              <AnimatePresence>
+                {(state === "speaking" || state === "processing") && (
+                  <motion.button
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                    onClick={onInterrupt}
+                    className="h-14 px-5 rounded-full flex items-center gap-2
+                      border-2 border-danger/40 bg-danger/10 text-danger
+                      hover:bg-danger/20 hover:border-danger/60
+                      transition-colors duration-150 cursor-pointer"
+                    title="AI'ı sustur"
+                  >
+                    <Hand size={18} strokeWidth={2} />
+                    <span className="text-sm font-medium">Sustur</span>
+                  </motion.button>
+                )}
+              </AnimatePresence>
+            </div>
+            <p className="text-center text-xs text-text-muted mt-3">
+              {state === "speaking" || state === "processing"
+                ? "Konuşarak veya butona tıklayarak susturabilirsiniz"
+                : micActive
+                  ? "Konuşun — sessizlikte otomatik gönderilir"
+                  : "Mikrofonu açmak için butona tıklayın"}
+            </p>
+          </>
+        )}
       </div>
     </div>
   );
