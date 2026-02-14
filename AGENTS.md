@@ -2,7 +2,15 @@
 
 Bu dosya, bu repo üzerinde çalışan AI agent'ları (Claude, Copilot, Cursor, vb.) için talimatlar içerir.
 
----
+# Important
+- DO NOT EVER OPEN DEV SERVER FOR ANYTHING. IT IS ALREADY OPENED AND RUNNING LOCALLY. IF YOU OPEN ANOTHER ONE, YOU WILL CAUSE CONFLICTS AND ERRORS.
+
+# Tool Preferences
+
+- Use `rg` (ripgrep) instead of `grep` for searching files and text.
+- Use `tsgo` (typescript/native-preview) instead of `tsc` for TypeScript type checking.
+- Use `oxlint` instead of `eslint` for linting.
+- Use `bun` as the package manager and runtime instead of `npm`, `yarn`, `pnpm`, or `node`.
 
 ## 🏗️ Proje Özeti
 
