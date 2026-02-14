@@ -595,152 +595,221 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
   </div>
 
   <!-- ═══════════════════════════════════════════════
-       SLIDE 4 — Voice Pipeline
+       SLIDE 4 — Voice Pipeline (Visual)
        ═══════════════════════════════════════════════ -->
   <div class="slide" data-slide="3">
-    <div class="slide-content flex flex-col gap-8">
+    <div class="slide-content flex flex-col gap-6" style="max-width:1200px;">
       <div class="reveal">
         <p class="t-amber t-mono" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px;">Çekirdek Özellik</p>
-        <h2 style="font-size:40px;">Sesli AI <span class="t-amber">Pipeline</span></h2>
-        <p class="t-secondary" style="margin-top:6px; font-size:15px;">Neden bu kadar hızlı konuşuyor? İşte arkadaki trick'ler.</p>
+        <h2 style="font-size:38px;">Sesli AI <span class="t-amber">Pipeline</span></h2>
       </div>
 
-      <!-- Pipeline flow -->
-      <div class="reveal flex items-center justify-center gap-4" style="flex-wrap:wrap;">
-        <div class="pipeline-step">
-          <div class="pipeline-icon" style="background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.2);"><i class="ri-mic-line t-success icon-lg"></i></div>
-          <div>
-            <p style="font-size:14px; font-weight:600;">Mikrofon</p>
-            <p class="t-muted" style="font-size:11px;">WebM/Opus 16kHz</p>
-          </div>
-        </div>
-        <span class="pipeline-arrow"><i class="ri-arrow-right-line"></i></span>
-        <div class="pipeline-step" style="border-color:rgba(59,130,246,0.2);">
-          <div class="pipeline-icon" style="background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.2);"><i class="ri-file-text-line t-info icon-lg"></i></div>
-          <div>
-            <p style="font-size:14px; font-weight:600;">Freya <span class="t-info">STT</span></p>
-            <p class="t-muted" style="font-size:11px;">Türkçe transkript</p>
-          </div>
-        </div>
-        <span class="pipeline-arrow"><i class="ri-arrow-right-line"></i></span>
-        <div class="pipeline-step" style="border-color:rgba(229,161,14,0.2);">
-          <div class="pipeline-icon" style="background:rgba(229,161,14,0.1); border:1px solid rgba(229,161,14,0.2);"><i class="ri-brain-line t-amber icon-lg"></i></div>
-          <div>
-            <p style="font-size:14px; font-weight:600;"><span class="t-amber">LLM</span> Streaming</p>
-            <p class="t-muted" style="font-size:11px;">OpenRouter SSE</p>
-          </div>
-        </div>
-        <span class="pipeline-arrow"><i class="ri-arrow-right-line"></i></span>
-        <div class="pipeline-step" style="border-color:rgba(229,161,14,0.2);">
-          <div class="pipeline-icon" style="background:rgba(229,161,14,0.1); border:1px solid rgba(229,161,14,0.2);"><i class="ri-volume-up-line t-amber icon-lg"></i></div>
-          <div>
-            <p style="font-size:14px; font-weight:600;">Freya <span class="t-amber">TTS</span></p>
-            <p class="t-muted" style="font-size:11px;">PCM16 streaming</p>
-          </div>
+      <!-- ═══ MAIN VISUAL: Clean Pipeline Diagram ═══ -->
+      <div class="reveal">
+        <div style="width:100%; height:380px; padding:16px; border-radius:16px; border:1px solid var(--color-border-subtle); background:#0d0d12; position:relative; overflow:hidden;">
+          <svg width="100%" height="100%" viewBox="0 0 1120 360" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <marker id="arrowAmber" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#e5a10e" opacity="0.8"/></marker>
+              <marker id="arrowGreen" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#22c55e" opacity="0.8"/></marker>
+              <marker id="arrowBlue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6" opacity="0.8"/></marker>
+            </defs>
+
+            <!-- ═══════ TOP ROW: Main Pipeline Flow ═══════ -->
+
+            <!-- Step 1: Microphone -->
+            <rect x="20" y="28" width="150" height="68" rx="12" fill="rgba(34,197,94,0.06)" stroke="#22c55e" stroke-width="1.5"/>
+            <text x="95" y="56" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="16" font-weight="700" fill="#22c55e">🎙️ Mikrofon</text>
+            <text x="95" y="78" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#8b8b96">WebM/Opus · 16kHz</text>
+
+            <!-- Arrow 1→2 -->
+            <line x1="172" y1="62" x2="218" y2="62" stroke="#22c55e" stroke-width="2" marker-end="url(#arrowGreen)" opacity="0.7"/>
+
+            <!-- Step 2: Silence Detection -->
+            <rect x="224" y="28" width="175" height="68" rx="12" fill="rgba(34,197,94,0.06)" stroke="#22c55e" stroke-width="1.5"/>
+            <text x="311" y="56" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="15" font-weight="700" fill="#22c55e">📊 Sessizlik Algıla</text>
+            <text x="311" y="78" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#8b8b96">Volume RMS · 1.5s bekle</text>
+
+            <!-- "No Neural VAD" callout -->
+            <rect x="250" y="102" width="126" height="24" rx="6" fill="rgba(229,161,14,0.12)" stroke="#e5a10e" stroke-width="1.5" stroke-dasharray="5 3"/>
+            <text x="313" y="118" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="12" font-weight="700" fill="#e5a10e">Neural VAD yok</text>
+
+            <!-- Arrow 2→3 -->
+            <line x1="401" y1="62" x2="448" y2="62" stroke="#3b82f6" stroke-width="2" marker-end="url(#arrowBlue)" opacity="0.7"/>
+
+            <!-- Step 3: STT -->
+            <rect x="452" y="28" width="160" height="68" rx="12" fill="rgba(59,130,246,0.06)" stroke="#3b82f6" stroke-width="1.5"/>
+            <text x="532" y="56" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="16" font-weight="700" fill="#3b82f6">📝 Freya STT</text>
+            <text x="532" y="78" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#8b8b96">Türkçe → Metin</text>
+
+            <!-- Arrow 3→4 -->
+            <line x1="614" y1="62" x2="660" y2="62" stroke="#e5a10e" stroke-width="2" marker-end="url(#arrowAmber)" opacity="0.7"/>
+
+            <!-- Step 4: LLM -->
+            <rect x="664" y="28" width="185" height="68" rx="12" fill="rgba(229,161,14,0.06)" stroke="#e5a10e" stroke-width="1.5"/>
+            <text x="756" y="56" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="16" font-weight="700" fill="#e5a10e">🧠 LLM Stream</text>
+            <text x="756" y="78" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#8b8b96">OpenRouter · SSE</text>
+
+            <!-- Arrow 4→5 -->
+            <line x1="851" y1="62" x2="898" y2="62" stroke="#e5a10e" stroke-width="2" marker-end="url(#arrowAmber)" opacity="0.7"/>
+
+            <!-- Step 5: TTS -->
+            <rect x="902" y="28" width="195" height="68" rx="12" fill="rgba(229,161,14,0.06)" stroke="#e5a10e" stroke-width="1.5"/>
+            <text x="1000" y="56" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="16" font-weight="700" fill="#e5a10e">🔊 Freya TTS</text>
+            <text x="1000" y="78" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#8b8b96">PCM16 · 16kHz stream</text>
+
+            <!-- ═══════ MIDDLE SECTION: Interleaved Timeline ═══════ -->
+
+            <!-- Section divider line -->
+            <line x1="20" y1="136" x2="1100" y2="136" stroke="#27272f" stroke-width="1" opacity="0.5"/>
+
+            <!-- Section title -->
+            <text x="560" y="160" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="16" font-weight="700" fill="#ededef">⚡ 2-Fazlı Chunk Splitting + Paralel Pipeline</text>
+
+            <!-- Time axis -->
+            <line x1="60" y1="182" x2="710" y2="182" stroke="#55555f" stroke-width="1" opacity="0.4"/>
+            <text x="45" y="186" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="11" fill="#55555f">t →</text>
+
+            <!-- LLM Lane label -->
+            <rect x="60" y="198" width="36" height="22" rx="4" fill="rgba(229,161,14,0.12)"/>
+            <text x="78" y="213" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#e5a10e">LLM</text>
+
+            <!-- LLM tokens streaming -->
+            <rect x="104" y="198" width="42" height="22" rx="4" fill="rgba(229,161,14,0.12)" stroke="#e5a10e" stroke-width="1"/>
+            <text x="125" y="213" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#e5a10e">w1</text>
+
+            <rect x="150" y="198" width="42" height="22" rx="4" fill="rgba(229,161,14,0.12)" stroke="#e5a10e" stroke-width="1"/>
+            <text x="171" y="213" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#e5a10e">w2</text>
+
+            <!-- w3 — highlighted -->
+            <rect x="196" y="196" width="44" height="26" rx="5" fill="rgba(229,161,14,0.3)" stroke="#e5a10e" stroke-width="2.5"/>
+            <text x="218" y="214" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" fill="#e5a10e">w3</text>
+
+            <!-- FIRE indicator -->
+            <text x="248" y="200" font-size="18">🔥</text>
+
+            <!-- Continuing tokens -->
+            <rect x="276" y="198" width="42" height="22" rx="4" fill="rgba(229,161,14,0.08)" stroke="#e5a10e" stroke-width="1" opacity="0.6"/>
+            <text x="297" y="213" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#e5a10e" opacity="0.6">w4</text>
+
+            <rect x="322" y="198" width="42" height="22" rx="4" fill="rgba(229,161,14,0.08)" stroke="#e5a10e" stroke-width="1" opacity="0.6"/>
+            <text x="343" y="213" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#e5a10e" opacity="0.6">w5</text>
+
+            <rect x="368" y="198" width="42" height="22" rx="4" fill="rgba(229,161,14,0.08)" stroke="#e5a10e" stroke-width="1" opacity="0.6"/>
+            <text x="389" y="213" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#e5a10e" opacity="0.6">w6</text>
+
+            <rect x="414" y="198" width="42" height="22" rx="4" fill="rgba(229,161,14,0.08)" stroke="#e5a10e" stroke-width="1" opacity="0.6"/>
+            <text x="435" y="213" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#e5a10e" opacity="0.6">w7</text>
+
+            <!-- Sentence end marker -->
+            <rect x="462" y="198" width="24" height="22" rx="4" fill="rgba(59,130,246,0.2)" stroke="#3b82f6" stroke-width="2"/>
+            <text x="474" y="214" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="14" font-weight="700" fill="#3b82f6">.</text>
+
+            <!-- More LLM tokens (sentence 2) -->
+            <rect x="494" y="198" width="150" height="22" rx="4" fill="rgba(229,161,14,0.06)" stroke="#e5a10e" stroke-width="1" opacity="0.5" stroke-dasharray="4 3"/>
+            <text x="569" y="213" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#e5a10e" opacity="0.4">... sonraki cümle ...</text>
+
+            <rect x="650" y="198" width="24" height="22" rx="4" fill="rgba(59,130,246,0.2)" stroke="#3b82f6" stroke-width="2"/>
+            <text x="662" y="214" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="14" font-weight="700" fill="#3b82f6">.</text>
+
+            <!-- TTS Lane label -->
+            <rect x="60" y="244" width="36" height="22" rx="4" fill="rgba(34,197,94,0.12)"/>
+            <text x="78" y="259" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#22c55e">TTS</text>
+
+            <!-- Arrow from w3 down to TTS lane -->
+            <line x1="218" y1="224" x2="170" y2="242" stroke="#e5a10e" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.5"/>
+            <polygon points="168,244 176,238 172,248" fill="#e5a10e" opacity="0.5"/>
+
+            <!-- TTS Chunk 1: First 3 words -->
+            <rect x="104" y="244" width="150" height="24" rx="6" fill="rgba(34,197,94,0.15)" stroke="#22c55e" stroke-width="1.5"/>
+            <text x="179" y="260" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="12" font-weight="600" fill="#22c55e">▶ İlk 3 kelime</text>
+
+            <!-- Phase 1 label -->
+            <text x="179" y="284" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="12" font-weight="700" fill="#e5a10e">Faz 1 — hemen gönder</text>
+
+            <!-- Arrow from sentence end down to TTS chunk 2 -->
+            <line x1="474" y1="222" x2="380" y2="242" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.4"/>
+            <polygon points="377,244 385,238 381,248" fill="#3b82f6" opacity="0.4"/>
+
+            <!-- TTS Chunk 2: Full sentence -->
+            <rect x="268" y="244" width="210" height="24" rx="6" fill="rgba(34,197,94,0.1)" stroke="#22c55e" stroke-width="1.5" opacity="0.85"/>
+            <text x="373" y="260" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="12" font-weight="600" fill="#22c55e">▶ Tam cümle 1</text>
+
+            <!-- TTS Chunk 3 -->
+            <rect x="490" y="244" width="190" height="24" rx="6" fill="rgba(34,197,94,0.08)" stroke="#22c55e" stroke-width="1.5" opacity="0.7"/>
+            <text x="585" y="260" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="12" font-weight="600" fill="#22c55e" opacity="0.8">▶ Tam cümle 2</text>
+
+            <!-- Phase 2 label -->
+            <text x="440" y="284" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="12" font-weight="700" fill="#3b82f6">Faz 2 — cümle sonu (.!?) veya virgül (≥25 kar)</text>
+
+            <!-- Audio Lane label -->
+            <rect x="60" y="306" width="36" height="22" rx="4" fill="rgba(59,130,246,0.12)"/>
+            <text x="78" y="321" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700" fill="#3b82f6">SES</text>
+
+            <!-- Audio blocks (gapless) -->
+            <rect x="136" y="306" width="118" height="22" rx="5" fill="rgba(59,130,246,0.1)" stroke="#3b82f6" stroke-width="1" opacity="0.7"/>
+            <rect x="258" y="306" width="218" height="22" rx="5" fill="rgba(59,130,246,0.08)" stroke="#3b82f6" stroke-width="1" opacity="0.6"/>
+            <rect x="480" y="306" width="196" height="22" rx="5" fill="rgba(59,130,246,0.06)" stroke="#3b82f6" stroke-width="1" opacity="0.5"/>
+
+            <!-- Waveform hint -->
+            <path d="M 152 317 L 157 311 L 162 321 L 167 313 L 172 319 L 177 310 L 182 320 L 187 314 L 192 318 L 197 312 L 202 317 L 207 310 L 212 322 L 217 314 L 222 318 L 227 312 L 232 317" stroke="#3b82f6" stroke-width="1" fill="none" opacity="0.35"/>
+
+            <text x="414" y="345" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#3b82f6" opacity="0.5">Gapless · PCM16 → Float32 · nextStartTime chain</text>
+
+            <!-- ═══════ RIGHT SIDE: Key Numbers ═══════ -->
+
+            <!-- Big "3" callout -->
+            <rect x="750" y="150" width="160" height="76" rx="14" fill="rgba(229,161,14,0.06)" stroke="#e5a10e" stroke-width="1.5"/>
+            <text x="830" y="191" text-anchor="middle" font-family="Bricolage Grotesque, serif" font-size="44" font-weight="800" fill="#e5a10e">3</text>
+            <text x="830" y="216" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="13" fill="#8b8b96">kelimede ilk ses</text>
+
+            <!-- Big "1.5s" callout -->
+            <rect x="930" y="150" width="160" height="76" rx="14" fill="rgba(34,197,94,0.06)" stroke="#22c55e" stroke-width="1.5"/>
+            <text x="1010" y="191" text-anchor="middle" font-family="Bricolage Grotesque, serif" font-size="38" font-weight="800" fill="#22c55e">1.5s</text>
+            <text x="1010" y="216" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="13" fill="#8b8b96">sessizlik → gönder</text>
+
+            <!-- Big "~2s" callout -->
+            <rect x="750" y="242" width="160" height="76" rx="14" fill="rgba(139,91,246,0.06)" stroke="#8b5cf6" stroke-width="1.5"/>
+            <text x="830" y="283" text-anchor="middle" font-family="Bricolage Grotesque, serif" font-size="38" font-weight="800" fill="#8b5cf6">~2s</text>
+            <text x="830" y="308" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="13" fill="#8b8b96">end-to-end latency</text>
+
+            <!-- Interrupt callout -->
+            <rect x="930" y="242" width="160" height="76" rx="14" fill="rgba(239,68,68,0.06)" stroke="#ef4444" stroke-width="1.5"/>
+            <text x="1010" y="276" text-anchor="middle" font-family="Bricolage Grotesque, serif" font-size="22" font-weight="800" fill="#ef4444">Interrupt</text>
+            <text x="1010" y="296" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="12" fill="#8b8b96">AbortController ile</text>
+            <text x="1010" y="312" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="12" fill="#8b8b96">anında pipeline kes</text>
+
+            <!-- "Parallel" annotation -->
+            <rect x="752" y="334" width="336" height="22" rx="6" fill="rgba(229,161,14,0.06)" stroke="#e5a10e" stroke-width="1" opacity="0.5"/>
+            <text x="920" y="349" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="12" font-weight="600" fill="#e5a10e" opacity="0.7">LLM token üretirken TTS paralel çalışır</text>
+
+          </svg>
         </div>
       </div>
 
-      <!-- Technical Tricks Grid -->
-      <div class="reveal" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px;">
-        <!-- Trick 1: Two-Phase Chunk Splitting + Interleaved Pipeline -->
-        <div class="card" style="padding:18px; border-color:rgba(229,161,14,0.2); background:rgba(229,161,14,0.02);">
-          <div class="flex items-center gap-3" style="margin-bottom:10px;">
-            <div style="width:36px;height:36px;border-radius:10px;background:rgba(229,161,14,0.12);display:flex;align-items:center;justify-content:center;">
-              <i class="ri-swap-line t-amber" style="font-size:18px;"></i>
-            </div>
-            <div>
-              <h3 style="font-size:14px;">2-Fazlı Chunk Splitting</h3>
-              <span class="badge badge-amber" style="font-size:9px; padding:1px 5px;">En Kritik Trick</span>
-            </div>
-          </div>
-          <p class="t-secondary" style="font-size:12px; line-height:1.6;">
-            <strong style="color:var(--color-amber)">Faz 1:</strong> İlk <strong style="color:var(--color-text)">3 kelimede</strong> hemen TTS'e gönder — noktalama yok say, en düşük TTFB.<br>
-            <strong style="color:var(--color-info)">Faz 2:</strong> Sonraki chunk'lar <strong style="color:var(--color-text)">cümle sonu</strong> (.!?) veya <strong style="color:var(--color-text)">virgül/noktalı virgül</strong> (≥25 kar) sınırlarında bölünür. LLM + TTS <strong style="color:var(--color-amber)">paralel</strong> çalışır.
-          </p>
-          <div style="margin-top:10px; padding:8px 10px; border-radius:6px; background:var(--color-surface-raised); font-family:var(--font-mono); font-size:10px; color:var(--color-text-muted); line-height:1.6;">
-            LLM: [w1][w2][<span style="color:var(--color-amber);">w3→TTS!</span>][tok][<span style="color:var(--color-info);">cümle.</span>]...<br>
-            TTS: &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;[<span style="color:var(--color-success);">3-kel</span>]&ensp;&ensp;&ensp;&ensp;[<span style="color:var(--color-success);">cümle</span>]
-          </div>
+      <!-- Bottom: Key facts strip -->
+      <div class="reveal flex gap-4 justify-center" style="flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:8px; padding:8px 16px; border-radius:10px; background:rgba(229,161,14,0.06); border:1px solid rgba(229,161,14,0.15);">
+          <i class="ri-swap-line t-amber" style="font-size:16px;"></i>
+          <span style="font-size:13px;"><strong style="color:var(--color-amber)">Faz 1:</strong> <span class="t-secondary">3 kelime → TTS (noktalama yok say)</span></span>
         </div>
-
-        <!-- Trick 2: Gapless Audio Queue -->
-        <div class="card" style="padding:18px; border-color:rgba(59,130,246,0.2); background:rgba(59,130,246,0.02);">
-          <div class="flex items-center gap-3" style="margin-bottom:10px;">
-            <div style="width:36px;height:36px;border-radius:10px;background:rgba(59,130,246,0.12);display:flex;align-items:center;justify-content:center;">
-              <i class="ri-play-list-line t-info" style="font-size:18px;"></i>
-            </div>
-            <h3 style="font-size:14px;">Gapless Audio Queue</h3>
-          </div>
-          <p class="t-secondary" style="font-size:12px; line-height:1.6;">
-            PCM16 chunk'lar Base64 olarak WebSocket'ten gelir. Client tarafında <strong style="color:var(--color-text)">AudioQueuePlayer</strong> ile <strong style="color:var(--color-info)">BufferSource chain</strong> oluşturup gapless playback yapıyoruz. Cümleler arası boşluk yok.
-          </p>
-          <div style="margin-top:10px; padding:8px 10px; border-radius:6px; background:var(--color-surface-raised); font-family:var(--font-mono); font-size:10px; color:var(--color-text-muted); line-height:1.6;">
-            PCM16 → Int16 → <span style="color:var(--color-info);">Float32</span> decode<br>
-            16kHz mono · nextStartTime chain
-          </div>
+        <div style="display:flex; align-items:center; gap:8px; padding:8px 16px; border-radius:10px; background:rgba(59,130,246,0.06); border:1px solid rgba(59,130,246,0.15);">
+          <i class="ri-text-wrap t-info" style="font-size:16px;"></i>
+          <span style="font-size:13px;"><strong style="color:var(--color-info)">Faz 2:</strong> <span class="t-secondary">Cümle sonu veya virgül ≥25 kar</span></span>
         </div>
-
-        <!-- Trick 3: AbortController Interrupt -->
-        <div class="card" style="padding:18px; border-color:rgba(239,68,68,0.2); background:rgba(239,68,68,0.02);">
-          <div class="flex items-center gap-3" style="margin-bottom:10px;">
-            <div style="width:36px;height:36px;border-radius:10px;background:rgba(239,68,68,0.12);display:flex;align-items:center;justify-content:center;">
-              <i class="ri-hand-coin-line t-danger" style="font-size:18px;"></i>
-            </div>
-            <h3 style="font-size:14px;">Anında Interrupt</h3>
-          </div>
-          <p class="t-secondary" style="font-size:12px; line-height:1.6;">
-            Kullanıcı araya girdiğinde <strong style="color:var(--color-text)">AbortController</strong> tüm pipeline'ı anında keser — devam eden LLM stream'i, bekleyen TTS isteği, oynatılan ses <strong style="color:var(--color-danger)">hepsi iptal</strong>.
-          </p>
-          <div style="margin-top:10px; padding:8px 10px; border-radius:6px; background:var(--color-surface-raised); font-family:var(--font-mono); font-size:10px; color:var(--color-text-muted); line-height:1.6;">
-            signal.aborted → LLM ✗ TTS ✗ Audio ✗<br>
-            Yeni pipeline hemen başlar
-          </div>
+        <div style="display:flex; align-items:center; gap:8px; padding:8px 16px; border-radius:10px; background:rgba(34,197,94,0.06); border:1px solid rgba(34,197,94,0.15);">
+          <i class="ri-play-list-line t-success" style="font-size:16px;"></i>
+          <span style="font-size:13px;"><strong style="color:var(--color-success)">Gapless Queue:</strong> <span class="t-secondary">PCM16 → Float32 · 16kHz chain</span></span>
         </div>
-
-        <!-- Trick 4: VAD Silence Detection -->
-        <div class="card" style="padding:18px; border-color:rgba(34,197,94,0.2); background:rgba(34,197,94,0.02);">
-          <div class="flex items-center gap-3" style="margin-bottom:10px;">
-            <div style="width:36px;height:36px;border-radius:10px;background:rgba(34,197,94,0.12);display:flex;align-items:center;justify-content:center;">
-              <i class="ri-sound-module-line t-success" style="font-size:18px;"></i>
-            </div>
-            <h3 style="font-size:14px;">VAD Silence Detection</h3>
-          </div>
-          <p class="t-secondary" style="font-size:12px; line-height:1.6;">
-            Mikrofon ses seviyesini <strong style="color:var(--color-text)">VolumeMeter</strong> ile ölçüp <strong style="color:var(--color-success)">800ms sessizlik</strong> algılayınca otomatik gönderim. Buton basmaya gerek yok, doğal konuşma akışı.
-          </p>
-        </div>
-
-        <!-- Trick 5: Context Injection -->
-        <div class="card" style="padding:18px; border-color:rgba(139,91,246,0.2); background:rgba(139,91,246,0.02);">
-          <div class="flex items-center gap-3" style="margin-bottom:10px;">
-            <div style="width:36px;height:36px;border-radius:10px;background:rgba(139,91,246,0.12);display:flex;align-items:center;justify-content:center;">
-              <i class="ri-eye-line t-purple" style="font-size:18px;"></i>
-            </div>
-            <h3 style="font-size:14px;">Context Injection</h3>
-          </div>
-          <p class="t-secondary" style="font-size:12px; line-height:1.6;">
-            Her turda <strong style="color:var(--color-text)">kod editörü, whiteboard durumu, CV, iş ilanı</strong> bilgileri LLM'e enjekte ediliyor. AI mülakatçı her zaman güncel context'e sahip.
-          </p>
-        </div>
-
-        <!-- Trick 6: Latency Tracking -->
-        <div class="card" style="padding:18px; border-color:rgba(229,161,14,0.15);">
-          <div class="flex items-center gap-3" style="margin-bottom:10px;">
-            <div style="width:36px;height:36px;border-radius:10px;background:rgba(229,161,14,0.08);display:flex;align-items:center;justify-content:center;">
-              <i class="ri-timer-flash-line t-amber-light" style="font-size:18px;"></i>
-            </div>
-            <h3 style="font-size:14px;">Latency Tracking</h3>
-          </div>
-          <p class="t-secondary" style="font-size:12px; line-height:1.6;">
-            Her pipeline çalışmasında <strong style="color:var(--color-text)">STT ms, LLM TTFT ms, TTS TTFB ms</strong> ayrı ayrı ölçülüp client'a raporlanıyor. End-to-end <strong style="color:var(--color-amber)">~2s</strong> hedefi.
-          </p>
+        <div style="display:flex; align-items:center; gap:8px; padding:8px 16px; border-radius:10px; background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.15);">
+          <i class="ri-hand-coin-line t-danger" style="font-size:16px;"></i>
+          <span style="font-size:13px;"><strong style="color:var(--color-danger)">Interrupt:</strong> <span class="t-secondary">LLM + TTS + Audio anında iptal</span></span>
         </div>
       </div>
 
       <div class="reveal flex gap-3 justify-center">
         <span class="badge badge-amber"><i class="ri-code-s-slash-line icon-xs"></i> ~1560 satır VoiceSession</span>
-        <span class="badge badge-default"><i class="ri-link icon-xs"></i> 9 client → 13 server mesaj tipi</span>
-        <span class="badge badge-info"><i class="ri-refresh-line icon-xs"></i> Convex history persist</span>
+        <span class="badge badge-default"><i class="ri-sound-module-line icon-xs"></i> Neural VAD yok · Volume RMS</span>
+        <span class="badge badge-info"><i class="ri-timer-flash-line icon-xs"></i> STT + LLM TTFT + TTS TTFB ayrı ölçüm</span>
       </div>
     </div>
   </div>
@@ -823,7 +892,7 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
               <td style="text-align:center;"><span class="t-muted" style="font-size:12px;">Ücretsiz</span></td>
               <td style="text-align:center;"><span class="t-muted" style="font-size:12px;">$150+/seans</span></td>
               <td style="text-align:center;"><span class="t-muted" style="font-size:12px;">$20/ay</span></td>
-              <td class="wingman-col" style="text-align:center;"><span style="font-size:12px; color:var(--color-amber); font-weight:600;">Free + $19/ay</span></td>
+              <td class="wingman-col" style="text-align:center;"><span style="font-size:12px; color:var(--color-amber); font-weight:600;">7 gün trial + $10/ay</span></td>
             </tr>
             <tr>
               <td style="font-weight:600; color:var(--color-text);"><i class="ri-time-line icon-xs t-success" style="margin-right:6px;"></i>Erişim</td>
@@ -1067,164 +1136,206 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
        SLIDE 8 — Unit Economics
        ═══════════════════════════════════════════════ -->
   <div class="slide" data-slide="7">
-    <div class="slide-content flex flex-col gap-8">
+    <div class="slide-content flex flex-col gap-6">
       <div class="reveal">
         <p class="t-amber t-mono" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px;">Ticarileşme</p>
         <h2 style="font-size:40px;">Birim Ekonomi — <span class="t-amber">Kârlılık Analizi</span></h2>
       </div>
 
       <div class="flex gap-6">
-        <!-- Left: Cost Breakdown -->
+        <!-- Left: Cost Breakdown (Monthly per user) -->
         <div class="reveal card" style="flex:1; border-color:rgba(229,161,14,0.2);">
           <div class="flex items-center gap-3" style="margin-bottom:16px;">
             <div style="width:36px;height:36px;border-radius:10px;background:rgba(229,161,14,0.1);border:1px solid rgba(229,161,14,0.2);display:flex;align-items:center;justify-content:center;">
               <i class="ri-money-dollar-circle-line t-amber icon-md"></i>
             </div>
             <div>
-              <h3 style="font-size:15px;">Mülakat Başına Maliyet</h3>
-              <p class="t-muted" style="font-size:11px;">Ortalama 15 dk · ~15 konuşma turu</p>
+              <h3 style="font-size:15px;">Aylık Kullanıcı Maliyeti</h3>
+              <p class="t-muted" style="font-size:11px;">Aktif kullanıcı · ~12 mülakat/ay</p>
             </div>
           </div>
 
           <div class="flex flex-col gap-3">
+            <!-- TTS -->
+            <div>
+              <div class="flex justify-between items-center" style="margin-bottom:3px;">
+                <span class="t-secondary" style="font-size:13px;"><i class="ri-volume-up-line icon-xs t-amber" style="margin-right:5px;"></i>Freya TTS</span>
+                <span class="t-mono t-amber" style="font-size:13px; font-weight:600;">$0.70</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <div style="flex:1; height:6px; border-radius:4px; background:var(--color-surface-raised); overflow:hidden;">
+                  <div style="height:100%; width:54%; border-radius:4px; background:var(--color-amber);"></div>
+                </div>
+                <span class="t-muted t-mono" style="font-size:10px; min-width:32px; text-align:right;">%54</span>
+              </div>
+            </div>
+
+            <!-- STT -->
             <div>
               <div class="flex justify-between items-center" style="margin-bottom:3px;">
                 <span class="t-secondary" style="font-size:13px;"><i class="ri-mic-line icon-xs t-info" style="margin-right:5px;"></i>Freya STT</span>
-                <span class="t-mono" style="font-size:12px;">$0.09</span>
+                <span class="t-mono t-info" style="font-size:13px; font-weight:600;">$0.32</span>
               </div>
               <div class="flex items-center gap-3">
                 <div style="flex:1; height:6px; border-radius:4px; background:var(--color-surface-raised); overflow:hidden;">
-                  <div style="height:100%; width:23%; border-radius:4px; background:var(--color-info);"></div>
+                  <div style="height:100%; width:25%; border-radius:4px; background:var(--color-info);"></div>
                 </div>
-                <span class="t-muted t-mono" style="font-size:10px; min-width:62px; text-align:right;">15 × $0.006</span>
+                <span class="t-muted t-mono" style="font-size:10px; min-width:32px; text-align:right;">%25</span>
               </div>
             </div>
 
+            <!-- LLM -->
             <div>
               <div class="flex justify-between items-center" style="margin-bottom:3px;">
-                <span class="t-secondary" style="font-size:13px;"><i class="ri-brain-line icon-xs t-amber" style="margin-right:5px;"></i>LLM (OpenRouter)</span>
-                <span class="t-mono" style="font-size:12px;">$0.20</span>
+                <span class="t-secondary" style="font-size:13px;"><i class="ri-brain-line icon-xs t-purple" style="margin-right:5px;"></i>LLM (Gemini 2.5 Flash)</span>
+                <span class="t-mono t-purple" style="font-size:13px; font-weight:600;">$0.21</span>
               </div>
               <div class="flex items-center gap-3">
                 <div style="flex:1; height:6px; border-radius:4px; background:var(--color-surface-raised); overflow:hidden;">
-                  <div style="height:100%; width:51%; border-radius:4px; background:var(--color-amber);"></div>
+                  <div style="height:100%; width:16%; border-radius:4px; background:var(--color-purple);"></div>
                 </div>
-                <span class="t-muted t-mono" style="font-size:10px; min-width:62px; text-align:right;">~52K token</span>
+                <span class="t-muted t-mono" style="font-size:10px; min-width:32px; text-align:right;">%16</span>
               </div>
             </div>
 
+            <!-- Infra -->
             <div>
               <div class="flex justify-between items-center" style="margin-bottom:3px;">
-                <span class="t-secondary" style="font-size:13px;"><i class="ri-volume-up-line icon-xs t-success" style="margin-right:5px;"></i>Freya TTS</span>
-                <span class="t-mono" style="font-size:12px;">$0.10</span>
+                <span class="t-secondary" style="font-size:13px;"><i class="ri-server-line icon-xs t-success" style="margin-right:5px;"></i>Infra (Convex + Hosting)</span>
+                <span class="t-mono t-success" style="font-size:13px; font-weight:600;">$0.07</span>
               </div>
               <div class="flex items-center gap-3">
                 <div style="flex:1; height:6px; border-radius:4px; background:var(--color-surface-raised); overflow:hidden;">
-                  <div style="height:100%; width:26%; border-radius:4px; background:var(--color-success);"></div>
+                  <div style="height:100%; width:5%; border-radius:4px; background:var(--color-success);"></div>
                 </div>
-                <span class="t-muted t-mono" style="font-size:10px; min-width:62px; text-align:right;">15 × $0.007</span>
+                <span class="t-muted t-mono" style="font-size:10px; min-width:32px; text-align:right;">%5</span>
               </div>
             </div>
 
-            <div style="height:1px; background:var(--color-border); margin:2px 0;"></div>
+            <div style="height:1px; background:var(--color-border); margin:4px 0;"></div>
 
+            <!-- Total -->
             <div>
               <div class="flex justify-between items-center">
-                <span style="font-size:14px; font-weight:700;"><i class="ri-wallet-3-line icon-xs t-amber" style="margin-right:5px;"></i>Toplam Maliyet</span>
-                <span class="t-amber t-mono" style="font-size:16px; font-weight:700;">$0.39</span>
+                <span style="font-size:15px; font-weight:700;"><i class="ri-wallet-3-line icon-xs t-danger" style="margin-right:5px;"></i>Toplam Maliyet</span>
+                <span class="t-danger t-mono" style="font-size:18px; font-weight:700;">$1.30<span class="t-muted" style="font-size:11px; font-weight:400; margin-left:3px;">/ay</span></span>
               </div>
               <div style="margin-top:6px; height:8px; border-radius:5px; background:var(--color-surface-raised); overflow:hidden; display:flex;">
-                <div style="height:100%; width:23%; background:var(--color-info); border-radius:5px 0 0 5px;"></div>
-                <div style="height:100%; width:51%; background:var(--color-amber);"></div>
-                <div style="height:100%; width:26%; background:var(--color-success); border-radius:0 5px 5px 0;"></div>
+                <div style="height:100%; width:54%; background:var(--color-amber); border-radius:5px 0 0 5px;"></div>
+                <div style="height:100%; width:25%; background:var(--color-info);"></div>
+                <div style="height:100%; width:16%; background:var(--color-purple);"></div>
+                <div style="height:100%; width:5%; background:var(--color-success); border-radius:0 5px 5px 0;"></div>
               </div>
-              <div class="flex justify-between" style="margin-top:4px;">
-                <span class="t-muted" style="font-size:9px;"><span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:var(--color-info);vertical-align:middle;margin-right:3px;"></span>STT %23</span>
-                <span class="t-muted" style="font-size:9px;"><span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:var(--color-amber);vertical-align:middle;margin-right:3px;"></span>LLM %51</span>
-                <span class="t-muted" style="font-size:9px;"><span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:var(--color-success);vertical-align:middle;margin-right:3px;"></span>TTS %26</span>
-              </div>
-            </div>
-
-            <div style="margin-top:2px; padding:8px 12px; border-radius:8px; background:rgba(34,197,94,0.04); border:1px solid rgba(34,197,94,0.15);">
-              <div class="flex justify-between items-center">
-                <span class="t-secondary" style="font-size:11px;"><i class="ri-exchange-dollar-line icon-xs t-success" style="margin-right:4px;"></i>Pro plan mülakat başı gelir</span>
-                <span class="t-success t-mono" style="font-size:12px; font-weight:600;">$0.95</span>
-              </div>
-              <p class="t-muted" style="font-size:10px; margin-top:2px;">$19 ÷ 20 mülakat = $0.95 → <span class="t-success" style="font-weight:600;">net kâr: $0.56/mülakat</span></p>
             </div>
           </div>
         </div>
 
-        <!-- Right: Pricing Tiers -->
-        <div class="reveal card" style="flex:1.2; border-color:rgba(139,91,246,0.2);">
+        <!-- Right: Pricing + Profit -->
+        <div class="reveal card" style="flex:1.2; border-color:rgba(34,197,94,0.2);">
           <div class="flex items-center gap-3" style="margin-bottom:16px;">
-            <div style="width:36px;height:36px;border-radius:10px;background:rgba(139,91,246,0.1);border:1px solid rgba(139,91,246,0.2);display:flex;align-items:center;justify-content:center;">
-              <i class="ri-line-chart-line t-purple icon-md"></i>
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);display:flex;align-items:center;justify-content:center;">
+              <i class="ri-line-chart-line t-success icon-md"></i>
             </div>
             <div>
-              <h3 style="font-size:15px;">Kârlılık Modeli</h3>
-              <p class="t-muted" style="font-size:11px;">SaaS tiered pricing</p>
+              <h3 style="font-size:15px;">Fiyatlandırma & Kâr</h3>
+              <p class="t-muted" style="font-size:11px;">Kullanıcı başına aylık</p>
             </div>
           </div>
 
-          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px;">
-            <div style="border-radius:10px; border:1px solid var(--color-border-subtle); background:var(--color-surface-raised); padding:14px 12px; text-align:center;">
-              <div style="margin-bottom:4px;"><i class="ri-gift-line" style="font-size:22px; color:var(--color-text-muted);"></i></div>
-              <h3 style="font-size:14px; font-weight:700; margin-bottom:2px;">Free</h3>
-              <p class="t-amber t-display" style="font-size:20px; font-weight:800;">$0<span class="t-muted" style="font-size:11px; font-weight:400;">/ay</span></p>
-              <p class="t-muted" style="font-size:11px; margin:8px 0;">3 mülakat/ay</p>
-              <div style="height:1px; background:var(--color-border-subtle); margin:8px 0;"></div>
-              <div style="font-size:10px; line-height:1.6;">
-                <p class="t-secondary">Maliyet: <span class="t-mono" style="color:var(--color-text);">$1.17</span></p>
-                <p class="t-danger" style="font-weight:600;">Margin: -%100</p>
+          <!-- Big Price -->
+          <div style="text-align:center; margin-bottom:12px;">
+            <span class="t-display" style="font-size:56px; font-weight:800; color:var(--color-amber); line-height:1;">$10</span>
+            <span class="t-muted" style="font-size:18px;">/ay</span>
+          </div>
+
+          <!-- Waterfall Bar -->
+          <div style="margin-bottom:14px;">
+            <div style="position:relative; width:100%; height:36px; border-radius:8px; overflow:hidden; background:rgba(34,197,94,0.08);">
+              <!-- Cost: 13% of bar -->
+              <div style="position:absolute; left:0; top:0; bottom:0; width:13%; background:linear-gradient(90deg, rgba(239,68,68,0.5), rgba(239,68,68,0.7)); border-radius:8px 0 0 8px; display:flex; align-items:center; justify-content:center;">
+                <span class="t-mono" style="font-size:10px; color:white; font-weight:600;">$1.30</span>
+              </div>
+              <!-- Profit: 87% of bar -->
+              <div style="position:absolute; left:13%; top:0; bottom:0; width:87%; background:linear-gradient(90deg, rgba(34,197,94,0.6), rgba(34,197,94,0.9)); border-radius:0 8px 8px 0; display:flex; align-items:center; justify-content:center; box-shadow:0 0 20px rgba(34,197,94,0.2);">
+                <span class="t-mono" style="font-size:13px; color:white; font-weight:700;">$8.70 kâr</span>
               </div>
             </div>
-
-            <div style="border-radius:10px; border:1px solid rgba(229,161,14,0.4); background:rgba(229,161,14,0.03); padding:14px 12px; text-align:center; box-shadow:0 0 15px var(--color-amber-glow); position:relative;">
-              <div style="position:absolute; top:-8px; left:50%; transform:translateX(-50%);">
-                <span class="badge badge-amber" style="font-size:9px; padding:1px 8px;">Popüler</span>
-              </div>
-              <div style="margin-bottom:4px;"><i class="ri-vip-crown-line" style="font-size:22px; color:var(--color-amber);"></i></div>
-              <h3 style="font-size:14px; font-weight:700; margin-bottom:2px;">Pro</h3>
-              <p class="t-amber t-display" style="font-size:20px; font-weight:800;">$19<span class="t-muted" style="font-size:11px; font-weight:400;">/ay</span></p>
-              <p class="t-muted" style="font-size:11px; margin:8px 0;">20 mülakat/ay</p>
-              <div style="height:1px; background:rgba(229,161,14,0.2); margin:8px 0;"></div>
-              <div style="font-size:10px; line-height:1.6;">
-                <p class="t-secondary">Maliyet: <span class="t-mono" style="color:var(--color-text);">$7.80</span></p>
-                <p class="t-success" style="font-weight:600;">Margin: %59</p>
-              </div>
+            <div class="flex justify-between" style="margin-top:5px;">
+              <span class="t-muted" style="font-size:10px;"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:rgba(239,68,68,0.7);vertical-align:middle;margin-right:4px;"></span>Maliyet %13</span>
+              <span class="t-muted" style="font-size:10px;"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--color-success);vertical-align:middle;margin-right:4px;"></span>Kâr %87</span>
             </div>
+          </div>
 
-            <div style="border-radius:10px; border:1px solid rgba(139,91,246,0.3); background:rgba(139,91,246,0.03); padding:14px 12px; text-align:center;">
-              <div style="margin-bottom:4px;"><i class="ri-building-4-line" style="font-size:22px; color:var(--color-purple);"></i></div>
-              <h3 style="font-size:14px; font-weight:700; margin-bottom:2px;">Enterprise</h3>
-              <p class="t-amber t-display" style="font-size:20px; font-weight:800;">Custom</p>
-              <p class="t-muted" style="font-size:11px; margin:8px 0;">Sınırsız + Admin</p>
-              <div style="height:1px; background:rgba(139,91,246,0.2); margin:8px 0;"></div>
-              <div style="font-size:10px; line-height:1.6;">
-                <p class="t-secondary">Maliyet: <span class="t-mono" style="color:var(--color-text);">~</span></p>
-                <p class="t-success" style="font-weight:600;">Margin: %70+</p>
-              </div>
+          <!-- Margin Badge -->
+          <div style="display:flex; justify-content:center; margin-bottom:14px;">
+            <div style="display:inline-flex; align-items:center; gap:10px; padding:12px 28px; border-radius:100px; border:2px solid rgba(34,197,94,0.4); background:linear-gradient(135deg, rgba(34,197,94,0.12), rgba(34,197,94,0.04)); box-shadow:0 0 24px rgba(34,197,94,0.15);">
+              <span style="font-size:22px;">📈</span>
+              <span class="t-display" style="font-size:32px; font-weight:800; color:var(--color-success);">%87</span>
+              <span style="font-size:15px; font-weight:600; color:var(--color-text-secondary);">Gross Margin</span>
+            </div>
+          </div>
+
+          <!-- Competitor Pricing Comparison (compact) -->
+          <div style="border-radius:10px; border:1px solid var(--color-border-subtle); overflow:hidden;">
+            <div style="display:grid; grid-template-columns:1.6fr 0.8fr 0.6fr 0.6fr; padding:8px 14px; background:var(--color-surface-raised); border-bottom:1px solid var(--color-border-subtle);">
+              <span class="t-mono t-muted" style="font-size:10px; text-transform:uppercase; letter-spacing:0.05em;">Rakip</span>
+              <span class="t-mono t-muted" style="font-size:10px; text-transform:uppercase; letter-spacing:0.05em;">Fiyat</span>
+              <span class="t-mono t-muted" style="font-size:10px; text-transform:uppercase; letter-spacing:0.05em; text-align:center;">Sesli AI</span>
+              <span class="t-mono t-muted" style="font-size:10px; text-transform:uppercase; letter-spacing:0.05em; text-align:center;">Türkçe</span>
+            </div>
+            <!-- Pramp -->
+            <div style="display:grid; grid-template-columns:1.6fr 0.8fr 0.6fr 0.6fr; padding:7px 14px; border-bottom:1px solid var(--color-border-subtle); align-items:center;">
+              <span class="t-secondary" style="font-size:12px;">Pramp</span>
+              <span class="t-mono t-muted" style="font-size:12px;">$0 <span style="font-size:9px;">(eşleşme)</span></span>
+              <span style="text-align:center; font-size:13px;">❌</span>
+              <span style="text-align:center; font-size:13px;">❌</span>
+            </div>
+            <!-- Interviewing.io -->
+            <div style="display:grid; grid-template-columns:1.6fr 0.8fr 0.6fr 0.6fr; padding:7px 14px; border-bottom:1px solid var(--color-border-subtle); align-items:center;">
+              <span class="t-secondary" style="font-size:12px;">Interviewing.io</span>
+              <span class="t-mono t-muted" style="font-size:12px;">$249/ay</span>
+              <span style="text-align:center; font-size:13px;">✅</span>
+              <span style="text-align:center; font-size:13px;">❌</span>
+            </div>
+            <!-- Prepfully -->
+            <div style="display:grid; grid-template-columns:1.6fr 0.8fr 0.6fr 0.6fr; padding:7px 14px; border-bottom:1px solid var(--color-border-subtle); align-items:center;">
+              <span class="t-secondary" style="font-size:12px;">Prepfully</span>
+              <span class="t-mono t-muted" style="font-size:12px;">$59/ay</span>
+              <span style="text-align:center; font-size:13px;">❌</span>
+              <span style="text-align:center; font-size:13px;">❌</span>
+            </div>
+            <!-- Wingman (highlighted) -->
+            <div style="display:grid; grid-template-columns:1.6fr 0.8fr 0.6fr 0.6fr; padding:8px 14px; align-items:center; background:rgba(229,161,14,0.06); border-left:3px solid var(--color-amber);">
+              <span style="font-size:13px; font-weight:700; color:var(--color-amber);">Wingman <span class="badge badge-amber" style="font-size:8px; padding:1px 6px; margin-left:4px; vertical-align:middle;">BİZ</span></span>
+              <span class="t-mono" style="font-size:13px; font-weight:700; color:var(--color-success);">$10/ay</span>
+              <span style="text-align:center; font-size:13px;">✅</span>
+              <span style="text-align:center; font-size:13px;">✅</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="reveal" style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px;">
-        <div class="stat-card" style="border-color:rgba(229,161,14,0.2); text-align:center; padding:20px;">
-          <div class="stat-label" style="margin-bottom:4px;"><i class="ri-scales-3-line icon-xs t-amber" style="margin-right:4px;"></i>Break-even</div>
-          <div class="stat-value" style="color:var(--color-amber);">~150</div>
-          <p class="t-muted" style="font-size:11px; margin-top:2px;">Pro kullanıcı</p>
+      <!-- Bottom: Scale Projections -->
+      <div class="reveal" style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px;">
+        <div class="stat-card" style="border-color:rgba(229,161,14,0.2); text-align:center; padding:16px;">
+          <div class="stat-label" style="margin-bottom:4px;"><i class="ri-user-line icon-xs t-amber" style="margin-right:4px;"></i>Kullanıcı başı kâr</div>
+          <div class="stat-value" style="color:var(--color-amber); font-size:24px;">$8.70</div>
+          <p class="t-muted" style="font-size:10px; margin-top:2px;">aylık net</p>
         </div>
-        <div class="stat-card" style="border-color:rgba(34,197,94,0.2); text-align:center; padding:20px;">
-          <div class="stat-label" style="margin-bottom:4px;"><i class="ri-group-line icon-xs t-success" style="margin-right:4px;"></i>1000 Kullanıcı</div>
-          <div class="stat-value" style="color:var(--color-success);">$19K</div>
-          <p class="t-muted" style="font-size:11px; margin-top:2px;">MRR · $11K net</p>
+        <div class="stat-card" style="border-color:rgba(34,197,94,0.2); text-align:center; padding:16px;">
+          <div class="stat-label" style="margin-bottom:4px;"><i class="ri-group-line icon-xs t-success" style="margin-right:4px;"></i>500 Kullanıcı</div>
+          <div class="stat-value" style="color:var(--color-success); font-size:24px;">$4,350</div>
+          <p class="t-muted" style="font-size:10px; margin-top:2px;">aylık net kâr</p>
         </div>
-        <div class="stat-card" style="border-color:rgba(139,91,246,0.2); text-align:center; padding:20px;">
+        <div class="stat-card" style="border-color:rgba(59,130,246,0.2); text-align:center; padding:16px;">
+          <div class="stat-label" style="margin-bottom:4px;"><i class="ri-team-line icon-xs t-info" style="margin-right:4px;"></i>2K Kullanıcı</div>
+          <div class="stat-value" style="color:var(--color-info); font-size:24px;">$17,400</div>
+          <p class="t-muted" style="font-size:10px; margin-top:2px;">aylık net kâr</p>
+        </div>
+        <div class="stat-card" style="border-color:rgba(139,91,246,0.2); text-align:center; padding:16px;">
           <div class="stat-label" style="margin-bottom:4px;"><i class="ri-percent-line icon-xs t-purple" style="margin-right:4px;"></i>Gross Margin</div>
-          <div class="stat-value" style="color:var(--color-purple);">%59</div>
-          <p class="t-muted" style="font-size:11px; margin-top:2px;">Pro plan</p>
+          <div class="stat-value" style="color:var(--color-purple); font-size:24px;">%87</div>
+          <p class="t-muted" style="font-size:10px; margin-top:2px;">SaaS ortalaması: %70</p>
         </div>
       </div>
     </div>
