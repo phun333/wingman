@@ -407,7 +407,13 @@ export function InterviewRoomPage() {
 
   function handleMicClick() {
     if (state === "speaking" || state === "processing") {
+      // Interrupt AI and immediately start recording user's speech
       interrupt();
+      // If mic is not active, start recording right away so user doesn't need to press twice
+      if (!micActive) {
+        // Small delay to let interrupt settle before starting recording
+        setTimeout(() => toggleMic(), 50);
+      }
       return;
     }
     // Flush whiteboard state before voice pipeline starts (system-design)

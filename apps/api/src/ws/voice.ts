@@ -524,13 +524,21 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
             this.persistMessage("assistant", introText);
             this.generateIntroAudio(introText);
           } else if (this.interview.type === "phone-screen") {
-            // Phone screen: AI introduces itself and starts with the first question
-            console.log("[start_listening] Phone screen — triggering AI intro...");
+            // Phone screen: hardcoded greeting like other interview types
+            console.log("[start_listening] Phone screen — playing intro greeting...");
+
+            const introText = "Merhaba! Ben Elif, TeknoSoft'un yetenek kazanım ekibinden. Bugün benimle görüşmeye vakit ayırdığın için teşekkür ederim. Bu yaklaşık otuz dakikalık bir ön görüşme olacak, geçmişini, deneyimlerini ve pozisyona olan ilgini konuşacağız. Hazır olduğunda başlayalım, nasılsın?";
+
+            this.send({ type: "ai_text", text: introText, done: true });
+            this.conversationHistory.push({ role: "assistant", content: introText });
+            this.persistMessage("assistant", introText);
+            this.generateIntroAudio(introText);
+
+            // Guide LLM: greeting is done, respond concisely to candidate's answer
             this.conversationHistory.push({
-              role: "user",
-              content: "[SYSTEM: Kullanıcı hazır, mülakata başla ve ilk soruyu sor]",
+              role: "system",
+              content: `[SYSTEM_NOTE: Tanışma ve format açıklaması zaten yapıldı. Adayın yanıtına çok kısa bir onay ver (ör. "Harika!") ve hemen ilk soruyu sor. Geçiş cümlesi, format tekrarı veya ek açıklama yapma. Tek cümle onay + tek soru, bu kadar.]`,
             });
-            this.triggerAIResponse();
           }
         }
         break;
