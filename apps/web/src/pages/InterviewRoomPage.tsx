@@ -80,11 +80,13 @@ export function InterviewRoomPage() {
       .then((iv) => {
         setInterview(iv);
         if (iv.type === "live-coding" || iv.type === "practice") {
-          // Set code language from interview config if it's a valid code language
           // iv.language is the spoken language (tr/en), NOT the code language
+          // Code language may be stored in config; default to "javascript"
           const validCodeLangs = ["javascript", "typescript", "python"];
-          if (iv.codeLanguage && validCodeLangs.includes(iv.codeLanguage)) {
-            setCodeLanguage(iv.codeLanguage as CodeLanguage);
+          const cfg = iv.config as Record<string, unknown> | undefined;
+          const codeLang = cfg?.codeLanguage as string | undefined;
+          if (codeLang && validCodeLangs.includes(codeLang)) {
+            setCodeLanguage(codeLang as CodeLanguage);
           }
         }
         if (iv.type === "system-design") {

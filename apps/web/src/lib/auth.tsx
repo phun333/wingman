@@ -6,6 +6,7 @@ import {
   useState,
 } from "react";
 import type { ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface User {
   id: string;
@@ -26,6 +27,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   const fetchSession = useCallback(async () => {
     try {
@@ -92,6 +94,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(async () => {
+    // Clear local state first so the UI reacts immediately
+    setUser(null);
+
     try {
       await fetch("/api/auth/sign-out", {
         method: "POST",
@@ -109,21 +114,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       "better-auth.convex_jwt",
     ];
     const paths = ["/", "/api", "/api/auth"];
+    const domains = [window.location.hostname, "", "localhost", "127.0.0.1"];
     for (const name of cookieNames) {
       for (const p of paths) {
+        // Without domain
         document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=${p};`;
-        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=${p}; domain=${window.location.hostname};`;
+        for (const d of domains) {
+          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=${p}; domain=${d};`;
+        }
       }
     }
 
-    setUser(null);
-
-    // Force a full page reload to the landing page so that:
-    // 1. All in-memory SPA state is fully cleared
-    // 2. The browser re-evaluates cookies (server-side session is invalidated)
-    // Without this, navigating via React Router may hit stale auth state on reload
-    window.location.href = "/";
-  }, []);
+    // Navigate via React Router — no full page reload.
+    // This avoids fetchSession() re-running and finding stale HttpOnly cookies
+    // that the proxy didn't properly clear via Set-Cookie headers.
+    navigate("/", { replace: true });
+  }, [navigate]);
 
   return (
     <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>
