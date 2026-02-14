@@ -6,7 +6,7 @@ import { useVoice } from "@/lib/useVoice";
 import { getInterview, completeInterview, abandonInterview, executeCode as executeCodeApi, getRandomProblem, getProblem, startInterview, getLeetcodeProblem } from "@/lib/api";
 import { useInterviewsStore } from "@/stores";
 import { typeLabels } from "@/lib/constants";
-import { Mic, MicOff, Hand, Coffee, Clock, AlertTriangle, CheckCircle2, X, Volume2 } from "lucide-react";
+import { Mic, MicOff, Hand, Coffee, Clock, AlertTriangle, CheckCircle2, X, Volume2, Play } from "lucide-react";
 import type {
   VoicePipelineState,
   Interview,
@@ -21,6 +21,7 @@ import { ResizableSplitter } from "@/components/interview/ResizableSplitter";
 import { SolutionComparisonPanel } from "@/components/interview/SolutionComparisonPanel";
 import { SystemDesignRoom } from "@/components/interview/SystemDesignRoom";
 import { AIChat } from "@/components/interview/AIChat";
+import { ChatThread } from "@/components/interview/ChatThread";
 
 const stateLabels: Record<VoicePipelineState, string> = {
   idle: "Hazır",
@@ -611,17 +612,10 @@ function VoiceOnlyRoom({
   const questionTimePercent = recommendedSeconds > 0 ? Math.min(questionElapsed / recommendedSeconds, 1) : 0;
   const questionOvertime = questionElapsed > recommendedSeconds && recommendedSeconds > 0;
 
-  const orbScale =
-    state === "listening"
-      ? 1 + Math.min(volume * 8, 0.2)
-      : state === "speaking"
-        ? undefined
-        : 1;
-
   return (
     <div className="flex flex-col h-screen bg-bg">
-      {/* Top bar */}
-      <header className="flex h-14 items-center justify-between border-b border-border-subtle bg-surface/80 backdrop-blur-sm px-5">
+      {/* ── Top bar ── */}
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border-subtle bg-surface/80 backdrop-blur-sm px-5">
         <div className="flex items-center gap-3">
           <div className="h-7 w-7 rounded-md bg-amber/15 flex items-center justify-center">
             <span className="text-amber font-display text-xs font-bold">W</span>
@@ -639,7 +633,7 @@ function VoiceOnlyRoom({
           />
         </div>
         <div className="flex items-center gap-4">
-          {/* Question counter + per-question timer for phone-screen */}
+          {/* Question counter + per-question timer */}
           {questionTotal > 0 && (
             <div className="flex items-center gap-2">
               <span className="text-xs text-text-secondary px-2.5 py-1 rounded-md bg-surface-raised border border-border tabular-nums">
@@ -680,103 +674,120 @@ function VoiceOnlyRoom({
         </div>
       </header>
 
-      {/* Main area */}
-      <div className="flex-1 flex flex-col items-center justify-center relative overflow-hidden">
-        {/* Voice Assistant */}
-        <AIChat
-          transcript={transcript}
-          aiText={aiText}
-          micActive={micActive}
-          state={state}
-          volume={volume}
-          onMicClick={onMicClick}
-          connected={connected}
-          voiceStarted={voiceStarted}
-          onStartVoice={onStartVoice}
-          onInterrupt={onInterrupt}
-          interviewStatus={interview?.status}
-          onStartInterview={onStartInterview}
-        />
+      {/* ── Centered chat thread ── */}
+      {voiceStarted ? (
+        <ChatThread transcript={transcript} aiText={aiText} state={state} />
+      ) : (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <div className="w-20 h-20 mx-auto rounded-full bg-amber/10 border border-amber/20 flex items-center justify-center">
+              <Volume2 size={32} className="text-amber" />
+            </div>
+            <div>
+              <h2 className="text-lg font-display font-bold text-text">Sesli Mülakat</h2>
+              <p className="text-sm text-text-muted mt-1">Başlatmak için aşağıdaki butona tıklayın</p>
+            </div>
+          </div>
+        </div>
+      )}
 
-        {timeWarning && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="relative z-10 mt-4 rounded-lg bg-amber/10 border border-amber/20 px-4 py-2 max-w-md flex items-center gap-2"
-          >
-            <Clock size={14} className="text-amber shrink-0" />
-            <p className="text-sm text-amber">Kalan süre: ~{timeWarning} dakika</p>
-          </motion.div>
-        )}
+      {/* ── Alerts ── */}
+      <div className="flex flex-col items-center gap-2 px-4">
+        <AnimatePresence>
+          {timeWarning && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              className="rounded-lg bg-amber/10 border border-amber/20 px-4 py-2 max-w-md flex items-center gap-2"
+            >
+              <Clock size={14} className="text-amber shrink-0" />
+              <p className="text-sm text-amber">Kalan süre: ~{timeWarning} dakika</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {error && (
-          <div className="relative z-10 mt-4 rounded-lg bg-danger/10 border border-danger/20 px-4 py-2 max-w-md">
+          <div className="rounded-lg bg-danger/10 border border-danger/20 px-4 py-2 max-w-md">
             <p className="text-sm text-danger">{error}</p>
           </div>
         )}
-
-        <AnimatePresence mode="wait">
-          {aiText && (
-            <motion.div
-              key="ai-text"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="relative z-10 mt-6 max-w-lg text-center px-6"
-            >
-              <p className="text-text-secondary text-sm leading-relaxed">{aiText}</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence mode="wait">
-          {transcript && (
-            <motion.div
-              key="transcript"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="absolute bottom-32 left-1/2 -translate-x-1/2 max-w-md"
-            >
-              <div className="rounded-xl bg-surface-overlay/80 backdrop-blur-sm border border-border px-4 py-3">
-                <p className="text-xs text-text-muted mb-1">Sen</p>
-                <p className="text-sm text-text">{transcript}</p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
-      {/* Bottom controls */}
-      <div className="border-t border-border-subtle bg-surface/80 backdrop-blur-sm py-5">
+      {/* ── Bottom controls ── */}
+      <div className="shrink-0 border-t border-border-subtle bg-surface/80 backdrop-blur-sm py-4 px-5">
         {!voiceStarted ? (
-          /* ── Start voice session ── */
           <div className="flex flex-col items-center gap-3">
-            <button
-              onClick={onStartVoice}
-              disabled={!connected}
-              className="flex items-center gap-3 px-7 py-3.5 rounded-full
-                bg-success/15 border-2 border-success/40 text-success
-                hover:bg-success/25 hover:border-success/60 hover:shadow-[0_0_24px_rgba(34,197,94,0.15)]
-                transition-all duration-200 cursor-pointer
-                disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <Volume2 size={22} strokeWidth={2} />
-              <span className="text-base font-medium">Sesli mülakatı başlat</span>
-            </button>
+            {interview?.status === "created" && onStartInterview ? (
+              <button
+                onClick={() => { onStartInterview(); }}
+                className="flex items-center gap-3 px-7 py-3.5 rounded-full
+                  bg-success/15 border-2 border-success/40 text-success
+                  hover:bg-success/25 hover:border-success/60 hover:shadow-[0_0_24px_rgba(34,197,94,0.15)]
+                  transition-all duration-200 cursor-pointer"
+              >
+                <Play size={22} strokeWidth={2} />
+                <span className="text-base font-medium">Mülakatı Başlat</span>
+              </button>
+            ) : (
+              <button
+                onClick={onStartVoice}
+                disabled={!connected}
+                className="flex items-center gap-3 px-7 py-3.5 rounded-full
+                  bg-success/15 border-2 border-success/40 text-success
+                  hover:bg-success/25 hover:border-success/60 hover:shadow-[0_0_24px_rgba(34,197,94,0.15)]
+                  transition-all duration-200 cursor-pointer
+                  disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Volume2 size={22} strokeWidth={2} />
+                <span className="text-base font-medium">Sesli mülakatı başlat</span>
+              </button>
+            )}
             <p className="text-xs text-text-muted">
               {connected ? "Mikrofon izni istenecektir" : "Bağlantı kuruluyor…"}
             </p>
           </div>
         ) : (
-          /* ── Mic + interrupt controls ── */
-          <>
+          <div className="flex flex-col items-center gap-3">
             <div className="flex items-center justify-center gap-4">
+              {/* Status indicator */}
+              <div className="flex items-center gap-2 min-w-[100px]">
+                <motion.div
+                  className={`w-2 h-2 rounded-full ${
+                    state === "speaking" ? "bg-amber" :
+                    state === "processing" ? "bg-amber/60" :
+                    state === "listening" && micActive ? "bg-success" :
+                    "bg-text-muted/30"
+                  }`}
+                  animate={
+                    state === "speaking" || state === "processing"
+                      ? { opacity: [0.4, 1, 0.4] }
+                      : { opacity: 1 }
+                  }
+                  transition={
+                    state === "speaking" || state === "processing"
+                      ? { duration: 1, repeat: Infinity }
+                      : {}
+                  }
+                />
+                <span className={`text-xs font-medium ${
+                  state === "speaking" ? "text-amber" :
+                  state === "processing" ? "text-amber/70" :
+                  state === "listening" ? "text-success" :
+                  "text-text-muted"
+                }`}>
+                  {state === "speaking" ? "Konuşuyor" :
+                   state === "processing" ? "Düşünüyor" :
+                   state === "listening" ? "Dinliyor" :
+                   "Hazır"}
+                </span>
+              </div>
+
               {/* Mic button */}
               <div className="relative">
-                {micActive && (
+                {micActive && state === "listening" && (
                   <motion.div
-                    animate={{ scale: 1 + volume * 6, opacity: 0.3 + volume * 2 }}
+                    animate={{ scale: 1 + volume * 6, opacity: 0.25 + volume * 2 }}
                     transition={{ duration: 0.1 }}
                     className="absolute inset-0 rounded-full bg-success/20 pointer-events-none"
                     style={{ margin: -8 }}
@@ -786,54 +797,77 @@ function VoiceOnlyRoom({
                   onClick={onMicClick}
                   disabled={!connected}
                   className={`
-                    relative h-16 w-16 rounded-full flex items-center justify-center
+                    relative h-14 w-14 rounded-full flex items-center justify-center
                     border-2 transition-all duration-200 cursor-pointer
                     disabled:opacity-40 disabled:cursor-not-allowed
-                    ${micActive
-                      ? "border-success bg-success/15 text-success shadow-[0_0_30px_rgba(34,197,94,0.2)] hover:bg-success/20"
-                      : "border-border bg-surface-raised text-text-muted hover:border-text-muted hover:text-text"
+                    ${state === "speaking" || state === "processing"
+                      ? "border-danger/40 bg-danger/10 text-danger hover:bg-danger/20"
+                      : micActive
+                        ? "border-success bg-success/15 text-success shadow-[0_0_24px_rgba(34,197,94,0.15)] hover:bg-success/20"
+                        : "border-border bg-surface-raised text-text-muted hover:border-text-muted hover:text-text"
                     }
                   `}
+                  title={
+                    state === "speaking" || state === "processing"
+                      ? "Sustur"
+                      : micActive ? "Mikrofonu kapat" : "Mikrofonu aç"
+                  }
                 >
-                  {micActive ? (
-                    <Mic size={24} strokeWidth={2} />
+                  {state === "speaking" || state === "processing" ? (
+                    <Hand size={22} strokeWidth={2} />
+                  ) : micActive ? (
+                    <Mic size={22} strokeWidth={2} />
                   ) : (
-                    <MicOff size={24} strokeWidth={2} />
+                    <MicOff size={22} strokeWidth={2} />
                   )}
                 </button>
               </div>
 
-              {/* Interrupt button — visible when AI is speaking */}
-              <AnimatePresence>
-                {(state === "speaking" || state === "processing") && (
-                  <motion.button
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0, opacity: 0 }}
-                    transition={{ duration: 0.15 }}
-                    onClick={onInterrupt}
-                    className="h-14 px-5 rounded-full flex items-center gap-2
-                      border-2 border-danger/40 bg-danger/10 text-danger
-                      hover:bg-danger/20 hover:border-danger/60
-                      transition-colors duration-150 cursor-pointer"
-                    title="AI'ı sustur"
-                  >
-                    <Hand size={18} strokeWidth={2} />
-                    <span className="text-sm font-medium">Sustur</span>
-                  </motion.button>
+              {/* Volume meter */}
+              <div className="min-w-[100px]">
+                {micActive && state === "listening" && (
+                  <div className="h-1.5 bg-surface-raised rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full bg-gradient-to-r from-success/60 to-success rounded-full"
+                      style={{ width: `${Math.min(volume * 100, 100)}%` }}
+                      transition={{ duration: 0.05 }}
+                    />
+                  </div>
                 )}
-              </AnimatePresence>
+              </div>
             </div>
-            <p className="text-center text-xs text-text-muted mt-3">
+
+            <p className="text-center text-[11px] text-text-muted">
               {state === "speaking" || state === "processing"
                 ? "Konuşarak veya butona tıklayarak susturabilirsiniz"
                 : micActive
-                  ? "Konuşun — sessizlikte otomatik gönderilir"
+                  ? "Konuşun — duraklamada otomatik gönderilir"
                   : "Mikrofonu açmak için butona tıklayın"}
             </p>
-          </>
+          </div>
         )}
       </div>
+
+      {/* Interview Start Button (for created status) */}
+      {voiceStarted && interview?.status === "created" && onStartInterview && (
+        <div className="fixed bottom-24 right-6">
+          <motion.button
+            onClick={onStartInterview}
+            className="w-14 h-14 rounded-full flex items-center justify-center
+              bg-gradient-to-br from-green-500 to-green-600
+              shadow-lg shadow-green-500/25 text-white
+              hover:shadow-xl hover:shadow-green-500/30
+              transition-all duration-200"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            title="Mülakatı Başlat"
+          >
+            <Play size={22} fill="currentColor" />
+          </motion.button>
+        </div>
+      )}
     </div>
   );
 }

@@ -52,16 +52,16 @@ function buildWsUrl(interviewId?: string, problemId?: string): string {
   return params.toString() ? `${base}?${params.toString()}` : base;
 }
 
-// VAD: aggressive settings for conversational feel (<2s E2E latency target)
-const VAD_THRESHOLD = 0.02; // More sensitive — detect speech faster
-const VAD_SILENCE_MS = 500; // 500ms silence → send (was 1200ms — too slow for conversation)
-const VAD_MIN_SPEECH_MS = 250; // 250ms speech to trigger interruption (was 400ms)
-const VAD_SPEECH_CONFIDENCE_MS = 40; // 40ms confidence for faster speech start (was 80ms)
+// VAD: balanced settings — natural conversation feel with breathing room
+const VAD_THRESHOLD = 0.02; // Sensitive — detect speech quickly
+const VAD_SILENCE_MS = 1500; // 1.5s silence → send (gives user time to pause/think)
+const VAD_MIN_SPEECH_MS = 250; // 250ms speech minimum
+const VAD_SPEECH_CONFIDENCE_MS = 40; // 40ms confidence for speech start
 
-// VAD: higher thresholds during AI speaking to avoid echo/feedback false triggers
-const VAD_INTERRUPT_THRESHOLD = 0.07; // Much higher — only real speech triggers interrupt
-const VAD_INTERRUPT_SPEECH_MS = 500; // 500ms sustained speech needed to interrupt AI
-const VAD_INTERRUPT_CONFIDENCE_MS = 100; // Need 100ms confidence before counting speech
+// VAD: interrupt settings — user speaking should stop AI quickly
+const VAD_INTERRUPT_THRESHOLD = 0.04; // Lower than before — catch user speech more easily
+const VAD_INTERRUPT_SPEECH_MS = 300; // 300ms sustained speech → interrupt AI (was 500ms)
+const VAD_INTERRUPT_CONFIDENCE_MS = 60; // 60ms confidence before counting (was 100ms)
 
 export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
   const [state, setState] = useState<VoicePipelineState>("idle");
