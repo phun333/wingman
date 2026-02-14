@@ -106,63 +106,43 @@ export function InterviewRoomPage() {
 
   // Handle problem loaded from WebSocket or fetch fallback
   const handleProblemLoaded = useCallback(
-    (p: Problem) => {
+    async (p: Problem) => {
       const requestedProblemId = searchParams.get("problemId");
       console.log("handleProblemLoaded called with:", p.title);
-      console.log("Requested problem ID:", requestedProblemId);
-      console.log("Loaded problem ID:", p._id);
 
       // If a specific problem was requested but we got a different one from WebSocket,
       // we should override it with the correct one
       if (requestedProblemId && p._id !== requestedProblemId) {
         console.log("WebSocket loaded wrong problem, will override with correct one");
-        // Don't set the problem yet, let the timeout handler load the correct one
         return;
+      }
+
+      // Fetch coding data (starter code + test cases) before setting problem
+      // so the code-update effect sees starterCode from the start
+      if (showCodeEditor && !p.starterCode?.javascript) {
+        try {
+          console.log("[coding-data] Fetching starter code for:", p._id);
+          const codingData = await getLeetcodeCodingData(p._id);
+          if (codingData) {
+            p.starterCode = codingData.starterCode;
+            p.testCases = codingData.testCases;
+            console.log(`[coding-data] Loaded: ${codingData.testCases.length} test cases`);
+          }
+        } catch (err) {
+          console.warn("[coding-data] Failed to fetch:", err);
+        }
       }
 
       setProblem(p);
       setProblemLoading(false);
     },
-    [searchParams],
+    [searchParams, showCodeEditor],
   );
 
   const handleDesignProblemLoaded = useCallback((p: DesignProblem) => {
     setDesignProblem(p);
     setDesignProblemLoading(false);
   }, []);
-
-  // Fetch coding data (starter code + test cases) if problem loaded without them
-  useEffect(() => {
-    if (!problem || !showCodeEditor) return;
-    // Already has starter code — nothing to do
-    if (problem.starterCode?.javascript) return;
-
-    let cancelled = false;
-
-    (async () => {
-      try {
-        console.log("[coding-data] Problem loaded without starter code, fetching for:", problem._id);
-        const codingData = await getLeetcodeCodingData(problem._id);
-        if (cancelled) return;
-        if (codingData) {
-          console.log(`[coding-data] Loaded: ${codingData.testCases.length} test cases`);
-          setProblem((prev) => prev ? {
-            ...prev,
-            starterCode: codingData.starterCode,
-            testCases: codingData.testCases,
-          } : prev);
-          // Directly set code — don't rely on the problem-change effect
-          // because Monaco may not pick up the value prop change
-          const starter = codingData.starterCode[codeLanguage] ?? "";
-          if (starter) setCode(starter);
-        }
-      } catch (err) {
-        console.warn("[coding-data] Failed to fetch:", err);
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, [problem?._id, showCodeEditor, codeLanguage]);
 
   // Update code when problem or language changes
   useEffect(() => {
