@@ -3,7 +3,6 @@ import { ENV } from "@ffh/env";
 import { convex } from "@ffh/db";
 import { api } from "../../../../convex/_generated/api";
 import { getSystemPrompt } from "../prompts";
-import { getClientIP, getGeolocationFromIP, formatLocation, getCountryFlag } from "../services/geolocation";
 import { optimizeForTTS } from "../prompts/pronunciation-guide";
 import { getProblemIntro } from "../services/problem-intros";
 import type {

@@ -1,6 +1,5 @@
 import { Hono } from "hono";
-import { describeRoute, validator } from "hono-openapi";
-import { z } from "zod";
+import { describeRoute } from "hono-openapi";
 import { convex } from "@ffh/db";
 import { api } from "../../../../convex/_generated/api";
 import { authMiddleware } from "../middleware/auth";
@@ -222,7 +221,7 @@ function extractTextFromPDF(buffer: Buffer): string {
 
   // Method 2: Look for readable text sequences
   if (textParts.length < 10) {
-    const readableRegex = /[a-zA-ZğüşıöçĞÜŞİÖÇ0-9@.,;:!?\-\/\s]{10,}/g;
+    const readableRegex = /[a-zA-ZğüşıöçĞÜŞİÖÇ0-9@.,;:!?\-/\s]{10,}/g;
     let rMatch: RegExpExecArray | null;
     while ((rMatch = readableRegex.exec(content)) !== null) {
       const cleaned = rMatch[0].trim();

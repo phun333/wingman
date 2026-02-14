@@ -1,6 +1,5 @@
 import { Hono } from "hono";
-import { describeRoute, validator } from "hono-openapi";
-import { z } from "zod";
+import { describeRoute } from "hono-openapi";
 import { convex } from "@ffh/db";
 import { api } from "../../../../convex/_generated/api";
 

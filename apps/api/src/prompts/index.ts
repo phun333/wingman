@@ -1,7 +1,6 @@
 import type { InterviewType, Difficulty } from "@ffh/types";
 import { liveCodingPrompt } from "./live-coding";
 import { systemDesignPrompt } from "./system-design";
-import { phoneScreenPrompt } from "./phone-screen";
 import { phoneScreenPromptEnhanced } from "./phone-screen-enhanced";
 import { practicePrompt } from "./practice";
 

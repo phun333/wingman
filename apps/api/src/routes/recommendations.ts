@@ -1,10 +1,10 @@
 import { Hono } from "hono";
-import { describeRoute, resolver, validator } from "hono-openapi";
+import { describeRoute, validator } from "hono-openapi";
 import { z } from "zod";
 import { convex } from "@ffh/db";
 import { api } from "../../../../convex/_generated/api";
 import { authMiddleware } from "../middleware/auth";
-import { getRecommendations, scoreProblems } from "../services/recommendation";
+import { getRecommendations } from "../services/recommendation";
 
 type AuthEnv = {
   Variables: { userId: string; userName: string; userEmail: string };
