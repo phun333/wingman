@@ -78,7 +78,7 @@ export const listByUser = query({
 export const getDailyActivity = query({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
-    const oneYearAgo = Date.now() - 365 * 24 * 60 * 60 * 1000;
+    const tenMonthsAgo = Date.now() - 300 * 24 * 60 * 60 * 1000;
 
     const results = await ctx.db
       .query("interviewResults")
@@ -90,7 +90,7 @@ export const getDailyActivity = query({
     const dayCounts = new Map<string, number>();
 
     for (const r of results) {
-      if (r.createdAt < oneYearAgo) continue;
+      if (r.createdAt < tenMonthsAgo) continue;
       const d = new Date(r.createdAt);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
       dayCounts.set(key, (dayCounts.get(key) ?? 0) + 1);
@@ -99,13 +99,14 @@ export const getDailyActivity = query({
     // Build activity array
     const activity: { date: string; count: number; level: number }[] = [];
     const today = new Date();
-    const start = new Date(oneYearAgo);
+    const start = new Date(tenMonthsAgo);
     start.setHours(0, 0, 0, 0);
 
     for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) {
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
       const count = dayCounts.get(key) ?? 0;
-      const level = count === 0 ? 0 : count <= 1 ? 1 : count <= 2 ? 2 : count <= 4 ? 3 : 4;
+      const level =
+        count === 0 ? 0 : count <= 1 ? 1 : count <= 2 ? 2 : count <= 4 ? 3 : 4;
       activity.push({ date: key, count, level });
     }
 
