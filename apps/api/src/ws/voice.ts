@@ -880,39 +880,15 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
     if (error) summary += `Hata: ${error}\n`;
     if (stderr) summary += `Stderr: ${stderr}\n`;
 
-    // Add to conversation so AI can respond
+    // Add to conversation so AI can see it when user speaks next
     this.conversationHistory.push({ role: "user", content: summary });
     this.persistMessage("user", summary);
 
     // Check if all tests passed for solution comparison (practice mode)
     this.checkSolutionComparison(results);
 
-    // Auto-trigger AI response to comment on the results
-    if (this.processing) return;
-    this.processing = true;
-    this.setState("processing");
-    this.abortController = new AbortController();
-    const { signal } = this.abortController;
-
-    try {
-      const aiResponse = await this.generateAndSpeak(signal);
-      if (!aiResponse || signal.aborted) return;
-
-      this.conversationHistory.push({ role: "assistant", content: aiResponse });
-      this.persistMessage("assistant", aiResponse);
-    } catch (err) {
-      if (!signal.aborted) {
-        const message = err instanceof Error ? err.message : "Code result response hatası";
-        this.send({ type: "error", message });
-      }
-    } finally {
-      this.processing = false;
-      if (!signal.aborted) {
-        this.send({ type: "ai_audio_done" });
-        this.setState("idle");
-      }
-      this.abortController = null;
-    }
+    // Don't auto-trigger AI response — let user initiate conversation via mic
+    console.log(`[code_result] ${passed}/${total} passed. Stored in history, awaiting user input.`);
   }
 
   // ─── Hint Request ────────────────────────────────────
