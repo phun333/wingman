@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="apps/web/public/icon.svg" width="80" height="80" alt="Wingman" />
+  <img src="assets/logo.png" width="80" height="80" alt="Wingman" />
 </p>
 
 <h1 align="center">Wingman</h1>
@@ -24,14 +24,14 @@ Wingman, adayların gerçekçi mülakat simülasyonları ile kodlama, sistem tas
 
 | Özellik | Açıklama |
 |---------|----------|
-| 🎙️ Sesli Yapay Zeka Mülakatçısı | Türkçe konuşan yapay zeka mülakatçısı (Freya STT/TTS + OpenRouter LLM) |
-| 💻 Canlı Kodlama | Monaco editör ile kod yazma, çalıştırma ve yapay zeka tarafından analiz edilmesi |
-| 🏗️ Sistem Tasarımı | tldraw tabanlı beyaz tahta ile sistem mimarisi tasarlama |
-| 📞 Telefon Mülakatı | Sadece sesli, soru-cevap formatında mülakat simülasyonu |
-| 🧪 Pratik Modu | Serbest çalışma, ipucu sistemi ve çözüm karşılaştırması |
-| 🎯 Kişiselleştirilmiş Mülakatlar | İş ilanı ve özgeçmiş analizi ile hedefe yönelik sorular |
-| 📊 Detaylı Raporlama | Performans skoru, güçlü/zayıf yönler, radar grafiği ve ilerleme takibi |
-| 📚 LeetCode Entegrasyonu | 2000+ soru, şirket bazlı çalışma yol haritaları |
+| Sesli Yapay Zeka Mülakatçısı | Türkçe konuşan yapay zeka mülakatçısı (Freya STT/TTS + OpenRouter LLM) |
+| Canlı Kodlama | Monaco editör ile kod yazma, çalıştırma ve yapay zeka tarafından analiz edilmesi |
+| Sistem Tasarımı | tldraw tabanlı beyaz tahta ile sistem mimarisi tasarlama |
+| Telefon Mülakatı | Sadece sesli, soru-cevap formatında mülakat simülasyonu |
+| Pratik Modu | Serbest çalışma, ipucu sistemi ve çözüm karşılaştırması |
+| Kişiselleştirilmiş Mülakatlar | İş ilanı ve özgeçmiş analizi ile hedefe yönelik sorular |
+| Detaylı Raporlama | Performans skoru, güçlü/zayıf yönler, radar grafiği ve ilerleme takibi |
+| LeetCode Entegrasyonu | 2000+ soru, şirket bazlı çalışma yol haritaları |
 
 ## Mimari
 
@@ -83,27 +83,6 @@ LLM üretimi ile TTS sentezi paralel çalıştırılarak düşük gecikme sağla
 | Durum Yönetimi | [Zustand](https://zustand.docs.pmnd.rs) |
 | Dağıtım | [Docker](https://docker.com) + [Dokploy](https://dokploy.com) |
 
-## Proje Yapısı
-
-```
-wingman/
-├── apps/
-│   ├── api/            Hono REST API + WebSocket sunucusu
-│   └── web/            React tek sayfa uygulaması (SPA)
-├── packages/
-│   ├── db/             Convex istemci sarmalayıcısı
-│   ├── env/            Ortam değişkeni yönetimi
-│   ├── tsconfig/       Paylaşılan TypeScript yapılandırmaları
-│   └── types/          Paylaşılan tip tanımları
-├── convex/             Convex arka uç (şema, sorgular, mutasyonlar)
-├── dataset/            LeetCode veri seti ve dönüştürücü
-├── docs/               fal.ai / Freya entegrasyon dokümantasyonu
-├── infra/              Docker ve dağıtım yapılandırması
-├── roadmap/            Geliştirme yol haritası (fazlar)
-├── presentation/       Hackathon sunum dosyaları
-└── tests/              API ve entegrasyon testleri
-```
-
 ## Kurulum
 
 ### Ön Koşullar
@@ -117,8 +96,8 @@ wingman/
 
 ```bash
 # Depoyu klonla
-git clone https://github.com/phun333/freya-fal-hackathon.git
-cd freya-fal-hackathon
+git clone https://github.com/phun333/wingman.git
+cd wingman
 
 # Bağımlılıkları yükle
 bun install
@@ -175,19 +154,19 @@ Her modülün kendi README dosyasında ayrıntılı açıklama, klasör yapısı
 
 | Modül | Açıklama | README |
 |-------|----------|--------|
-| **apps/api** | Hono REST API + WebSocket sunucusu | [→ Oku](apps/api/README.md) |
-| **apps/web** | React tek sayfa uygulaması | [→ Oku](apps/web/README.md) |
-| **convex** | Veritabanı şeması, sorgular ve mutasyonlar | [→ Oku](convex/README.md) |
-| **packages/db** | Convex istemci sarmalayıcısı | [→ Oku](packages/db/README.md) |
-| **packages/env** | Ortam değişkeni yönetimi | [→ Oku](packages/env/README.md) |
-| **packages/types** | Paylaşılan tip tanımları | [→ Oku](packages/types/README.md) |
-| **packages/tsconfig** | Paylaşılan TypeScript yapılandırmaları | [→ Oku](packages/tsconfig/README.md) |
-| **dataset** | LeetCode veri seti ve dönüştürücü | [→ Oku](dataset/README.md) |
-| **docs** | fal.ai / Freya entegrasyon dokümantasyonu | [→ Oku](docs/README.md) |
-| **infra** | Docker ve dağıtım yapılandırması | [→ Oku](infra/README.md) |
-| **roadmap** | Geliştirme yol haritası | [→ Oku](roadmap/README.md) |
-| **presentation** | Hackathon sunum dosyaları | [→ Oku](presentation/README.md) |
-| **tests** | API ve entegrasyon testleri | [→ Oku](tests/README.md) |
+| **apps/api** | Hono REST API + WebSocket sunucusu | [Oku](apps/api/README.md) |
+| **apps/web** | React tek sayfa uygulaması | [Oku](apps/web/README.md) |
+| **convex** | Veritabanı şeması, sorgular ve mutasyonlar | [Oku](convex/README.md) |
+| **packages/db** | Convex istemci sarmalayıcısı | [Oku](packages/db/README.md) |
+| **packages/env** | Ortam değişkeni yönetimi | [Oku](packages/env/README.md) |
+| **packages/types** | Paylaşılan tip tanımları | [Oku](packages/types/README.md) |
+| **packages/tsconfig** | Paylaşılan TypeScript yapılandırmaları | [Oku](packages/tsconfig/README.md) |
+| **dataset** | LeetCode veri seti ve dönüştürücü | [Oku](dataset/README.md) |
+| **docs** | fal.ai / Freya entegrasyon dokümantasyonu | [Oku](docs/README.md) |
+| **infra** | Docker ve dağıtım yapılandırması | [Oku](infra/README.md) |
+| **roadmap** | Geliştirme yol haritası | [Oku](roadmap/README.md) |
+| **presentation** | Hackathon sunum dosyaları | [Oku](presentation/README.md) |
+| **tests** | API ve entegrasyon testleri | [Oku](tests/README.md) |
 
 ## Docker ile Dağıtım
 
