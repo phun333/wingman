@@ -67,6 +67,8 @@ export class VoiceSession {
   private consecutiveErrors = 0; // Track consecutive pipeline errors for connection fallback
   private currentWhiteboardState: WhiteboardState | null = null;
 
+
+
   // Question tracking (phone-screen)
   private currentQuestion: number = 0;
   private totalQuestions: number = 5;
@@ -159,6 +161,7 @@ export class VoiceSession {
         try {
           let designProblem = await convex.query(api.designProblems.getRandom, {
             difficulty: this.interview.difficulty as any,
+            seed: Math.random(),
           });
 
           // If no design problems exist, seed the table and retry
@@ -168,6 +171,7 @@ export class VoiceSession {
               await convex.mutation(api.designProblems.seedIfEmpty, {});
               designProblem = await convex.query(api.designProblems.getRandom, {
                 difficulty: this.interview.difficulty as any,
+                seed: Math.random(),
               });
             } catch (seedErr) {
               console.error("Failed to seed design problems:", seedErr);
@@ -175,6 +179,7 @@ export class VoiceSession {
           }
 
           if (designProblem) {
+            console.log(`[init] Sending design_problem_loaded: ${designProblem.title}`);
             this.send({ type: "design_problem_loaded", problem: designProblem as any });
             // Store design problem info for intro generation
             this.currentDesignProblem = designProblem as any;
@@ -188,7 +193,7 @@ export class VoiceSession {
 
             this.conversationHistory.push({
               role: "system",
-              content: `[Mülakata atanan system design problemi]\nBaşlık: ${designProblem.title}\nZorluk: ${designProblem.difficulty}\nAçıklama: ${designProblem.description}\n\n${reqText}\n\nBu problemi adaya sor. Problemi kısaca sesli olarak açıkla, gereksinimleri paylaş ve adayın whiteboard üzerinde tasarım yapmasını bekle. Whiteboard'daki değişiklikleri takip edip yorumlayacaksın.`,
+              content: `[Atanan problem — aday bunu sol panelde görüyor, madde madde tekrarlama]\nBaşlık: ${designProblem.title}\nAçıklama: ${designProblem.description}\n\n${reqText}\n\nAdaya kısa bir giriş yap ve whiteboard'a çizmeye başlamasını iste.`,
             });
             // Link design problem to interview
             try {
@@ -233,11 +238,24 @@ export class VoiceSession {
             }
             console.log("Specific problem loaded:", problem?._id);
           } else {
-            // Load random problem by difficulty
-            problem = await convex.query(api.problems.getRandom, {
+            // Load random problem from leetcodeProblems table (real question bank)
+            const lc = await convex.query(api.leetcodeProblems.getRandom, {
               difficulty: this.interview.difficulty as any,
+              seed: Math.random(), // Pass seed to avoid Convex query determinism
             });
-            console.log("Random problem loaded:", problem?._id);
+            if (lc) {
+              problem = {
+                ...lc,
+                category: lc.relatedTopics?.[0] ?? "general",
+                testCases: [],
+              };
+            } else {
+              // Fallback to legacy problems table if leetcode table is empty
+              problem = await convex.query(api.problems.getRandom, {
+                difficulty: this.interview.difficulty as any,
+              });
+            }
+            console.log("Random problem loaded:", problem?._id, problem?.title);
           }
           if (problem) {
             this.send({ type: "problem_loaded", problem: problem as any });
@@ -1178,7 +1196,7 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
     if (this.currentWhiteboardState) {
       const wbContext: ChatMessage = {
         role: "system",
-        content: `[Adayın şu anki whiteboard tasarımı]\n${this.currentWhiteboardState.textRepresentation}`,
+        content: `[DAHİLİ — TEKRARLAMA, LİSTELEME, ALINTILAMA. Sessizce analiz et.]\n${this.currentWhiteboardState.textRepresentation}`,
       };
       const lastUserIdx = messages.findLastIndex((m) => m.role === "user");
       if (lastUserIdx >= 0) {
@@ -1204,6 +1222,7 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
     // ── Async sentence queue with notification ──
     const sentenceQueue: string[] = [];
     let llmDone = false;
+    let firstChunkSent = false;
     // Mutable container to avoid TS closure narrowing issues
     const pending: { notify: (() => void) | null } = { notify: null };
 
@@ -1225,6 +1244,7 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
     // ── TTS consumer (runs concurrently with LLM producer) ──
     let hasSwitchedToSpeaking = false;
 
+    // ── Sequential TTS with streaming — simple & fast ──
     const ttsConsumer = async (): Promise<void> => {
       while (true) {
         if (signal.aborted) return;
@@ -1234,11 +1254,9 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
         const sentence = sentenceQueue.shift();
         if (!sentence) continue;
 
-        // Switch to "speaking" state on first TTS sentence
         if (!hasSwitchedToSpeaking) {
           hasSwitchedToSpeaking = true;
           this.setState("speaking");
-          // Record TTS start time on the first sentence
           this._ttsStart = performance.now();
           this._ttsFirstChunkRecorded = false;
         }
@@ -1330,19 +1348,58 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
             fullText += token;
             sentenceBuffer += token;
 
-            // Stream token to client in real-time
+            // Stream text to client immediately — token by token
             this.send({ type: "ai_text", text: token, done: false });
 
-            // Detect sentence boundary: [.!?] followed by whitespace
-            const boundaryIdx = sentenceBuffer.search(/[.!?]\s/);
-            if (boundaryIdx !== -1) {
-              const sentence = sentenceBuffer.slice(0, boundaryIdx + 1).trim();
-              sentenceBuffer = sentenceBuffer.slice(boundaryIdx + 2);
-              if (sentence) {
+            // ── Chunk splitting ──
+            // First chunk: fire ASAP at ~3 words for lowest TTFB
+            // After that: split at sentence/clause boundaries for natural speech
+            let splitIdx = -1;
+            let skipChars = 0;
+
+            if (!firstChunkSent) {
+              // FIRST CHUNK: exactly 3 words, ignore all punctuation
+              const words = sentenceBuffer.split(/\s+/);
+              if (words.length >= 4) {
+                // Find end of 3rd word in the buffer
+                let pos = 0;
+                for (let w = 0; w < 3; w++) {
+                  pos = sentenceBuffer.indexOf(words[w]!, pos) + words[w]!.length;
+                }
+                splitIdx = pos;
+                // skip whitespace after split
+                if (sentenceBuffer[splitIdx] === " ") skipChars = 1;
+              }
+            } else {
+              // REST: sentence enders (.!?) — always split
+              const sentenceEnd = sentenceBuffer.search(/[.!?]\s/);
+              if (sentenceEnd !== -1) {
+                splitIdx = sentenceEnd + 1;
+                skipChars = 1;
+              }
+
+              // Comma/semicolon — split if buffer is long enough
+              if (splitIdx === -1 && sentenceBuffer.length >= 25) {
+                const clauseEnd = sentenceBuffer.search(/[,;:]\s/);
+                if (clauseEnd !== -1 && clauseEnd >= 12) {
+                  splitIdx = clauseEnd + 1;
+                  skipChars = 1;
+                }
+              }
+            }
+
+            if (splitIdx !== -1) {
+              const chunk = sentenceBuffer.slice(0, splitIdx).trim();
+              sentenceBuffer = sentenceBuffer.slice(splitIdx + skipChars);
+              if (chunk.length >= 3) {
+                if (!firstChunkSent) {
+                  firstChunkSent = true;
+                  console.log(`[TTS] First chunk fired (${chunk.length} chars): "${chunk}"`);
+                }
                 const optimized =
                   this.interview?.language === "tr"
-                    ? optimizeForTTS(sentence)
-                    : sentence;
+                    ? optimizeForTTS(chunk)
+                    : chunk;
                 pushSentence(optimized);
               }
             }
@@ -1362,7 +1419,6 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
         pushSentence(optimized);
       }
 
-      this.send({ type: "ai_text", text: "", done: true });
     } catch (err) {
       // LLM network/fetch error — send granular error if not aborted
       if (!signal.aborted) {
@@ -1380,6 +1436,8 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
       // Signal TTS consumer that LLM is done
       llmDone = true;
       pending.notify?.();
+      // Text is fully streamed — tell client
+      this.send({ type: "ai_text", text: "", done: true });
     }
 
     // Wait for all TTS sentences to finish playing
@@ -1389,6 +1447,7 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
   }
 
   // ─── Single Sentence TTS ─────────────────────────────
+  // Raw fetch SSE to /stream — skips fal SDK overhead (~200ms saving)
 
   private async synthesizeSentence(
     text: string,
@@ -1396,84 +1455,115 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
   ): Promise<void> {
     if (signal.aborted || !text) return;
 
-    try {
-      const stream = await fal.stream(ENV.TTS_ENDPOINT as any, {
-        input: { input: text, speed: this.config.speed },
-        path: "/stream",
-      } as any);
+    const optimizedText = this.interview?.language === "tr" ? optimizeForTTS(text) : text;
 
-      for await (const event of stream as AsyncIterable<{
-        audio?: string;
-        done?: boolean;
-        error?: { message: string };
-      }>) {
+    try {
+      const response = await fetch(
+        `https://fal.run/${ENV.TTS_ENDPOINT}/stream`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Key ${ENV.FAL_KEY}`,
+            "Content-Type": "application/json",
+            Accept: "text/event-stream",
+          },
+          body: JSON.stringify({
+            input: optimizedText,
+            speed: this.config.speed,
+          }),
+          signal,
+        },
+      );
+
+      if (!response.ok) {
+        // Fallback to /audio/speech
+        return this.synthesizeSentenceFallback(optimizedText, signal);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) return this.synthesizeSentenceFallback(optimizedText, signal);
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
         if (signal.aborted) return;
-        if (event.audio) {
-          // Record TTS first chunk latency (TTFB)
-          if (!this._ttsFirstChunkRecorded && this._ttsStart > 0) {
-            this._ttsFirstChunkMs = Math.round(performance.now() - this._ttsStart);
-            this._ttsFirstChunkRecorded = true;
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        // Parse SSE events from buffer
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop() ?? ""; // keep incomplete last part
+
+        for (const part of parts) {
+          const dataLine = part.split("\n").find((l) => l.startsWith("data: "));
+          if (!dataLine) continue;
+
+          try {
+            const event = JSON.parse(dataLine.slice(6));
+            if (event.audio) {
+              if (!this._ttsFirstChunkRecorded && this._ttsStart > 0) {
+                this._ttsFirstChunkMs = Math.round(performance.now() - this._ttsStart);
+                this._ttsFirstChunkRecorded = true;
+              }
+              this.send({ type: "ai_audio", data: event.audio });
+            }
+          } catch {
+            // skip malformed events
           }
-          this.send({ type: "ai_audio", data: event.audio });
-        }
-        if (event.error) {
-          this.send({ type: "error", message: event.error.message });
         }
       }
     } catch {
       if (signal.aborted) return;
-      // Fallback: generate full audio via /audio/speech
-      try {
-        await this.ttsFallback(text, signal);
-      } catch {
-        if (signal.aborted) return;
-        // Both TTS methods failed — send text as fallback
-        this.send({
-          type: "error",
-          message: "Ses oluşturulamadı — metin olarak gösteriliyor.",
-          errorType: "tts_failed",
-          retry: false,
-          fallbackText: text,
-        });
-      }
+      return this.synthesizeSentenceFallback(optimizedText, signal);
     }
   }
 
-  private async ttsFallback(
+  // Fallback: /audio/speech (non-streaming, full audio)
+  private async synthesizeSentenceFallback(
     text: string,
     signal: AbortSignal,
   ): Promise<void> {
-    // TTS için telaffuz optimizasyonu uygula (sadece Türkçe için)
-    const optimizedText = this.interview?.language === "tr" ? optimizeForTTS(text) : text;
-
-    const response = await fetch(
-      `https://fal.run/${ENV.TTS_ENDPOINT}/audio/speech`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Key ${ENV.FAL_KEY}`,
-          "Content-Type": "application/json",
+    if (signal.aborted) return;
+    try {
+      const response = await fetch(
+        `https://fal.run/${ENV.TTS_ENDPOINT}/audio/speech`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Key ${ENV.FAL_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            input: text,
+            response_format: "pcm",
+            speed: this.config.speed,
+          }),
+          signal,
         },
-        body: JSON.stringify({
-          input: optimizedText,
-          response_format: "pcm",
-          speed: this.config.speed,
-        }),
-        signal,
-      },
-    );
-
-    if (!response.ok) return;
-
-    const arrayBuffer = await response.arrayBuffer();
-    const base64 = Buffer.from(arrayBuffer).toString("base64");
-    // Record TTS first chunk latency from fallback path
-    if (!this._ttsFirstChunkRecorded && this._ttsStart > 0) {
-      this._ttsFirstChunkMs = Math.round(performance.now() - this._ttsStart);
-      this._ttsFirstChunkRecorded = true;
+      );
+      if (!response.ok) return;
+      const arrayBuffer = await response.arrayBuffer();
+      if (!this._ttsFirstChunkRecorded && this._ttsStart > 0) {
+        this._ttsFirstChunkMs = Math.round(performance.now() - this._ttsStart);
+        this._ttsFirstChunkRecorded = true;
+      }
+      this.send({ type: "ai_audio", data: Buffer.from(arrayBuffer).toString("base64") });
+    } catch {
+      if (signal.aborted) return;
+      this.send({
+        type: "error",
+        message: "Ses oluşturulamadı — metin olarak gösteriliyor.",
+        errorType: "tts_failed",
+        retry: false,
+        fallbackText: text,
+      });
     }
-    this.send({ type: "ai_audio", data: base64 });
   }
+
+
 
   // ─── Interrupt ───────────────────────────────────────
 
@@ -1508,6 +1598,7 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
       clearTimeout(this.timeUpTimer);
       this.timeUpTimer = null;
     }
+
   }
 
   /**
@@ -1521,30 +1612,10 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
 
     try {
       this.setState("speaking");
-
-      // Stream TTS audio
-      const stream = await fal.stream(ENV.TTS_ENDPOINT as any, {
-        input: { input: text, speed: this.config.speed },
-        path: "/stream",
-      } as any);
-
-      for await (const event of stream as AsyncIterable<{
-        audio?: string;
-        done?: boolean;
-        error?: { message: string };
-      }>) {
-        if (signal.aborted) return;
-        if (event.audio) {
-          this.send({ type: "ai_audio", data: event.audio });
-        }
-        if (event.error) {
-          this.send({ type: "error", message: event.error.message });
-        }
-      }
+      await this.synthesizeSentence(text, signal);
     } catch (error) {
       if (signal.aborted) return;
       console.error("Error generating intro audio:", error);
-      // Fallback to LLM if TTS fails
       this.conversationHistory.push({
         role: "user",
         content: "[SYSTEM: Kullanıcı hazır, problemi açıklamaya başla]",
