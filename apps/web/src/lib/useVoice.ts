@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ClientMessage, ServerMessage, VoicePipelineState, Problem, DesignProblem, CodeLanguage, TestResult, WhiteboardState } from "@ffh/types";
+import type { ClientMessage, ServerMessage, VoicePipelineState, Problem, DesignProblem, CodeLanguage, TestResult, WhiteboardState, ErrorType } from "@ffh/types";
 import { AudioQueuePlayer, decodePCM16, createVolumeMeter } from "./audio";
 
 interface UseVoiceOptions {
@@ -16,6 +16,13 @@ interface SolutionComparison {
   spaceComplexity?: string;
 }
 
+export interface ErrorInfo {
+  message: string;
+  errorType?: ErrorType;
+  retry?: boolean;
+  fallbackText?: string;
+}
+
 interface UseVoiceReturn {
   state: VoicePipelineState;
   micActive: boolean;
@@ -23,6 +30,7 @@ interface UseVoiceReturn {
   transcript: string;
   aiText: string;
   error: string | null;
+  errorInfo: ErrorInfo | null;
   connected: boolean;
   voiceStarted: boolean;
   hintLevel: number;
@@ -41,6 +49,7 @@ interface UseVoiceReturn {
   sendWhiteboardUpdate: (state: WhiteboardState) => void;
   requestHint: () => void;
   dismissSolution: () => void;
+  dismissError: () => void;
 }
 
 function buildWsUrl(interviewId?: string, problemId?: string): string {
@@ -70,6 +79,7 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
   const [transcript, setTranscript] = useState("");
   const [aiText, setAiText] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [errorInfo, setErrorInfo] = useState<ErrorInfo | null>(null);
   const [connected, setConnected] = useState(false);
   const [voiceStarted, setVoiceStarted] = useState(false);
   const [hintLevel, setHintLevel] = useState(0);
@@ -92,6 +102,7 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
   const consecutiveSilenceRef = useRef(0);
   const aiTextAccRef = useRef("");
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const errorDismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const unmountedRef = useRef(false);
   // Ref to track state for VAD (avoids stale closure in volume meter callback)
@@ -191,9 +202,43 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
         // Playback will finish naturally from queue
         break;
 
-      case "error":
+      case "error": {
         setError(msg.message);
+
+        const info: ErrorInfo = {
+          message: msg.message,
+          errorType: msg.errorType,
+          retry: msg.retry,
+          fallbackText: msg.fallbackText,
+        };
+        setErrorInfo(info);
+
+        // TTS fallback: show text in aiText when voice fails
+        if (msg.errorType === "tts_failed" && msg.fallbackText) {
+          aiTextAccRef.current += msg.fallbackText;
+          setAiText(aiTextAccRef.current);
+        }
+
+        // Auto-dismiss STT and TTS errors after 5 seconds
+        if (msg.errorType === "stt_failed" || msg.errorType === "tts_failed") {
+          if (errorDismissTimerRef.current) clearTimeout(errorDismissTimerRef.current);
+          errorDismissTimerRef.current = setTimeout(() => {
+            setErrorInfo(null);
+            setError(null);
+          }, 5000);
+        }
+
+        // Auto-dismiss LLM timeout after 8 seconds
+        if (msg.errorType === "llm_timeout" || msg.errorType === "llm_failed") {
+          if (errorDismissTimerRef.current) clearTimeout(errorDismissTimerRef.current);
+          errorDismissTimerRef.current = setTimeout(() => {
+            setErrorInfo(null);
+            setError(null);
+          }, 8000);
+        }
+
         break;
+      }
 
       case "problem_loaded":
         console.log("Problem received from WebSocket:", msg.problem);
@@ -499,6 +544,15 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
     setSolutionComparison(null);
   }, []);
 
+  const dismissError = useCallback(() => {
+    setErrorInfo(null);
+    setError(null);
+    if (errorDismissTimerRef.current) {
+      clearTimeout(errorDismissTimerRef.current);
+      errorDismissTimerRef.current = null;
+    }
+  }, []);
+
   return {
     state,
     micActive,
@@ -506,6 +560,7 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
     transcript,
     aiText,
     error,
+    errorInfo,
     connected,
     voiceStarted,
     hintLevel,
@@ -524,5 +579,6 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
     sendWhiteboardUpdate,
     requestHint,
     dismissSolution,
+    dismissError,
   };
 }
