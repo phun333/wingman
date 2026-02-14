@@ -21,7 +21,21 @@ export default defineConfig({
         cookieDomainRewrite: "",
         cookiePathRewrite: "/",
       },
+      "/api/docs": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/docs/, "/docs"),
+      },
+      "/api/openapi.json": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
+        rewrite: (path) => "/openapi.json",
+      },
       "/api": "http://localhost:3001",
+      "/openapi.json": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
+      },
       "/ws/voice": {
         target: "ws://localhost:3001",
         ws: true,
