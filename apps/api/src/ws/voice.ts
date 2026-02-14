@@ -986,6 +986,15 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
 
   // ─── Pipeline ────────────────────────────────────────
 
+  // Latency tracking fields (reset per pipeline run)
+  private _sttMs = 0;
+  private _llmFirstTokenMs = 0;
+  private _ttsFirstChunkMs = 0;
+  private _llmStart = 0;
+  private _ttsStart = 0;
+  private _llmFirstTokenRecorded = false;
+  private _ttsFirstChunkRecorded = false;
+
   private async processAudio(): Promise<void> {
     if (this.processing) return;
     this.processing = true;
@@ -993,9 +1002,20 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
     this.abortController = new AbortController();
     const { signal } = this.abortController;
 
+    // Reset latency tracking
+    this._sttMs = 0;
+    this._llmFirstTokenMs = 0;
+    this._ttsFirstChunkMs = 0;
+    this._llmStart = 0;
+    this._ttsStart = 0;
+    this._llmFirstTokenRecorded = false;
+    this._ttsFirstChunkRecorded = false;
+
     try {
-      // 1) STT
+      // 1) STT (with latency measurement)
+      const sttStart = performance.now();
       const transcript = await this.transcribe(signal);
+      this._sttMs = Math.round(performance.now() - sttStart);
       if (!transcript || signal.aborted) {
         // STT returned nothing (too short / noise) — notify client and go back to idle
         if (!signal.aborted) {
@@ -1021,6 +1041,17 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
       this.conversationHistory.push({ role: "assistant", content: aiResponse });
       await this.persistMessage("assistant", aiResponse);
       this.trackQuestionProgress(aiResponse);
+
+      // Send latency report to client
+      const totalMs = this._sttMs + this._llmFirstTokenMs + this._ttsFirstChunkMs;
+      this.send({
+        type: "latency_report",
+        sttMs: this._sttMs,
+        llmFirstTokenMs: this._llmFirstTokenMs,
+        ttsFirstChunkMs: this._ttsFirstChunkMs,
+        totalMs,
+      });
+      console.log(`[Latency] STT: ${this._sttMs}ms | LLM TTFT: ${this._llmFirstTokenMs}ms | TTS TTFB: ${this._ttsFirstChunkMs}ms | Total: ${totalMs}ms`);
 
       // Reset consecutive errors on successful pipeline
       this.consecutiveErrors = 0;
@@ -1207,6 +1238,9 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
         if (!hasSwitchedToSpeaking) {
           hasSwitchedToSpeaking = true;
           this.setState("speaking");
+          // Record TTS start time on the first sentence
+          this._ttsStart = performance.now();
+          this._ttsFirstChunkRecorded = false;
         }
 
         await this.synthesizeSentence(sentence, signal);
@@ -1219,6 +1253,10 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
     // ── LLM producer (stream tokens → detect sentences → push to queue) ──
     let fullText = "";
     let sentenceBuffer = "";
+
+    // Record LLM start time for TTFT measurement
+    this._llmStart = performance.now();
+    this._llmFirstTokenRecorded = false;
 
     try {
       const response = await fetch(
@@ -1282,6 +1320,12 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
             const parsed = JSON.parse(data);
             const token = parsed.choices?.[0]?.delta?.content;
             if (!token) continue;
+
+            // Record LLM first token latency (TTFT)
+            if (!this._llmFirstTokenRecorded) {
+              this._llmFirstTokenMs = Math.round(performance.now() - this._llmStart);
+              this._llmFirstTokenRecorded = true;
+            }
 
             fullText += token;
             sentenceBuffer += token;
@@ -1365,6 +1409,11 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
       }>) {
         if (signal.aborted) return;
         if (event.audio) {
+          // Record TTS first chunk latency (TTFB)
+          if (!this._ttsFirstChunkRecorded && this._ttsStart > 0) {
+            this._ttsFirstChunkMs = Math.round(performance.now() - this._ttsStart);
+            this._ttsFirstChunkRecorded = true;
+          }
           this.send({ type: "ai_audio", data: event.audio });
         }
         if (event.error) {
@@ -1418,6 +1467,11 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
 
     const arrayBuffer = await response.arrayBuffer();
     const base64 = Buffer.from(arrayBuffer).toString("base64");
+    // Record TTS first chunk latency from fallback path
+    if (!this._ttsFirstChunkRecorded && this._ttsStart > 0) {
+      this._ttsFirstChunkMs = Math.round(performance.now() - this._ttsStart);
+      this._ttsFirstChunkRecorded = true;
+    }
     this.send({ type: "ai_audio", data: base64 });
   }
 

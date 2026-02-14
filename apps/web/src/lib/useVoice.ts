@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ClientMessage, ServerMessage, VoicePipelineState, Problem, DesignProblem, CodeLanguage, TestResult, WhiteboardState, ErrorType } from "@ffh/types";
+import type { ClientMessage, ServerMessage, VoicePipelineState, Problem, DesignProblem, CodeLanguage, TestResult, WhiteboardState, ErrorType, LatencyReport } from "@ffh/types";
 import { AudioQueuePlayer, decodePCM16, createVolumeMeter } from "./audio";
 
 interface UseVoiceOptions {
@@ -41,6 +41,8 @@ interface UseVoiceReturn {
   recommendedSeconds: number;
   timeWarning: number | null;
   solutionComparison: SolutionComparison | null;
+  latency: LatencyReport | null;
+  latencyHistory: number[];
   startVoiceSession: () => void;
   toggleMic: () => void;
   interrupt: () => void;
@@ -90,6 +92,8 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
   const [recommendedSeconds, setRecommendedSeconds] = useState(0);
   const [timeWarning, setTimeWarning] = useState<number | null>(null);
   const [solutionComparison, setSolutionComparison] = useState<SolutionComparison | null>(null);
+  const [latency, setLatency] = useState<LatencyReport | null>(null);
+  const [latencyHistory, setLatencyHistory] = useState<number[]>([]);
 
   const wsRef = useRef<WebSocket | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -272,6 +276,16 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
           timeComplexity: msg.timeComplexity,
           spaceComplexity: msg.spaceComplexity,
         });
+        break;
+
+      case "latency_report":
+        setLatency({
+          sttMs: msg.sttMs,
+          llmFirstTokenMs: msg.llmFirstTokenMs,
+          ttsFirstChunkMs: msg.ttsFirstChunkMs,
+          totalMs: msg.totalMs,
+        });
+        setLatencyHistory((prev) => [...prev.slice(-4), msg.totalMs]); // Keep last 5
         break;
     }
   }
@@ -571,6 +585,8 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
     recommendedSeconds,
     timeWarning,
     solutionComparison,
+    latency,
+    latencyHistory,
     startVoiceSession,
     toggleMic,
     interrupt,

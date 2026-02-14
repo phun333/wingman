@@ -25,6 +25,7 @@ import { SystemDesignRoom } from "@/components/interview/SystemDesignRoom";
 import { AIChat } from "@/components/interview/AIChat";
 import { ChatThread } from "@/components/interview/ChatThread";
 import { WingLogo } from "@/components/icons/WingLogo";
+import { LatencyPipeline } from "@/components/interview/LatencyPipeline";
 
 const stateLabels: Record<VoicePipelineState, string> = {
   idle: "Hazır",
@@ -139,6 +140,8 @@ export function InterviewRoomPage() {
     recommendedSeconds,
     timeWarning,
     solutionComparison,
+    latency,
+    latencyHistory,
     startVoiceSession,
     toggleMic,
     interrupt,
@@ -413,6 +416,8 @@ export function InterviewRoomPage() {
           timeWarning={timeWarning}
           onStartInterview={handleStartInterview}
           onDismissError={dismissError}
+          latency={latency}
+          latencyHistory={latencyHistory}
         />
         <EndInterviewModal
           open={showEndModal}
@@ -461,6 +466,8 @@ export function InterviewRoomPage() {
               </option>
             ))}
           </select>
+
+          <LatencyPipeline latency={latency} latencyHistory={latencyHistory} state={state} />
 
           {isPractice ? (
             <span className="text-xs text-text-muted/50 font-mono tabular-nums flex items-center gap-1" title="Süre sınırı yok — rahatça çalış">
@@ -597,6 +604,8 @@ interface VoiceOnlyRoomProps {
   timeWarning: number | null;
   onStartInterview: () => void;
   onDismissError: () => void;
+  latency: import("@ffh/types").LatencyReport | null;
+  latencyHistory: number[];
 }
 
 function VoiceOnlyRoom({
@@ -623,6 +632,8 @@ function VoiceOnlyRoom({
   timeWarning,
   onStartInterview,
   onDismissError,
+  latency,
+  latencyHistory,
 }: VoiceOnlyRoomProps) {
   // Per-question elapsed timer
   const [questionElapsed, setQuestionElapsed] = useState(0);
@@ -693,6 +704,7 @@ function VoiceOnlyRoom({
               )}
             </div>
           )}
+          <LatencyPipeline latency={latency} latencyHistory={latencyHistory} state={state} />
           <span className={`text-sm font-mono tabular-nums flex items-center gap-1.5 ${timeWarning ? "text-amber" : "text-text-muted"}`}>
             {timeWarning && <Clock size={12} />}
             {formatTime(elapsed)}

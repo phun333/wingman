@@ -409,6 +409,15 @@ export type ErrorType =
   | "tts_failed"
   | "connection";
 
+// ─── Latency Report ──────────────────────────────────────
+
+export interface LatencyReport {
+  sttMs: number;
+  llmFirstTokenMs: number;
+  ttsFirstChunkMs: number;
+  totalMs: number;
+}
+
 /** Server → Client */
 export type ServerMessage =
   | { type: "transcript"; text: string; final: boolean }
@@ -417,6 +426,7 @@ export type ServerMessage =
   | { type: "ai_audio_done" }
   | { type: "state_change"; state: VoicePipelineState }
   | { type: "error"; message: string; errorType?: ErrorType; retry?: boolean; fallbackText?: string }
+  | { type: "latency_report"; sttMs: number; llmFirstTokenMs: number; ttsFirstChunkMs: number; totalMs: number }
   | { type: "problem_loaded"; problem: Problem }
   | { type: "design_problem_loaded"; problem: DesignProblem }
   | { type: "hint_given"; level: number; totalHints: number }
