@@ -109,7 +109,7 @@ export function StreakHeatmap() {
       </div>
 
       {/* Heatmap */}
-      <div className="overflow-x-auto -mx-2 px-2 pb-1">
+      <div className="overflow-x-hidden -mx-2 px-2 pb-1">
         <ActivityCalendar
           data={data.activity}
           theme={{ dark: THEME.dark }}
