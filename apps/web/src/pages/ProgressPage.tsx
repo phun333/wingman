@@ -55,6 +55,7 @@ export function ProgressPage() {
   const loadingInterviews = useInterviewsStore((s) => s.loadingAll || s.loadingProgress);
 
   const jobPaths = useJobsStore((s) => s.paths);
+  const removePath = useJobsStore((s) => s.removePath);
   const fetchJobs = useJobsStore((s) => s.fetchData);
   const loadingJobs = useJobsStore((s) => s.loading);
 
@@ -491,6 +492,7 @@ export function ProgressPage() {
       <div className="mt-8">
         <JobPaths
           paths={jobPaths}
+          onDeletePath={removePath}
           onStartInterview={async (path, question, category) => {
             try {
               const interview = await createInterview({

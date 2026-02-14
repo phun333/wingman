@@ -156,6 +156,19 @@ export const updateQuestionProgress = mutation({
   },
 });
 
+// ─── Delete Path ─────────────────────────────────────────
+export const remove = mutation({
+  args: {
+    id: v.id("jobInterviewPaths"),
+  },
+  handler: async (ctx, args) => {
+    const path = await ctx.db.get(args.id);
+    if (!path) throw new Error("Path not found");
+    await ctx.db.delete(args.id);
+    return { deleted: true };
+  },
+});
+
 // ─── Helper: Generate Questions from LeetCode DB ────────
 
 interface PathQuestion {

@@ -245,6 +245,31 @@ jobRoutes.put(
 );
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  DELETE /jobs/paths/:id — Delete an interview path
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+jobRoutes.delete(
+  "/paths/:id",
+  describeRoute({
+    tags: ["Jobs"],
+    summary: "Delete an interview path",
+    responses: {
+      200: { description: "Deleted" },
+      404: { description: "Not found" },
+    },
+  }),
+  async (c) => {
+    const id = c.req.param("id");
+    try {
+      await convex.mutation(api.jobInterviewPaths.remove, { id: id as any });
+      return c.json({ deleted: true });
+    } catch {
+      return c.json({ error: "Interview path not found" }, 404);
+    }
+  },
+);
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  GET /jobs/:id — Get by ID
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

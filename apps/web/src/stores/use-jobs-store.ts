@@ -4,6 +4,7 @@ import {
   deleteJobPosting,
   parseJobPosting,
   getJobPaths,
+  deleteJobPath,
 } from "@/lib/api";
 import type { JobPosting } from "@ffh/types";
 
@@ -49,6 +50,7 @@ interface JobsState {
   fetchData: (force?: boolean) => Promise<void>;
   parseJob: (params: { url?: string; rawText?: string }) => Promise<void>;
   removeJob: (id: string) => Promise<void>;
+  removePath: (id: string) => Promise<void>;
   getPathForJob: (jobId: string) => JobPath | undefined;
   invalidate: () => void;
 }
@@ -110,6 +112,21 @@ export const useJobsStore = create<JobsState>()((set, get) => ({
 
     try {
       await deleteJobPosting(id);
+    } catch {
+      // Revert on failure
+      await get().fetchData(true);
+      throw new Error("Silme işlemi başarısız");
+    }
+  },
+
+  removePath: async (id) => {
+    // Optimistic update
+    set((state) => ({
+      paths: state.paths.filter((p) => p._id !== id),
+    }));
+
+    try {
+      await deleteJobPath(id);
     } catch {
       // Revert on failure
       await get().fetchData(true);

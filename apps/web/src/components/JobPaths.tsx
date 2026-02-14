@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Progress } from "@/components/ui/progress";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import {
   Building2,
   Code2,
@@ -11,7 +13,8 @@ import {
   ChevronRight,
   CheckCircle,
   Circle,
-  Briefcase
+  Briefcase,
+  Trash2,
 } from "lucide-react";
 
 interface JobPath {
@@ -56,9 +59,26 @@ const difficultyColors = {
 interface JobPathsProps {
   paths: JobPath[];
   onStartInterview?: (path: JobPath, question: any, category: any) => void;
+  onDeletePath?: (id: string) => Promise<void>;
 }
 
-export function JobPaths({ paths, onStartInterview }: JobPathsProps) {
+export function JobPaths({ paths, onStartInterview, onDeletePath }: JobPathsProps) {
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDelete() {
+    if (!deleteTarget || !onDeletePath) return;
+    setDeleting(true);
+    try {
+      await onDeletePath(deleteTarget.id);
+      setDeleteTarget(null);
+    } catch {
+      // ignore
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   console.log("JobPaths component - paths:", paths);
 
   if (paths.length === 0) {
@@ -111,13 +131,25 @@ export function JobPaths({ paths, onStartInterview }: JobPathsProps) {
                   {path.description}
                 </p>
               </div>
-              <Link
-                to={`/job-path/${path._id}`}
-                className="flex items-center gap-1 text-xs text-amber hover:text-amber/80 transition-colors"
-              >
-                Detaylar
-                <ChevronRight size={14} />
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link
+                  to={`/job-path/${path._id}`}
+                  className="flex items-center gap-1 text-xs text-amber hover:text-amber/80 transition-colors"
+                >
+                  Detaylar
+                  <ChevronRight size={14} />
+                </Link>
+                {onDeletePath && (
+                  <button
+                    type="button"
+                    onClick={() => setDeleteTarget({ id: path._id, title: path.title })}
+                    className="p-1.5 rounded-lg text-danger/50 hover:text-danger hover:bg-danger/10 transition-colors cursor-pointer"
+                    title="Yolu Sil"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Progress */}
@@ -234,6 +266,23 @@ export function JobPaths({ paths, onStartInterview }: JobPathsProps) {
           </Card>
         </motion.div>
       ))}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        title="İş İlanı Yolunu Silmek İstediğine Emin Misin?"
+        description={
+          deleteTarget
+            ? `"${deleteTarget.title}" yolu ve tüm ilerleme verileri kalıcı olarak silinecek.`
+            : undefined
+        }
+        confirmText="Evet, Sil"
+        cancelText="Vazgeç"
+        variant="danger"
+        loading={deleting}
+      />
     </div>
   );
 }

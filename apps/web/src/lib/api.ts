@@ -387,6 +387,10 @@ export async function getJobPaths(): Promise<any[]> {
   return request<any[]>("/jobs/paths");
 }
 
+export async function deleteJobPath(id: string): Promise<void> {
+  await request<{ deleted: boolean }>(`/jobs/paths/${id}`, { method: "DELETE" });
+}
+
 export async function getJobPath(pathId: string): Promise<any> {
   return request<any>(`/jobs/paths/${pathId}`);
 }
