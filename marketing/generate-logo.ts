@@ -16,5 +16,5 @@ const svg = `<svg width="${SIZE}" height="${SIZE}" viewBox="0 0 ${SIZE} ${SIZE}"
   </g>
 </svg>`;
 
-await sharp(Buffer.from(svg)).png().toFile("assets/logo.png");
-console.log("assets/logo.png oluşturuldu");
+await sharp(Buffer.from(svg)).png().toFile("marketing/logo.png");
+console.log("marketing/logo.png oluşturuldu");

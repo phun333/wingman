@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.png" width="80" height="80" alt="Wingman" />
+  <img src="marketing/logo.png" width="80" height="80" alt="Wingman" />
 </p>
 
 <h1 align="center">Wingman</h1>
