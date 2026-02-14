@@ -371,4 +371,48 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_job", ["jobPostingId"])
     .index("by_user_job", ["userId", "jobPostingId"]),
+
+  // ─── CV → LeetCode Öneri Sistemi ───────────────────────
+
+  resumeAnalysis: defineTable({
+    userId: v.id("users"),
+    resumeId: v.id("resumes"),
+
+    // Deneyim seviyesi (LLM çıkarımı)
+    experienceLevel: v.union(
+      v.literal("junior"),
+      v.literal("mid"),
+      v.literal("senior"),
+    ),
+
+    // Topic bazlı beceri seviyeleri (LLM çıkarımı)
+    topicProficiency: v.array(
+      v.object({
+        topic: v.string(), // LeetCode relatedTopics ile eşleşen isim
+        level: v.number(), // 0-100
+        shouldPractice: v.boolean(),
+      }),
+    ),
+
+    // Hedef şirketler (CV'den çıkarılan veya kullanıcının belirttiği)
+    targetCompanies: v.array(v.string()),
+
+    // Güçlü ve zayıf alanlar
+    strongTopics: v.array(v.string()),
+    weakTopics: v.array(v.string()),
+
+    // Önerilen zorluk dağılımı (toplamı 100)
+    difficultyDistribution: v.object({
+      easy: v.number(),
+      medium: v.number(),
+      hard: v.number(),
+    }),
+
+    // LLM'in ürettiği açıklama (debug / UI için)
+    reasoning: v.optional(v.string()),
+
+    analyzedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_resume", ["resumeId"]),
 });

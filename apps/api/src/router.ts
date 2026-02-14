@@ -14,6 +14,7 @@ import { resumeRoutes } from "./routes/resume";
 import { profileRoutes } from "./routes/profile";
 import { leetcodeRoutes } from "./routes/leetcode";
 import { studyPathRoutes } from "./routes/study-paths";
+import { recommendationRoutes } from "./routes/recommendations";
 
 export const apiRoutes = new Hono();
 
@@ -76,6 +77,12 @@ apiRoutes.route("/leetcode", leetcodeRoutes);
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 apiRoutes.route("/study-paths", studyPathRoutes);
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  CV → LeetCode Recommendations
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+apiRoutes.route("/recommendations", recommendationRoutes);
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  Users
