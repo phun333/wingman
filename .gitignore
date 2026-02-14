@@ -11,3 +11,5 @@ apps/video/out
 # Scraper binary
 apps/scraper/scraper
 benchmark/go-bench/bench
+
+temp/

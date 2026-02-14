@@ -27,6 +27,8 @@ export function ChatThread({ transcript, aiText, state }: ChatThreadProps) {
   const prevStateRef = useRef(state);
   const lastTranscriptRef = useRef("");
   const aiAccumulatorRef = useRef("");
+  // Track whether user message was committed this turn (prevents duplicates)
+  const userCommittedRef = useRef(false);
 
   // Track user speech: buffer transcript, commit when processing starts
   useEffect(() => {
@@ -35,6 +37,26 @@ export function ChatThread({ transcript, aiText, state }: ChatThreadProps) {
       lastTranscriptRef.current = transcript;
     }
   }, [transcript]);
+
+  // Commit user message when transcript arrives during processing/speaking
+  // (PTT mode: transcript arrives AFTER state transitions to processing)
+  useEffect(() => {
+    if (transcript && !userCommittedRef.current && (state === "processing" || state === "speaking")) {
+      userCommittedRef.current = true;
+      setMessages((msgs) => [
+        ...msgs,
+        {
+          id: `user-${Date.now()}`,
+          type: "user",
+          text: transcript,
+          timestamp: Date.now(),
+        },
+      ]);
+      setPendingUserText("");
+      lastTranscriptRef.current = "";
+      aiAccumulatorRef.current = "";
+    }
+  }, [transcript, state]);
 
   // Track AI text: accumulate
   useEffect(() => {
@@ -48,8 +70,14 @@ export function ChatThread({ transcript, aiText, state }: ChatThreadProps) {
     const prev = prevStateRef.current;
     prevStateRef.current = state;
 
-    // Commit user message when state transitions to processing
-    if (state === "processing" && prev === "listening" && lastTranscriptRef.current) {
+    // Reset user committed flag when a new listening turn starts
+    if (state === "listening") {
+      userCommittedRef.current = false;
+    }
+
+    // Commit user message when state transitions to processing (VAD mode: transcript may already be available)
+    if (state === "processing" && prev === "listening" && lastTranscriptRef.current && !userCommittedRef.current) {
+      userCommittedRef.current = true;
       const text = lastTranscriptRef.current;
       setMessages((msgs) => [
         ...msgs,

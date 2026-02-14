@@ -172,7 +172,7 @@ export function InterviewRoomPage() {
   } = useVoice({
     interviewId: id,
     problemId: searchParams.get("problemId") || undefined,
-    pttMode: isLiveCoding || isPractice || isSystemDesign, // Push-to-talk for all panel-based interviews
+    pttMode: true, // Push-to-talk for all interview types
     onProblemLoaded: handleProblemLoaded,
     onDesignProblemLoaded: handleDesignProblemLoaded,
   });
@@ -876,7 +876,7 @@ function VoiceOnlyRoom({
                   className={`w-2 h-2 rounded-full ${
                     state === "speaking" ? "bg-amber" :
                     state === "processing" ? "bg-amber/60" :
-                    state === "listening" && micActive ? "bg-success" :
+                    micActive ? "bg-danger" :
                     "bg-text-muted/30"
                   }`}
                   animate={
@@ -893,29 +893,29 @@ function VoiceOnlyRoom({
                 <span className={`text-xs font-medium ${
                   state === "speaking" ? "text-amber" :
                   state === "processing" ? "text-amber/70" :
-                  state === "listening" ? "text-success" :
+                  micActive ? "text-success" :
                   "text-text-muted"
                 }`}>
                   {state === "speaking" ? "Konuşuyor" :
                    state === "processing" ? "Düşünüyor" :
-                   state === "listening" ? "Dinliyor" :
-                   "Hazır"}
+                   micActive ? "Kayıt yapılıyor" :
+                   "Sıranız — mikrofona basın"}
                 </span>
               </div>
 
               {/* Mic button */}
               <div className="relative">
-                {micActive && state === "listening" && (
+                {micActive && (
                   <motion.div
                     animate={{ scale: 1 + volume * 6, opacity: 0.25 + volume * 2 }}
                     transition={{ duration: 0.1 }}
-                    className="absolute inset-0 rounded-full bg-success/20 pointer-events-none"
+                    className="absolute inset-0 rounded-full bg-danger/20 pointer-events-none"
                     style={{ margin: -8 }}
                   />
                 )}
                 <button
                   onClick={onMicClick}
-                  disabled={!connected}
+                  disabled={!connected || state === "processing"}
                   className={`
                     relative h-14 w-14 rounded-full flex items-center justify-center
                     border-2 transition-all duration-200 cursor-pointer
@@ -923,14 +923,14 @@ function VoiceOnlyRoom({
                     ${state === "speaking" || state === "processing"
                       ? "border-danger/40 bg-danger/10 text-danger hover:bg-danger/20"
                       : micActive
-                        ? "border-success bg-success/15 text-success shadow-[0_0_24px_rgba(34,197,94,0.15)] hover:bg-success/20"
-                        : "border-border bg-surface-raised text-text-muted hover:border-text-muted hover:text-text"
+                        ? "border-danger bg-danger/15 text-danger shadow-[0_0_24px_rgba(239,68,68,0.15)] hover:bg-danger/20 animate-pulse"
+                        : "border-amber/60 bg-amber/10 text-amber hover:border-amber hover:bg-amber/20 hover:shadow-[0_0_24px_rgba(229,161,14,0.15)]"
                     }
                   `}
                   title={
                     state === "speaking" || state === "processing"
                       ? "Sustur"
-                      : micActive ? "Mikrofonu kapat" : "Mikrofonu aç"
+                      : micActive ? "Konuşmayı gönder" : "Konuşmak için bas"
                   }
                 >
                   {state === "speaking" || state === "processing" ? (
@@ -938,17 +938,17 @@ function VoiceOnlyRoom({
                   ) : micActive ? (
                     <Mic size={22} strokeWidth={2} />
                   ) : (
-                    <MicOff size={22} strokeWidth={2} />
+                    <Mic size={22} strokeWidth={2} />
                   )}
                 </button>
               </div>
 
               {/* Volume meter */}
               <div className="min-w-[100px]">
-                {micActive && state === "listening" && (
+                {micActive && (
                   <div className="h-1.5 bg-surface-raised rounded-full overflow-hidden">
                     <motion.div
-                      className="h-full bg-gradient-to-r from-success/60 to-success rounded-full"
+                      className="h-full bg-gradient-to-r from-danger/60 to-danger rounded-full"
                       style={{ width: `${Math.min(volume * 100, 100)}%` }}
                       transition={{ duration: 0.05 }}
                     />
@@ -959,10 +959,10 @@ function VoiceOnlyRoom({
 
             <p className="text-center text-[11px] text-text-muted">
               {state === "speaking" || state === "processing"
-                ? "Konuşarak veya butona tıklayarak susturabilirsiniz"
+                ? "Susturmak için butona tıklayın"
                 : micActive
-                  ? "Konuşun — duraklamada otomatik gönderilir"
-                  : "Mikrofonu açmak için butona tıklayın"}
+                  ? "Konuşun — bitirince butona tekrar tıklayın"
+                  : "Konuşmak için mikrofon butonuna tıklayın"}
             </p>
           </div>
         )}
