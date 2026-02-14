@@ -642,23 +642,24 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
 
       <!-- Technical Tricks Grid -->
       <div class="reveal" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px;">
-        <!-- Trick 1: Interleaved Pipeline -->
+        <!-- Trick 1: Two-Phase Chunk Splitting + Interleaved Pipeline -->
         <div class="card" style="padding:18px; border-color:rgba(229,161,14,0.2); background:rgba(229,161,14,0.02);">
           <div class="flex items-center gap-3" style="margin-bottom:10px;">
             <div style="width:36px;height:36px;border-radius:10px;background:rgba(229,161,14,0.12);display:flex;align-items:center;justify-content:center;">
               <i class="ri-swap-line t-amber" style="font-size:18px;"></i>
             </div>
             <div>
-              <h3 style="font-size:14px;">LLM + TTS Interleaved</h3>
+              <h3 style="font-size:14px;">2-Fazlı Chunk Splitting</h3>
               <span class="badge badge-amber" style="font-size:9px; padding:1px 5px;">En Kritik Trick</span>
             </div>
           </div>
           <p class="t-secondary" style="font-size:12px; line-height:1.6;">
-            LLM token token üretirken <strong style="color:var(--color-text)">cümle sınırlarını anlık tespit</strong> ediyoruz. Her cümle tamamlandığında LLM bitmeden TTS başlıyor. LLM üretme ve TTS sentezleme <strong style="color:var(--color-amber)">paralel çalışıyor</strong>.
+            <strong style="color:var(--color-amber)">Faz 1:</strong> İlk <strong style="color:var(--color-text)">3 kelimede</strong> hemen TTS'e gönder — noktalama yok say, en düşük TTFB.<br>
+            <strong style="color:var(--color-info)">Faz 2:</strong> Sonraki chunk'lar <strong style="color:var(--color-text)">cümle sonu</strong> (.!?) veya <strong style="color:var(--color-text)">virgül/noktalı virgül</strong> (≥25 kar) sınırlarında bölünür. LLM + TTS <strong style="color:var(--color-amber)">paralel</strong> çalışır.
           </p>
           <div style="margin-top:10px; padding:8px 10px; border-radius:6px; background:var(--color-surface-raised); font-family:var(--font-mono); font-size:10px; color:var(--color-text-muted); line-height:1.6;">
-            LLM: [tok][tok][<span style="color:var(--color-amber);">cümle!</span>][tok]...<br>
-            TTS: &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;[<span style="color:var(--color-success);">ses üret</span>][<span style="color:var(--color-success);">oynat</span>]
+            LLM: [w1][w2][<span style="color:var(--color-amber);">w3→TTS!</span>][tok][<span style="color:var(--color-info);">cümle.</span>]...<br>
+            TTS: &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;[<span style="color:var(--color-success);">3-kel</span>]&ensp;&ensp;&ensp;&ensp;[<span style="color:var(--color-success);">cümle</span>]
           </div>
         </div>
 
