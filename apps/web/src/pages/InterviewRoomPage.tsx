@@ -4,7 +4,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/Button";
 import { useVoice } from "@/lib/useVoice";
-import { getInterview, completeInterview, abandonInterview, executeCode as executeCodeApi, getRandomProblem, getProblem, startInterview, getLeetcodeProblem } from "@/lib/api";
+import { getInterview, completeInterview, abandonInterview, executeCode as executeCodeApi, getRandomProblem, getProblem, startInterview, getLeetcodeProblem, getRandomLeetcodeProblem } from "@/lib/api";
 import { useInterviewsStore } from "@/stores";
 import { typeLabels } from "@/lib/constants";
 import { Mic, MicOff, Hand, Coffee, Clock, AlertTriangle, CheckCircle2, X, Volume2, Play, MicOff as MicOffIcon, RefreshCw, VolumeX, WifiOff, MessageSquareText, RotateCcw } from "lucide-react";
@@ -12,8 +12,10 @@ import type {
   VoicePipelineState,
   Interview,
   Problem,
+  DesignProblem,
   CodeLanguage,
   CodeExecutionResult,
+  WhiteboardState,
 } from "@ffh/types";
 import type { ErrorInfo } from "@/lib/useVoice";
 import { ProblemPanel } from "@/components/interview/ProblemPanel";
@@ -21,7 +23,8 @@ import { CodeEditor } from "@/components/interview/CodeEditor";
 import { TestResultsPanel } from "@/components/interview/TestResultsPanel";
 import { ResizableSplitter } from "@/components/interview/ResizableSplitter";
 import { SolutionComparisonPanel } from "@/components/interview/SolutionComparisonPanel";
-import { SystemDesignRoom } from "@/components/interview/SystemDesignRoom";
+import { WhiteboardCanvas } from "@/components/interview/whiteboard/WhiteboardCanvas";
+import { SystemDesignProblemPanel } from "@/components/interview/SystemDesignProblemPanel";
 import { AIChat } from "@/components/interview/AIChat";
 import { ChatThread } from "@/components/interview/ChatThread";
 import { WingLogo } from "@/components/icons/WingLogo";
@@ -58,6 +61,10 @@ export function InterviewRoomPage() {
   const [executing, setExecuting] = useState(false);
   const [showEndModal, setShowEndModal] = useState(false);
 
+  // System Design state
+  const [designProblem, setDesignProblem] = useState<DesignProblem | null>(null);
+  const [designProblemLoading, setDesignProblemLoading] = useState(false);
+
   // Debounced code update ref
   const codeUpdateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -65,6 +72,7 @@ export function InterviewRoomPage() {
   const isLiveCoding = interview?.type === "live-coding";
   const isPractice = interview?.type === "practice";
   const showCodeEditor = isLiveCoding || isPractice;
+  const showSplitLayout = showCodeEditor || isSystemDesign;
 
   // Load interview data
   useEffect(() => {
@@ -84,6 +92,15 @@ export function InterviewRoomPage() {
           if (iv.language) {
             setCodeLanguage(iv.language as CodeLanguage);
           }
+        }
+        if (iv.type === "system-design") {
+          // Only set loading if we don't have a design problem yet (WS may have arrived first)
+          setDesignProblem((current) => {
+            if (!current) {
+              setDesignProblemLoading(true);
+            }
+            return current;
+          });
         }
       })
       .catch((err) => {
@@ -112,6 +129,11 @@ export function InterviewRoomPage() {
     },
     [searchParams],
   );
+
+  const handleDesignProblemLoaded = useCallback((p: DesignProblem) => {
+    setDesignProblem(p);
+    setDesignProblemLoading(false);
+  }, []);
 
   // Update code when problem or language changes
   useEffect(() => {
@@ -147,13 +169,16 @@ export function InterviewRoomPage() {
     interrupt,
     sendCodeUpdate,
     sendCodeResult,
+    sendWhiteboardUpdate,
     requestHint,
     dismissSolution,
     dismissError,
   } = useVoice({
     interviewId: id,
     problemId: searchParams.get("problemId") || undefined,
-    onProblemLoaded: handleProblemLoaded
+    pttMode: isLiveCoding || isPractice || isSystemDesign, // Push-to-talk for all panel-based interviews
+    onProblemLoaded: handleProblemLoaded,
+    onDesignProblemLoaded: handleDesignProblemLoaded,
   });
 
   // Fallback: if problem not loaded via WS after 5 seconds, fetch from API
@@ -190,9 +215,23 @@ export function InterviewRoomPage() {
             }
             console.log("Loaded specific problem:", p.title);
           } else {
-            // Load random problem
+            // Load random problem from leetcode question bank
             console.log("Loading random problem with difficulty:", interview.difficulty);
-            p = await getRandomProblem({ difficulty: interview.difficulty });
+            try {
+              const lc = await getRandomLeetcodeProblem({ difficulty: interview.difficulty });
+              p = {
+                _id: lc._id,
+                title: lc.title,
+                description: lc.description,
+                difficulty: lc.difficulty,
+                category: lc.relatedTopics[0] ?? "general",
+                testCases: [],
+                createdAt: lc.createdAt,
+              };
+            } catch {
+              // Fallback to legacy problems table
+              p = await getRandomProblem({ difficulty: interview.difficulty });
+            }
             console.log("Loaded random problem:", p.title);
           }
 
@@ -207,11 +246,14 @@ export function InterviewRoomPage() {
     return () => clearTimeout(timeout);
   }, [showCodeEditor, problem, interview, handleProblemLoaded, searchParams]);
 
-  // Debug: Log problem state changes
+  // Fallback: if design problem not loaded via WS after 8 seconds, stop spinner
   useEffect(() => {
-    console.log("Problem state updated:", problem);
-    console.log("ProblemLoading state:", problemLoading);
-  }, [problem, problemLoading]);
+    if (!isSystemDesign || designProblem) return;
+    const timeout = setTimeout(() => {
+      if (!designProblem) setDesignProblemLoading(false);
+    }, 8000);
+    return () => clearTimeout(timeout);
+  }, [isSystemDesign, designProblem]);
 
   // Timer — persisted via interview.startedAt so it survives page refresh
   const [elapsed, setElapsed] = useState(0);
@@ -241,6 +283,15 @@ export function InterviewRoomPage() {
     const s = seconds % 60;
     return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   }
+
+  // ─── Whiteboard change (system design) ────────────────
+
+  const handleWhiteboardChange = useCallback(
+    (wbState: WhiteboardState) => {
+      sendWhiteboardUpdate(wbState);
+    },
+    [sendWhiteboardUpdate],
+  );
 
   // ─── Code change (debounced WS update) ───────────────
 
@@ -381,15 +432,9 @@ export function InterviewRoomPage() {
     );
   }
 
-  // ─── System Design mode ─────────────────────────────
-
-  if (isSystemDesign && id) {
-    return <SystemDesignRoom interviewId={id} />;
-  }
-
   // ─── Voice-only mode (non-code interviews) ───────────
 
-  if (!showCodeEditor) {
+  if (!showSplitLayout) {
     return (
       <>
         <VoiceOnlyRoom
@@ -454,18 +499,20 @@ export function InterviewRoomPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Language selector */}
-          <select
-            value={codeLanguage}
-            onChange={(e) => handleLanguageChange(e.target.value as CodeLanguage)}
-            className="text-xs bg-surface-raised text-text border border-border rounded-md px-2 py-1 cursor-pointer focus:outline-none focus:border-amber"
-          >
-            {(Object.keys(languageLabels) as CodeLanguage[]).map((lang) => (
-              <option key={lang} value={lang}>
-                {languageLabels[lang]}
-              </option>
-            ))}
-          </select>
+          {/* Language selector — only for code interviews */}
+          {showCodeEditor && (
+            <select
+              value={codeLanguage}
+              onChange={(e) => handleLanguageChange(e.target.value as CodeLanguage)}
+              className="text-xs bg-surface-raised text-text border border-border rounded-md px-2 py-1 cursor-pointer focus:outline-none focus:border-amber"
+            >
+              {(Object.keys(languageLabels) as CodeLanguage[]).map((lang) => (
+                <option key={lang} value={lang}>
+                  {languageLabels[lang]}
+                </option>
+              ))}
+            </select>
+          )}
 
           <LatencyPipeline latency={latency} latencyHistory={latencyHistory} state={state} />
 
@@ -484,62 +531,93 @@ export function InterviewRoomPage() {
         </div>
       </header>
 
-      {/* Main content: Problem | Code Editor + Tests */}
+      {/* Main content: Problem Panel | Code Editor or Whiteboard */}
       <div className="flex-1 overflow-hidden">
         <ResizableSplitter
-          defaultLeftPercent={45}
-          minLeftPercent={35}
-          maxLeftPercent={60}
+          defaultLeftPercent={isSystemDesign ? 30 : 45}
+          minLeftPercent={isSystemDesign ? 20 : 35}
+          maxLeftPercent={isSystemDesign ? 50 : 60}
           left={
             <div className="h-full border-r border-border-subtle bg-surface flex flex-col">
-              <ProblemPanel
-                problem={problem}
-                loading={problemLoading}
-                transcript={transcript}
-                aiText={aiText}
-                micActive={micActive}
-                state={state}
-                volume={volume}
-                onMicClick={handleMicClick}
-                connected={connected}
-                voiceStarted={voiceStarted}
-                onStartVoice={startVoiceSession}
-                onInterrupt={interrupt}
-                hintLevel={hintLevel}
-                totalHints={totalHints}
-                onRequestHint={requestHint}
-                interviewStatus={interview?.status}
-                onStartInterview={handleStartInterview}
-              />
+              {isSystemDesign ? (
+                <SystemDesignProblemPanel
+                  problem={designProblem}
+                  loading={designProblemLoading}
+                  transcript={transcript}
+                  aiText={aiText}
+                  micActive={micActive}
+                  state={state}
+                  volume={volume}
+                  onMicClick={handleMicClick}
+                  connected={connected}
+                  voiceStarted={voiceStarted}
+                  onStartVoice={startVoiceSession}
+                  onInterrupt={interrupt}
+                  interviewStatus={interview?.status}
+                  onStartInterview={handleStartInterview}
+                  latency={latency}
+                  latencyHistory={latencyHistory}
+                />
+              ) : (
+                <ProblemPanel
+                  problem={problem}
+                  loading={problemLoading}
+                  transcript={transcript}
+                  aiText={aiText}
+                  micActive={micActive}
+                  state={state}
+                  volume={volume}
+                  onMicClick={handleMicClick}
+                  connected={connected}
+                  voiceStarted={voiceStarted}
+                  onStartVoice={startVoiceSession}
+                  onInterrupt={interrupt}
+                  hintLevel={hintLevel}
+                  totalHints={totalHints}
+                  onRequestHint={requestHint}
+                  interviewStatus={interview?.status}
+                  onStartInterview={handleStartInterview}
+                  latency={latency}
+                  latencyHistory={latencyHistory}
+                />
+              )}
             </div>
           }
           right={
-            <div className="h-full flex flex-col">
-              <div className="flex-1 min-h-0">
-                <ResizableSplitter
-                  direction="vertical"
-                  defaultLeftPercent={65}
-                  minLeftPercent={30}
-                  maxLeftPercent={85}
-                  left={
-                    <div className="h-full">
-                      <CodeEditor
-                        language={codeLanguage}
-                        value={code}
-                        onChange={handleCodeChange}
-                      />
-                    </div>
-                  }
-                  right={
-                    <TestResultsPanel
-                      result={executionResult}
-                      running={executing}
-                      onRun={handleRunCode}
-                    />
-                  }
+            isSystemDesign ? (
+              <div className="h-full relative">
+                <WhiteboardCanvas
+                  onStateChange={handleWhiteboardChange}
                 />
               </div>
-            </div>
+            ) : (
+              <div className="h-full flex flex-col">
+                <div className="flex-1 min-h-0">
+                  <ResizableSplitter
+                    direction="vertical"
+                    defaultLeftPercent={65}
+                    minLeftPercent={30}
+                    maxLeftPercent={85}
+                    left={
+                      <div className="h-full">
+                        <CodeEditor
+                          language={codeLanguage}
+                          value={code}
+                          onChange={handleCodeChange}
+                        />
+                      </div>
+                    }
+                    right={
+                      <TestResultsPanel
+                        result={executionResult}
+                        running={executing}
+                        onRun={handleRunCode}
+                      />
+                    }
+                  />
+                </div>
+              </div>
+            )
           }
         />
       </div>
