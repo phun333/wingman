@@ -10,6 +10,7 @@ import {
   searchLeetcodeProblems,
   listLeetcodeProblems,
 } from "@/lib/api";
+import { useInterviewsStore } from "@/stores";
 import { Code2, Waypoints, Phone, Dumbbell, Search, X, Check, Shuffle } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { InterviewType, Difficulty, LeetcodeProblem } from "@ffh/types";
@@ -109,6 +110,8 @@ export function NewInterviewPage() {
     }
   }, [showQuestionPicker]);
 
+  const fetchAllInterviews = useInterviewsStore((s) => s.fetchAll);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -118,6 +121,19 @@ export function NewInterviewPage() {
     setError(null);
 
     try {
+      // Check for existing in-progress/created interview of the same type
+      const freshInterviews = await fetchAllInterviews(true);
+      const activeInterview = freshInterviews.find(
+        (iv) =>
+          iv.type === selectedType &&
+          (iv.status === "created" || iv.status === "in-progress"),
+      );
+
+      if (activeInterview) {
+        navigate(`/interview/${activeInterview._id}`);
+        return;
+      }
+
       const interview = await createInterview({
         type: selectedType,
         difficulty: selectedProblem?.difficulty ?? difficulty,

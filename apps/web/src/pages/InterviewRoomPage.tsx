@@ -204,16 +204,28 @@ export function InterviewRoomPage() {
     console.log("ProblemLoading state:", problemLoading);
   }, [problem, problemLoading]);
 
-  // Timer
+  // Timer — persisted via interview.startedAt so it survives page refresh
   const [elapsed, setElapsed] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval>>(null);
 
   useEffect(() => {
-    timerRef.current = setInterval(() => setElapsed((s) => s + 1), 1000);
+    if (timerRef.current) clearInterval(timerRef.current);
+
+    const tick = () => {
+      if (interview?.startedAt) {
+        setElapsed(Math.floor((Date.now() - interview.startedAt) / 1000));
+      } else {
+        setElapsed(0);
+      }
+    };
+
+    tick(); // set immediately
+    timerRef.current = setInterval(tick, 1000);
+
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, []);
+  }, [interview?.startedAt]);
 
   function formatTime(seconds: number): string {
     const m = Math.floor(seconds / 60);
@@ -317,7 +329,7 @@ export function InterviewRoomPage() {
       }
       // Invalidate interview caches so dashboard/history show updated data
       useInterviewsStore.getState().invalidateAll();
-      navigate(`/interview/${id}/report`);
+      navigate("/dashboard");
     } else {
       navigate("/dashboard");
     }

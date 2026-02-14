@@ -51,6 +51,7 @@ export function ProgressPage() {
   // Zustand stores
   const progress = useInterviewsStore((s) => s.progress);
   const interviews = useInterviewsStore((s) => s.allInterviews);
+  const fetchAll = useInterviewsStore((s) => s.fetchAll);
   const fetchProgressData = useInterviewsStore((s) => s.fetchProgressData);
   const loadingInterviews = useInterviewsStore((s) => s.loadingAll || s.loadingProgress);
 
@@ -495,6 +496,34 @@ export function ProgressPage() {
           onDeletePath={removePath}
           onStartInterview={async (path, question, category) => {
             try {
+              // Fetch fresh interviews to avoid stale data
+              const freshInterviews = await fetchAll(true);
+
+              // Check if question already has an in-progress/created interview
+              if (question.interviewId) {
+                const existing = freshInterviews.find(
+                  (iv) =>
+                    iv._id === question.interviewId &&
+                    (iv.status === "created" || iv.status === "in-progress"),
+                );
+                if (existing) {
+                  navigate(`/interview/${existing._id}`);
+                  return;
+                }
+              }
+
+              // Also check if there's any active interview for this job posting + type combo
+              const activeInterview = freshInterviews.find(
+                (iv) =>
+                  iv.jobPostingId === path.jobPostingId &&
+                  iv.type === category.type &&
+                  (iv.status === "created" || iv.status === "in-progress"),
+              );
+              if (activeInterview) {
+                navigate(`/interview/${activeInterview._id}`);
+                return;
+              }
+
               const interview = await createInterview({
                 type: category.type,
                 difficulty: question.difficulty,

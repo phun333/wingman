@@ -10,6 +10,7 @@ import {
   createInterview,
   startInterview,
 } from "@/lib/api";
+import { useInterviewsStore } from "@/stores";
 import { difficultyLabels } from "@/lib/constants";
 import {
   Search,
@@ -715,12 +716,27 @@ function TopicDropdown({
 
 function ProblemRow({ problem, index }: { problem: LeetcodeProblem; index: number }) {
   const navigate = useNavigate();
+  const fetchAllInterviews = useInterviewsStore((s) => s.fetchAll);
   const [expanded, setExpanded] = useState(false);
   const [starting, setStarting] = useState(false);
 
   async function handleStartInterview() {
     try {
       setStarting(true);
+
+      // Check for existing in-progress/created practice interview
+      const freshInterviews = await fetchAllInterviews(true);
+      const activeInterview = freshInterviews.find(
+        (iv) =>
+          iv.type === "practice" &&
+          (iv.status === "created" || iv.status === "in-progress"),
+      );
+
+      if (activeInterview) {
+        navigate(`/interview/${activeInterview._id}`);
+        return;
+      }
+
       const interview = await createInterview({
         type: "practice",
         difficulty: problem.difficulty,
