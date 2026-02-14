@@ -36,3 +36,13 @@ Her soru kaydı şu alanları içerir:
 - Soran şirketler listesi
 - FAANG tarafından sorulma durumu
 - Beğeni/beğenmeme sayıları ve puan
+
+## Öneri Sistemi Entegrasyonu
+
+Bu veri seti, CV bazlı akıllı öneri sistemi (`apps/api/src/services/recommendation.ts`) tarafından kullanılır. Sistem, kullanıcının CV'sini LLM ile analiz ettikten sonra bu 1825 problemi 7 farklı kriterle puanlar:
+
+- **relatedTopics** → CV'deki zayıf alanlarla eşleştirme
+- **companies** → Hedef şirket eşleştirme
+- **difficulty** → Deneyim seviyesine uygun zorluk filtresi
+- **frequency** → Sık sorulan sorulara öncelik
+- **askedByFaang** → FAANG bonusu

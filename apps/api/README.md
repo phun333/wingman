@@ -32,10 +32,12 @@ src/
     profile.ts          Kullanıcı profili ve hafıza yönetimi
     leetcode.ts         LeetCode soru bankası
     study-paths.ts      Şirket bazlı çalışma yol haritaları
+    recommendations.ts  CV bazlı kişiselleştirilmiş problem önerileri
   services/
     geolocation.ts      IP tabanlı konum belirleme
     problem-intros.ts   Soru tanıtım metinleri oluşturma
     report-generator.ts LLM ile mülakat raporu üretme
+    recommendation.ts   CV → LeetCode akıllı öneri motoru (LLM analiz + scoring)
   prompts/
     index.ts            Sistem istemi yönlendiricisi
     live-coding.ts      Canlı kodlama mülakat istemi
@@ -59,6 +61,8 @@ src/
 | `POST /api/proxy/tts` | Freya TTS vekili |
 | `POST /api/proxy/stt` | Freya STT vekili |
 | `POST /api/proxy/llm` | OpenRouter LLM vekili |
+| `POST /api/recommendations` | CV'ye göre kişiselleştirilmiş LeetCode önerileri |
+| `GET /api/recommendations/analysis` | Kullanıcının CV analiz verisi |
 | `WS /ws/voice` | Sesli mülakat WebSocket bağlantısı |
 | `GET /docs` | Scalar API dokümantasyonu |
 | `GET /openapi.json` | OpenAPI şeması |

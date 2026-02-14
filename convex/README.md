@@ -27,6 +27,7 @@ Wingman platformunun arka uç veritabanı katmanıdır. Convex gerçek zamanlı 
 | `userMemory` | Kullanıcı hafızası (zayıf/güçlü konular, ortalama puan) |
 | `companyStudyPaths` | Şirket bazlı çalışma yol haritaları (konu bazlı LeetCode soruları) |
 | `jobInterviewPaths` | İş ilanına özel mülakat hazırlık planları |
+| `resumeAnalysis` | CV'den çıkarılan LLM analiz verileri (topic proficiency, zayıf/güçlü alanlar) |
 
 ## Dosya Yapısı
 
@@ -50,6 +51,7 @@ userProfiles.ts       Profil getirme ve güncelleme
 userMemory.ts         Hafıza okuma ve yazma
 companyStudyPaths.ts  Şirket çalışma yolu yönetimi
 jobInterviewPaths.ts  İş ilanı mülakat yolu yönetimi
+resumeAnalysis.ts     CV analiz verisi CRUD (öneri sistemi için)
 ```
 
 ## Yerel Geliştirme

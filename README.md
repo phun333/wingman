@@ -32,6 +32,7 @@ Wingman, adayların gerçekçi mülakat simülasyonları ile kodlama, sistem tas
 | Kişiselleştirilmiş Mülakatlar | İş ilanı ve özgeçmiş analizi ile hedefe yönelik sorular |
 | Detaylı Raporlama | Performans skoru, güçlü/zayıf yönler, radar grafiği ve ilerleme takibi |
 | LeetCode Entegrasyonu | 2000+ soru, şirket bazlı çalışma yol haritaları |
+| Akıllı Problem Önerisi | CV analizi ile kişiselleştirilmiş LeetCode problem önerileri (LLM + scoring hibrit) |
 
 ## Mimari
 
@@ -64,6 +65,15 @@ Wingman, adayların gerçekçi mülakat simülasyonları ile kodlama, sistem tas
 5. Üretilen ses, istemciye gerçek zamanlı olarak aktarılır
 
 LLM üretimi ile TTS sentezi paralel çalıştırılarak düşük gecikme sağlanır.
+
+### CV Bazlı Akıllı Öneri Sistemi
+
+Kullanıcının CV'sinden kişiselleştirilmiş LeetCode çalışma planı üreten iki aşamalı hibrit sistem:
+
+1. **LLM Analiz (tek seferlik):** CV yüklendiğinde OpenRouter LLM ile analiz edilir → deneyim seviyesi, topic proficiency, zayıf/güçlü alanlar, hedef şirketler çıkarılır ve `resumeAnalysis` tablosuna kaydedilir
+2. **Deterministic Scoring (anlık):** 1825 LeetCode problemi analiz sonucuna göre 7 farklı kriterle puanlanır (zayıf alan eşleşmesi, zorluk uyumu, şirket eşleşmesi, sıklık, FAANG bonusu) — LLM gerektirmez, milisaniyeler içinde çalışır
+
+Bu yaklaşım ML/regression yerine tercih edilmiştir çünkü labeled training data gerektirmez ve cold start problemi yoktur.
 
 ## Teknoloji Yığını
 

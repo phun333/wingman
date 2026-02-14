@@ -63,6 +63,7 @@ bun add -d <package>
 3. **Yeni env variable** → `.env`, `.env.example`, ve `packages/env/src/index.ts` güncelle
 4. **Yeni Convex tablo** → `convex/schema.ts` + ilgili query/mutation dosyası
 5. **fal.ai entegrasyonu** → `docs/` klasöründeki örneklere bak, `@fal-ai/client` kullan
+6. **Öneri sistemi** → `apps/api/src/services/recommendation.ts` (scoring) + `convex/resumeAnalysis.ts` (DB)
 
 ---
 
