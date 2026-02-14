@@ -9,6 +9,7 @@ import { SolutionScene } from "./scenes/SolutionScene";
 import { FeaturesScene } from "./scenes/FeaturesScene";
 import { PipelineScene } from "./scenes/PipelineScene";
 import { TechStackScene } from "./scenes/TechStackScene";
+import { UnitEconomicsScene } from "./scenes/UnitEconomicsScene";
 import { OutroScene } from "./scenes/OutroScene";
 
 /**
@@ -23,10 +24,11 @@ import { OutroScene } from "./scenes/OutroScene";
  *   4. Features     — 150 frames (5s)  — Feature cards
  *   5. Pipeline     — 150 frames (5s)  — Voice interview pipeline
  *   6. Tech Stack   — 120 frames (4s)  — Technologies + stats
- *   7. Outro        — 120 frames (4s)  — CTA + closing
+ *   7. Unit Econ    — 150 frames (5s)  — Cost breakdown + pricing + margin
+ *   8. Outro        — 120 frames (4s)  — CTA + closing
  *
  * Transitions: 20-frame fades between scenes (overlapping ~0.67s each)
- * Total: 990 - 6*20 = 870 frames ≈ 29s → We set composition to 900 frames for padding
+ * Total: 1140 - 7*20 = 1000 frames ≈ 33s
  */
 export const WingmanDemo: React.FC = () => {
   const TRANSITION_DURATION = 20;
@@ -94,7 +96,17 @@ export const WingmanDemo: React.FC = () => {
           timing={linearTiming({ durationInFrames: TRANSITION_DURATION })}
         />
 
-        {/* Scene 7: Outro */}
+        {/* Scene 7: Unit Economics */}
+        <TransitionSeries.Sequence durationInFrames={150}>
+          <UnitEconomicsScene />
+        </TransitionSeries.Sequence>
+
+        <TransitionSeries.Transition
+          presentation={fade()}
+          timing={linearTiming({ durationInFrames: TRANSITION_DURATION })}
+        />
+
+        {/* Scene 8: Outro */}
         <TransitionSeries.Sequence durationInFrames={120}>
           <OutroScene />
         </TransitionSeries.Sequence>
