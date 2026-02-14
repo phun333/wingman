@@ -376,14 +376,12 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
         <span class="badge badge-info"><i class="ri-mic-line icon-xs"></i> Freya STT/TTS</span>
         <span class="badge badge-success"><i class="ri-brain-line icon-xs"></i> OpenRouter LLM</span>
         <span class="badge badge-default"><i class="ri-terminal-box-line icon-xs"></i> Bun + Convex</span>
+        <span class="badge badge-purple"><i class="ri-book-open-line icon-xs"></i> Fumadocs</span>
       </div>
 
       <div class="reveal flex items-center gap-4" style="margin-top:20px;">
         <span class="t-muted" style="font-size:11px;">Powered by</span>
-        <span class="t-secondary flex items-center gap-1" style="font-size:12px; font-weight:500;">
-          <svg width="12" height="12" viewBox="0 0 122.88 121.46" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.35,121.46c-8.01-9.72-11.92-19.29-12.31-28.71C-0.78,73.01,10.92,58.28,28.3,47.67 c18.28-11.16,37.08-13.93,55.36-22.25C92.79,21.27,103.68,14.47,121.8,0c5.92,15.69-12.92,40.9-43.52,54.23 c9.48,0.37,19.69-2.54,30.85-9.74c-0.76,19.94-16.46,32.21-51.3,36.95c7.33,2.45,16.09,2.58,27.27-0.58 C74.33,116.81,29.9,91.06,12.35,121.46L12.35,121.46z" fill="var(--color-amber)"/></svg>
-          Freya AI
-        </span>
+        <span class="t-secondary" style="font-size:12px; font-weight:500;">Freya AI</span>
         <span class="t-muted" style="font-size:11px;">×</span>
         <span class="t-secondary" style="font-size:12px; font-weight:500;">fal.ai</span>
         <span class="t-muted" style="font-size:11px;">×</span>
@@ -470,7 +468,8 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
 
             <!-- ═══ ROW 1: Client ═══ -->
             <rect x="390" y="15" width="280" height="56" rx="12" fill="rgba(59,130,246,0.06)" stroke="#3b82f6" stroke-width="2" filter="url(#rough)" stroke-dasharray="none" opacity="0.9"/>
-            <text x="530" y="38" text-anchor="middle" font-family="Caveat, cursive" font-size="22" font-weight="600" fill="#3b82f6" filter="url(#roughText)">🖥️  React SPA</text>
+            <foreignObject x="500" y="22" width="20" height="20"><i xmlns="http://www.w3.org/1999/xhtml" class="ri-window-line" style="color:#3b82f6;font-size:16px;font-style:normal;"></i></foreignObject>
+            <text x="540" y="38" text-anchor="middle" font-family="Caveat, cursive" font-size="22" font-weight="600" fill="#3b82f6" filter="url(#roughText)">React SPA</text>
             <text x="530" y="58" text-anchor="middle" font-family="Caveat, cursive" font-size="14" fill="#8b8b96">Vite · TailwindCSS · Monaco · tldraw</text>
 
             <!-- Arrow: Client → API -->
@@ -485,11 +484,13 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
 
             <!-- ═══ ROW 2: API + WebSocket ═══ -->
             <rect x="190" y="118" width="260" height="56" rx="12" fill="rgba(229,161,14,0.06)" stroke="#e5a10e" stroke-width="2" filter="url(#rough)" opacity="0.9"/>
-            <text x="320" y="141" text-anchor="middle" font-family="Caveat, cursive" font-size="21" font-weight="600" fill="#e5a10e" filter="url(#roughText)">⚡ Hono API Server</text>
+            <foreignObject x="260" y="125" width="20" height="20"><i xmlns="http://www.w3.org/1999/xhtml" class="ri-server-line" style="color:#e5a10e;font-size:16px;font-style:normal;"></i></foreignObject>
+            <text x="330" y="141" text-anchor="middle" font-family="Caveat, cursive" font-size="21" font-weight="600" fill="#e5a10e" filter="url(#roughText)">Hono API Server</text>
             <text x="320" y="161" text-anchor="middle" font-family="Caveat, cursive" font-size="13" fill="#8b8b96">oRPC · Scalar Docs · Auth</text>
 
             <rect x="610" y="118" width="260" height="56" rx="12" fill="rgba(34,197,94,0.06)" stroke="#22c55e" stroke-width="2" filter="url(#rough)" opacity="0.9"/>
-            <text x="740" y="141" text-anchor="middle" font-family="Caveat, cursive" font-size="21" font-weight="600" fill="#22c55e" filter="url(#roughText)">🔗 WebSocket Server</text>
+            <foreignObject x="680" y="125" width="20" height="20"><i xmlns="http://www.w3.org/1999/xhtml" class="ri-link" style="color:#22c55e;font-size:16px;font-style:normal;"></i></foreignObject>
+            <text x="750" y="141" text-anchor="middle" font-family="Caveat, cursive" font-size="21" font-weight="600" fill="#22c55e" filter="url(#roughText)">WebSocket Server</text>
             <text x="740" y="161" text-anchor="middle" font-family="Caveat, cursive" font-size="13" fill="#8b8b96">Voice Pipeline · Real-time</text>
 
             <!-- Horizontal dashed line between API & WS -->
@@ -516,35 +517,58 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
             <!-- ═══ ROW 3: DB + AI Services ═══ -->
             <!-- Convex (leftmost, under API) -->
             <rect x="60" y="232" width="220" height="56" rx="12" fill="rgba(139,91,246,0.06)" stroke="#8b5cf6" stroke-width="2" filter="url(#rough)" opacity="0.9"/>
-            <text x="170" y="255" text-anchor="middle" font-family="Caveat, cursive" font-size="20" font-weight="600" fill="#8b5cf6" filter="url(#roughText)">🗄️ Convex</text>
+            <foreignObject x="120" y="238" width="20" height="20"><i xmlns="http://www.w3.org/1999/xhtml" class="ri-database-2-line" style="color:#8b5cf6;font-size:16px;font-style:normal;"></i></foreignObject>
+            <text x="178" y="255" text-anchor="middle" font-family="Caveat, cursive" font-size="20" font-weight="600" fill="#8b5cf6" filter="url(#roughText)">Convex DB</text>
             <text x="170" y="275" text-anchor="middle" font-family="Caveat, cursive" font-size="13" fill="#8b8b96">DB + better-auth</text>
 
             <!-- Freya STT -->
             <rect x="300" y="232" width="180" height="56" rx="12" fill="rgba(59,130,246,0.06)" stroke="#3b82f6" stroke-width="2" filter="url(#rough)" opacity="0.9"/>
-            <text x="390" y="255" text-anchor="middle" font-family="Caveat, cursive" font-size="20" font-weight="600" fill="#3b82f6" filter="url(#roughText)">🎤 Freya STT</text>
+            <foreignObject x="345" y="238" width="20" height="20"><i xmlns="http://www.w3.org/1999/xhtml" class="ri-mic-line" style="color:#3b82f6;font-size:16px;font-style:normal;"></i></foreignObject>
+            <text x="400" y="255" text-anchor="middle" font-family="Caveat, cursive" font-size="20" font-weight="600" fill="#3b82f6" filter="url(#roughText)">Freya STT</text>
             <text x="390" y="275" text-anchor="middle" font-family="Caveat, cursive" font-size="13" fill="#8b8b96">fal.ai · Türkçe transkript</text>
 
             <!-- OpenRouter LLM -->
             <rect x="500" y="232" width="210" height="56" rx="12" fill="rgba(229,161,14,0.06)" stroke="#e5a10e" stroke-width="2" filter="url(#rough)" opacity="0.9"/>
-            <text x="605" y="255" text-anchor="middle" font-family="Caveat, cursive" font-size="20" font-weight="600" fill="#e5a10e" filter="url(#roughText)">🧠 OpenRouter LLM</text>
+            <foreignObject x="553" y="238" width="20" height="20"><i xmlns="http://www.w3.org/1999/xhtml" class="ri-brain-line" style="color:#e5a10e;font-size:16px;font-style:normal;"></i></foreignObject>
+            <text x="615" y="255" text-anchor="middle" font-family="Caveat, cursive" font-size="20" font-weight="600" fill="#e5a10e" filter="url(#roughText)">OpenRouter LLM</text>
             <text x="605" y="275" text-anchor="middle" font-family="Caveat, cursive" font-size="13" fill="#8b8b96">SSE streaming · Chat</text>
 
             <!-- Freya TTS -->
             <rect x="730" y="232" width="220" height="56" rx="12" fill="rgba(34,197,94,0.06)" stroke="#22c55e" stroke-width="2" filter="url(#rough)" opacity="0.9"/>
-            <text x="840" y="255" text-anchor="middle" font-family="Caveat, cursive" font-size="20" font-weight="600" fill="#22c55e" filter="url(#roughText)">🔊 Freya TTS</text>
+            <foreignObject x="793" y="238" width="20" height="20"><i xmlns="http://www.w3.org/1999/xhtml" class="ri-volume-up-line" style="color:#22c55e;font-size:16px;font-style:normal;"></i></foreignObject>
+            <text x="850" y="255" text-anchor="middle" font-family="Caveat, cursive" font-size="20" font-weight="600" fill="#22c55e" filter="url(#roughText)">Freya TTS</text>
             <text x="840" y="275" text-anchor="middle" font-family="Caveat, cursive" font-size="13" fill="#8b8b96">fal.ai · PCM16 stream</text>
 
             <!-- ═══ Hand-drawn annotations ═══ -->
             <!-- fal.ai label under Freya STT -->
             <text x="390" y="305" text-anchor="middle" font-family="Caveat, cursive" font-size="16" font-weight="600" fill="#e5a10e" opacity="0.6" filter="url(#roughText)">── fal.ai powered ──</text>
 
+            <!-- ═══ Side Apps: Docs + Scraper ═══ -->
+            <!-- Fumadocs -->
+            <rect x="60" y="320" width="180" height="48" rx="10" fill="rgba(139,91,246,0.06)" stroke="#8b5cf6" stroke-width="1.5" filter="url(#rough)" opacity="0.85" stroke-dasharray="6 3"/>
+            <foreignObject x="105" y="325" width="20" height="20"><i xmlns="http://www.w3.org/1999/xhtml" class="ri-book-open-line" style="color:#8b5cf6;font-size:15px;font-style:normal;"></i></foreignObject>
+            <text x="160" y="340" text-anchor="middle" font-family="Caveat, cursive" font-size="17" font-weight="600" fill="#8b5cf6" filter="url(#roughText)">Fumadocs</text>
+            <text x="150" y="357" text-anchor="middle" font-family="Caveat, cursive" font-size="12" fill="#8b8b96">Next.js · MDX · Search</text>
+
+            <!-- Arrow: Convex ↔ Docs (dashed) -->
+            <path d="M 130 290 C 135 305, 140 312, 145 318" stroke="#8b5cf6" stroke-width="1.5" fill="none" stroke-linecap="round" filter="url(#rough)" stroke-dasharray="5 3" opacity="0.4"/>
+
+            <!-- Go Scraper -->
+            <rect x="260" y="320" width="200" height="48" rx="10" fill="rgba(34,197,94,0.06)" stroke="#22c55e" stroke-width="1.5" filter="url(#rough)" opacity="0.85" stroke-dasharray="6 3"/>
+            <foreignObject x="310" y="325" width="20" height="20"><i xmlns="http://www.w3.org/1999/xhtml" class="ri-search-eye-line" style="color:#22c55e;font-size:15px;font-style:normal;"></i></foreignObject>
+            <text x="370" y="340" text-anchor="middle" font-family="Caveat, cursive" font-size="17" font-weight="600" fill="#22c55e" filter="url(#roughText)">Go Scraper</text>
+            <text x="360" y="357" text-anchor="middle" font-family="Caveat, cursive" font-size="12" fill="#8b8b96">hiring.cafe · 1826 iş ilanı</text>
+
+            <!-- Arrow: Scraper → Convex -->
+            <path d="M 320 318 C 290 310, 230 295, 210 290" stroke="#22c55e" stroke-width="1.5" fill="none" stroke-linecap="round" filter="url(#rough)" stroke-dasharray="5 3" opacity="0.4"/>
+
             <!-- Flow annotation -->
-            <text x="530" y="330" text-anchor="middle" font-family="Caveat, cursive" font-size="18" fill="#e5a10e" opacity="0.7" filter="url(#roughText)">
-              Ses → Metin → Düşünce → Ses  🔄
+            <text x="700" y="340" text-anchor="middle" font-family="Caveat, cursive" font-size="18" fill="#e5a10e" opacity="0.7" filter="url(#roughText)">
+              Ses → Metin → Düşünce → Ses
             </text>
 
             <!-- Squiggly underline -->
-            <path d="M 380 338 C 400 342, 420 334, 440 338 C 460 342, 480 334, 500 338 C 520 342, 540 334, 560 338 C 580 342, 600 334, 620 338 C 640 342, 660 334, 680 338" stroke="#e5a10e" stroke-width="1.2" fill="none" stroke-linecap="round" filter="url(#rough)" opacity="0.35"/>
+            <path d="M 550 348 C 570 352, 590 344, 610 348 C 630 352, 650 344, 670 348 C 690 352, 710 344, 730 348 C 750 352, 770 344, 790 348 C 810 352, 830 344, 850 348" stroke="#e5a10e" stroke-width="1.2" fill="none" stroke-linecap="round" filter="url(#rough)" opacity="0.35"/>
 
             <!-- Hand-drawn circle around WebSocket -->
             <ellipse cx="740" cy="146" rx="148" ry="38" fill="none" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="6 3" filter="url(#rough)" opacity="0.25"/>
@@ -553,8 +577,8 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
             <text x="920" y="190" font-family="Caveat, cursive" font-size="14" fill="#22c55e" opacity="0.6">← çekirdek!</text>
 
             <!-- Small note -->
-            <text x="530" y="370" text-anchor="middle" font-family="Caveat, cursive" font-size="15" fill="#55555f" opacity="0.5">
-              tüm iletişim TypeScript strict · Zod v4 validated
+            <text x="700" y="380" text-anchor="middle" font-family="Caveat, cursive" font-size="14" fill="#55555f" opacity="0.5">
+              5 app monorepo · TypeScript + Go
             </text>
           </svg>
         </div>
@@ -564,7 +588,8 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
         <span class="badge badge-amber"><i class="ri-speed-line icon-xs"></i> Bun Runtime</span>
         <span class="badge badge-default"><i class="ri-shield-keyhole-line icon-xs"></i> better-auth</span>
         <span class="badge badge-info"><i class="ri-openai-line icon-xs"></i> OpenAI-compat API</span>
-        <span class="badge badge-default"><i class="ri-box-3-line icon-xs"></i> Monorepo Workspaces</span>
+        <span class="badge badge-purple"><i class="ri-book-open-line icon-xs"></i> Fumadocs</span>
+        <span class="badge badge-success"><i class="ri-spider-line icon-xs"></i> Go Scraper</span>
       </div>
     </div>
   </div>
@@ -739,7 +764,7 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
               <th style="text-align:center;">Pramp</th>
               <th style="text-align:center;">interviewing.io</th>
               <th style="text-align:center;">ChatGPT Voice</th>
-              <th class="wingman-col" style="text-align:center;">Wingman ⭐</th>
+              <th class="wingman-col" style="text-align:center;">Wingman <i class="ri-sparkling-2-fill" style="font-size:12px;"></i></th>
             </tr>
           </thead>
           <tbody>
@@ -1143,7 +1168,7 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
 
           <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px;">
             <div style="border-radius:10px; border:1px solid var(--color-border-subtle); background:var(--color-surface-raised); padding:14px 12px; text-align:center;">
-              <div style="font-size:18px; margin-bottom:4px;">🆓</div>
+              <div style="margin-bottom:4px;"><i class="ri-gift-line" style="font-size:22px; color:var(--color-text-muted);"></i></div>
               <h3 style="font-size:14px; font-weight:700; margin-bottom:2px;">Free</h3>
               <p class="t-amber t-display" style="font-size:20px; font-weight:800;">$0<span class="t-muted" style="font-size:11px; font-weight:400;">/ay</span></p>
               <p class="t-muted" style="font-size:11px; margin:8px 0;">3 mülakat/ay</p>
@@ -1158,7 +1183,7 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
               <div style="position:absolute; top:-8px; left:50%; transform:translateX(-50%);">
                 <span class="badge badge-amber" style="font-size:9px; padding:1px 8px;">Popüler</span>
               </div>
-              <div style="font-size:18px; margin-bottom:4px;">⭐</div>
+              <div style="margin-bottom:4px;"><i class="ri-vip-crown-line" style="font-size:22px; color:var(--color-amber);"></i></div>
               <h3 style="font-size:14px; font-weight:700; margin-bottom:2px;">Pro</h3>
               <p class="t-amber t-display" style="font-size:20px; font-weight:800;">$19<span class="t-muted" style="font-size:11px; font-weight:400;">/ay</span></p>
               <p class="t-muted" style="font-size:11px; margin:8px 0;">20 mülakat/ay</p>
@@ -1170,7 +1195,7 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
             </div>
 
             <div style="border-radius:10px; border:1px solid rgba(139,91,246,0.3); background:rgba(139,91,246,0.03); padding:14px 12px; text-align:center;">
-              <div style="font-size:18px; margin-bottom:4px;">🏢</div>
+              <div style="margin-bottom:4px;"><i class="ri-building-4-line" style="font-size:22px; color:var(--color-purple);"></i></div>
               <h3 style="font-size:14px; font-weight:700; margin-bottom:2px;">Enterprise</h3>
               <p class="t-amber t-display" style="font-size:20px; font-weight:800;">Custom</p>
               <p class="t-muted" style="font-size:11px; margin:8px 0;">Sınırsız + Admin</p>
@@ -1230,57 +1255,11 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
         </p>
       </div>
 
-      <div class="reveal">
-        <p class="t-muted text-center" style="font-size:11px; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px;">Jüri</p>
-        <div class="flex gap-3 justify-center">
-          <div class="card" style="padding:10px 14px; text-align:center; min-width:110px;">
-            <p style="font-size:12px; font-weight:600;">Tunga Bayrak</p>
-            <p class="t-muted" style="font-size:10px;">Co-Founder, Freya</p>
-          </div>
-          <div class="card" style="padding:10px 14px; text-align:center; min-width:110px;">
-            <p style="font-size:12px; font-weight:600;">Görkem Yurtseven</p>
-            <p class="t-muted" style="font-size:10px;">Co-Founder, fal.ai</p>
-          </div>
-          <div class="card" style="padding:10px 14px; text-align:center; min-width:110px;">
-            <p style="font-size:12px; font-weight:600;">Fatih Güner</p>
-            <p class="t-muted" style="font-size:10px;">Founder, Komünite</p>
-          </div>
-          <div class="card" style="padding:10px 14px; text-align:center; min-width:110px;">
-            <p style="font-size:12px; font-weight:600;">Birkan Babakol</p>
-            <p class="t-muted" style="font-size:10px;">Founder, TCC</p>
-          </div>
-          <div class="card" style="padding:10px 14px; text-align:center; min-width:110px;">
-            <p style="font-size:12px; font-weight:600;">Umut Günbak</p>
-            <p class="t-muted" style="font-size:10px;">Operations, fal</p>
-          </div>
-        </div>
+      <div class="reveal text-center" style="margin-top:12px;">
+        <h1 style="font-size:36px; letter-spacing:-0.01em;" class="t-amber">Şimdiden sorularınız için çok teşekkürler!</h1>
       </div>
 
-      <div class="reveal flex gap-4">
-        <div class="card flex items-center gap-3" style="padding:12px 18px;">
-          <i class="ri-calendar-event-line icon-md t-amber"></i>
-          <div>
-            <p style="font-size:12px; font-weight:600;">15 Şubat 2026 Pazar</p>
-            <p class="t-muted" style="font-size:10px;">09:00 — 21:00</p>
-          </div>
-        </div>
-        <div class="card flex items-center gap-3" style="padding:12px 18px;">
-          <i class="ri-map-pin-line icon-md t-amber"></i>
-          <div>
-            <p style="font-size:12px; font-weight:600;">Komünite Space</p>
-            <p class="t-muted" style="font-size:10px;">Vadistanbul, İstanbul</p>
-          </div>
-        </div>
-        <div class="card flex items-center gap-3" style="padding:12px 18px;">
-          <i class="ri-rocket-2-line icon-md t-amber"></i>
-          <div>
-            <p style="font-size:12px; font-weight:600;">Live Demo</p>
-            <p class="t-muted" style="font-size:10px;">wingman.app</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="reveal flex items-center gap-4" style="margin-top:4px;">
+      <div class="reveal flex items-center gap-4" style="margin-top:8px;">
         <span class="badge badge-amber"><i class="ri-trophy-line icon-xs"></i> Voice AI Hackathon</span>
         <span class="t-muted" style="font-size:11px;">Powered by</span>
         <span class="t-secondary" style="font-size:12px; font-weight:500;">Freya AI × fal.ai × Komünite</span>
