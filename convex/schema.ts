@@ -242,6 +242,65 @@ export default defineSchema({
     .index("by_difficulty", ["difficulty"])
     .index("by_category", ["category"]),
 
+  // ─── hiring.cafe Job Listings (global, scraper ile doldurulur) ─
+
+  jobs: defineTable({
+    // Unique ID from hiring.cafe
+    externalId: v.string(),
+
+    // Core
+    title: v.string(),
+    company: v.string(),
+    applyUrl: v.string(),
+    source: v.string(), // "lever", "greenhouse", "successfactors", etc.
+
+    // Location
+    location: v.string(), // formatted workplace location
+    workplaceType: v.string(), // "Remote", "Hybrid", "Onsite"
+    countries: v.array(v.string()),
+
+    // Job details
+    seniorityLevel: v.optional(v.string()),
+    commitment: v.array(v.string()), // ["Full Time"]
+    category: v.optional(v.string()), // "Software Development", "Marketing"
+    roleType: v.optional(v.string()), // "Individual Contributor", "People Manager"
+    minYoe: v.optional(v.number()), // minimum years of experience
+    skills: v.array(v.string()), // technical_tools
+    requirements: v.optional(v.string()), // requirements_summary
+    description: v.optional(v.string()), // job description (cleaned/truncated)
+
+    // Compensation
+    salaryMin: v.optional(v.number()),
+    salaryMax: v.optional(v.number()),
+    salaryCurrency: v.optional(v.string()),
+    salaryFrequency: v.optional(v.string()),
+    isCompensationTransparent: v.boolean(),
+
+    // Company info
+    companyLogo: v.optional(v.string()),
+    companyWebsite: v.optional(v.string()),
+    companyLinkedin: v.optional(v.string()),
+    companyIndustry: v.optional(v.string()),
+    companySize: v.optional(v.number()),
+    companyTagline: v.optional(v.string()),
+
+    // Metadata
+    publishedAt: v.optional(v.number()), // estimated_publish_date_millis
+    scrapedAt: v.number(),
+    isExpired: v.boolean(),
+  })
+    .index("by_external_id", ["externalId"])
+    .index("by_company", ["company"])
+    .index("by_category", ["category"])
+    .index("by_workplace_type", ["workplaceType"])
+    .index("by_seniority", ["seniorityLevel"])
+    .index("by_published", ["publishedAt"])
+    .index("by_scraped", ["scrapedAt"])
+    .searchIndex("search_jobs", {
+      searchField: "title",
+      filterFields: ["company", "workplaceType", "seniorityLevel", "category"],
+    }),
+
   // ─── Faz 6: Kişiselleştirme ────────────────────────────
 
   jobPostings: defineTable({

@@ -16,6 +16,7 @@ import type * as interviewResults from "../interviewResults.js";
 import type * as interviews from "../interviews.js";
 import type * as jobInterviewPaths from "../jobInterviewPaths.js";
 import type * as jobPostings from "../jobPostings.js";
+import type * as jobs from "../jobs.js";
 import type * as leetcodeProblems from "../leetcodeProblems.js";
 import type * as messages from "../messages.js";
 import type * as problems from "../problems.js";
@@ -41,6 +42,7 @@ declare const fullApi: ApiFromModules<{
   interviews: typeof interviews;
   jobInterviewPaths: typeof jobInterviewPaths;
   jobPostings: typeof jobPostings;
+  jobs: typeof jobs;
   leetcodeProblems: typeof leetcodeProblems;
   messages: typeof messages;
   problems: typeof problems;
