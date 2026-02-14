@@ -167,17 +167,20 @@ export async function runPython(
 
   const wrapped = `
 import json, sys
+from typing import List, Dict, Set, Tuple, Optional, Any, Union
 
 ${userCode}
 
 __fn = None
+__skip = {"json", "sys", "print", "input", "open", "exec", "eval", "compile", "__import__",
+          "List", "Dict", "Set", "Tuple", "Optional", "Any", "Union"}
 for __name in list(dir()):
+    if __name in __skip or __name.startswith("_"):
+        continue
     __obj = eval(__name)
     if (
         callable(__obj)
-        and not __name.startswith("_")
         and not isinstance(__obj, type)
-        and __name not in ("json", "sys", "print", "input", "open", "exec", "eval", "compile", "__import__")
     ):
         __fn = __obj
         break

@@ -80,9 +80,11 @@ export function InterviewRoomPage() {
       .then((iv) => {
         setInterview(iv);
         if (iv.type === "live-coding" || iv.type === "practice") {
-          // Set code language from interview if available
-          if (iv.language) {
-            setCodeLanguage(iv.language as CodeLanguage);
+          // Set code language from interview config if it's a valid code language
+          // iv.language is the spoken language (tr/en), NOT the code language
+          const validCodeLangs = ["javascript", "typescript", "python"];
+          if (iv.codeLanguage && validCodeLangs.includes(iv.codeLanguage)) {
+            setCodeLanguage(iv.codeLanguage as CodeLanguage);
           }
         }
         if (iv.type === "system-design") {
@@ -120,8 +122,7 @@ export function InterviewRoomPage() {
           console.log("[coding-data] Fetching starter code for:", p._id);
           const codingData = await getLeetcodeCodingData(p._id);
           if (codingData) {
-            p.starterCode = codingData.starterCode;
-            p.testCases = codingData.testCases;
+            p = { ...p, starterCode: codingData.starterCode, testCases: codingData.testCases };
             console.log(`[coding-data] Loaded: ${codingData.testCases.length} test cases`);
           }
         } catch (err) {
@@ -129,16 +130,13 @@ export function InterviewRoomPage() {
         }
       }
 
-      setProblem(p);
-      setProblemLoading(false);
-
-      // Directly set code — the code-update effect may not fire reliably
-      // on the first render due to Monaco Editor mounting timing
+      // Set code BEFORE setting problem so the editor has content immediately
       const lang = codeLanguageRef.current;
       const starter = p.starterCode?.[lang] ?? "";
-      if (starter) {
-        setCode(starter);
-      }
+      setCode(starter);
+
+      setProblem(p);
+      setProblemLoading(false);
     },
     [searchParams],
   );
@@ -156,6 +154,63 @@ export function InterviewRoomPage() {
       setCode(starter);
     }
   }, [problem, codeLanguage]);
+
+  // Direct fetch: if problemId is in URL, fetch coding data immediately
+  // Don't wait for WS — just grab it and set it
+  useEffect(() => {
+    const problemId = searchParams.get("problemId");
+    if (!problemId) return;
+
+    let cancelled = false;
+
+    async function fetchAndSet() {
+      try {
+        // 1. Fetch problem info
+        let p: Problem;
+        try {
+          const lc = await getLeetcodeProblem(problemId!);
+          p = {
+            _id: lc._id,
+            title: lc.title,
+            description: lc.description,
+            difficulty: lc.difficulty,
+            category: lc.relatedTopics[0] ?? "general",
+            testCases: [],
+            createdAt: lc.createdAt,
+          };
+        } catch {
+          p = await getProblem(problemId!);
+        }
+
+        if (cancelled) return;
+
+        // 2. Fetch coding data (starter code + test cases)
+        try {
+          const codingData = await getLeetcodeCodingData(problemId!);
+          if (codingData) {
+            p = { ...p, starterCode: codingData.starterCode, testCases: codingData.testCases };
+          }
+        } catch (err) {
+          console.warn("[direct-fetch] Coding data failed:", err);
+        }
+
+        if (cancelled) return;
+
+        // 3. Set everything
+        const lang = codeLanguageRef.current;
+        const starter = p.starterCode?.[lang] ?? "";
+        setCode(starter);
+        setProblem(p);
+        setProblemLoading(false);
+        console.log("[direct-fetch] Problem loaded:", p.title, "starter:", starter.substring(0, 50));
+      } catch (err) {
+        console.warn("[direct-fetch] Failed:", err);
+      }
+    }
+
+    fetchAndSet();
+    return () => { cancelled = true; };
+  }, [searchParams]);
 
   const {
     state,
@@ -638,6 +693,7 @@ export function InterviewRoomPage() {
                         result={executionResult}
                         running={executing}
                         onRun={handleRunCode}
+                        onComplete={handleComplete}
                       />
                     }
                   />

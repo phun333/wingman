@@ -121,16 +121,19 @@ export function NewInterviewPage() {
 
     try {
       // Check for existing in-progress/created interview of the same type
-      const freshInterviews = await fetchAllInterviews(true);
-      const activeInterview = freshInterviews.find(
-        (iv) =>
-          iv.type === selectedType &&
-          (iv.status === "created" || iv.status === "in-progress"),
-      );
+      // Skip this check if a specific problem is selected — always create fresh
+      if (!selectedProblem) {
+        const freshInterviews = await fetchAllInterviews(true);
+        const activeInterview = freshInterviews.find(
+          (iv) =>
+            iv.type === selectedType &&
+            (iv.status === "created" || iv.status === "in-progress"),
+        );
 
-      if (activeInterview) {
-        navigate(`/interview/${activeInterview._id}`);
-        return;
+        if (activeInterview) {
+          navigate(`/interview/${activeInterview._id}`);
+          return;
+        }
       }
 
       const interview = await createInterview({
@@ -226,27 +229,29 @@ export function NewInterviewPage() {
         </div>
       </motion.div>
 
-      {/* Step 2 — Difficulty */}
-      <motion.div variants={fadeUp} className="mt-8">
-        <h2 className="text-sm font-medium text-text-muted uppercase tracking-wider mb-3">
-          Zorluk
-        </h2>
-        <div className="flex gap-2">
-          {difficulties.map((d) => (
-            <button
-              key={d.id}
-              type="button"
-              onClick={() => setDifficulty(d.id)}
-              className={`
-                rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-150 cursor-pointer
-                ${difficulty === d.id ? d.color : "border-border bg-surface text-text-secondary hover:border-border"}
-              `}
-            >
-              {d.label}
-            </button>
-          ))}
-        </div>
-      </motion.div>
+      {/* Step 2 — Difficulty (hidden when a specific problem is selected) */}
+      {!selectedProblem && (
+        <motion.div variants={fadeUp} className="mt-8">
+          <h2 className="text-sm font-medium text-text-muted uppercase tracking-wider mb-3">
+            Zorluk
+          </h2>
+          <div className="flex gap-2">
+            {difficulties.map((d) => (
+              <button
+                key={d.id}
+                type="button"
+                onClick={() => setDifficulty(d.id)}
+                className={`
+                  rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-150 cursor-pointer
+                  ${difficulty === d.id ? d.color : "border-border bg-surface text-text-secondary hover:border-border"}
+                `}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       {/* Step 3 — Question Selection (optional) */}
       {(selectedType === "live-coding" || selectedType === "practice") && (

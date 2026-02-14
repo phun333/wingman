@@ -1,14 +1,15 @@
 import { motion, AnimatePresence } from "motion/react";
-import { Play, CheckCircle2, XCircle, Clock, AlertTriangle, Terminal } from "lucide-react";
+import { Play, CheckCircle2, XCircle, Clock, AlertTriangle, Terminal, Trophy } from "lucide-react";
 import type { CodeExecutionResult } from "@ffh/types";
 
 interface TestResultsPanelProps {
   result: CodeExecutionResult | null;
   running: boolean;
   onRun: () => void;
+  onComplete?: () => void;
 }
 
-export function TestResultsPanel({ result, running, onRun }: TestResultsPanelProps) {
+export function TestResultsPanel({ result, running, onRun, onComplete }: TestResultsPanelProps) {
   const passed = result?.results.filter((r) => r.passed).length ?? 0;
   const total = result?.results.length ?? 0;
   const allPassed = result && passed === total && total > 0;
@@ -132,6 +133,36 @@ export function TestResultsPanel({ result, running, onRun }: TestResultsPanelPro
                   </div>
                 </div>
               ))}
+
+              {/* All passed — success banner + complete button */}
+              {allPassed && onComplete && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="rounded-xl border-2 border-success/30 bg-gradient-to-br from-success/10 to-emerald-500/5 p-4 text-center space-y-3"
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <Trophy size={20} className="text-success" />
+                    <span className="text-sm font-semibold text-success">
+                      Tüm testler geçti!
+                    </span>
+                  </div>
+                  <p className="text-xs text-text-secondary">
+                    Tebrikler! Çözümün tüm test case'lerden başarıyla geçti.
+                  </p>
+                  <button
+                    onClick={onComplete}
+                    className="inline-flex items-center gap-2 px-5 py-2 rounded-lg
+                      bg-success/15 border border-success/30 text-success text-sm font-medium
+                      hover:bg-success/25 hover:border-success/50
+                      hover:shadow-[0_0_20px_rgba(34,197,94,0.15)]
+                      transition-all duration-200 cursor-pointer"
+                  >
+                    <CheckCircle2 size={15} />
+                    Tamamla ve Değerlendir
+                  </button>
+                </motion.div>
+              )}
 
               {/* Execution info */}
               <div className="flex items-center gap-3 text-xs text-text-muted pt-1">

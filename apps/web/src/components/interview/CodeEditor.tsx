@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import Editor, { type OnMount } from "@monaco-editor/react";
 import type { CodeLanguage } from "@ffh/types";
 
@@ -16,6 +16,8 @@ const monacoLanguageMap: Record<CodeLanguage, string> = {
 
 export function CodeEditor({ language, value, onChange }: CodeEditorProps) {
   const editorRef = useRef<any>(null);
+  const valueRef = useRef(value);
+  valueRef.current = value;
 
   const handleMount: OnMount = useCallback((editor, monaco) => {
     editorRef.current = editor;
@@ -52,9 +54,25 @@ export function CodeEditor({ language, value, onChange }: CodeEditorProps) {
 
     monaco.editor.setTheme("wingman-dark");
 
-    // Focus editor
+    // Ensure the editor content matches the value prop on mount
+    const currentValue = editor.getValue();
+    if (valueRef.current && currentValue !== valueRef.current) {
+      editor.setValue(valueRef.current);
+    }
+
     editor.focus();
   }, []);
+
+  // Sync value prop to editor when it changes after mount
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (editor && value !== undefined) {
+      const currentValue = editor.getValue();
+      if (currentValue !== value) {
+        editor.setValue(value);
+      }
+    }
+  }, [value]);
 
   const handleChange = useCallback(
     (value: string | undefined) => {
