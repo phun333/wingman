@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link } from "react-router-dom";
+import { usePageTitle } from "@/lib/usePageTitle";
 import { motion } from "motion/react";
 import { useAuth } from "@/lib/auth";
 import { WingLogo } from "@/components/icons/WingLogo";
@@ -8,6 +9,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
 export function RegisterPage() {
+  usePageTitle("Kayıt Ol");
   const { register } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");

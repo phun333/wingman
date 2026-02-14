@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { usePageTitle } from "@/lib/usePageTitle";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/Button";
@@ -60,6 +61,7 @@ const fadeUp = {
 };
 
 export function NewInterviewPage() {
+  usePageTitle("Yeni Mülakat");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const preselected = searchParams.get("type") as InterviewType | null;

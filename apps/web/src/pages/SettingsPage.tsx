@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { usePageTitle } from "@/lib/usePageTitle";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -440,6 +441,7 @@ function ResumeDetailCard({
 }
 
 export function SettingsPage() {
+  usePageTitle("Profil & Ayarlar");
   // Zustand profile store
   const profile = useProfileStore((s) => s.profile);
   const isLoading = useProfileStore((s) => s.loading);

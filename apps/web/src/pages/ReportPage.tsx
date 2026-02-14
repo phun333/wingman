@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { usePageTitle } from "@/lib/usePageTitle";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Card } from "@/components/ui/Card";
@@ -146,6 +147,7 @@ function CategoryBar({
 // ─── Main Component ──────────────────────────────────────
 
 export function ReportPage() {
+  usePageTitle("Rapor");
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 

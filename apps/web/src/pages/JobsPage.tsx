@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { usePageTitle } from "@/lib/usePageTitle";
 import { motion, AnimatePresence } from "motion/react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -64,6 +65,7 @@ const difficultyStyles = {
 // ─── Component ───────────────────────────────────────────
 
 export function JobsPage() {
+  usePageTitle("İş İlanları");
   const navigate = useNavigate();
 
   // Zustand store

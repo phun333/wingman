@@ -1,4 +1,5 @@
 import { useRef, useMemo, useState, useEffect } from "react";
+import { usePageTitle } from "@/lib/usePageTitle";
 import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform, useInView, AnimatePresence, type Variants } from "motion/react";
 import {
@@ -1909,6 +1910,7 @@ function Footer() {
 /* ────────────────────────────────────────────────── */
 
 export function LandingPage() {
+  usePageTitle("AI Mülakat Platformu");
   return (
     <div className="min-h-screen bg-bg text-text overflow-x-hidden">
       <Nav />

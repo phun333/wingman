@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, memo, useDeferredValue } from "react";
+import { usePageTitle } from "@/lib/usePageTitle";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { Card } from "@/components/ui/Card";
@@ -48,6 +49,7 @@ const DIFFICULTY_VARIANT = {
 const PAGE_SIZE = 30;
 
 export function QuestionsPage() {
+  usePageTitle("Sorular");
   const navigate = useNavigate();
 
   // ── Store ──────────────────────────────────────────────

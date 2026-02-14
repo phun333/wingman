@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { usePageTitle } from "@/lib/usePageTitle";
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -8,6 +9,7 @@ import { BarChart3 } from "lucide-react";
 import type { Interview } from "@ffh/types";
 
 export function HistoryPage() {
+  usePageTitle("Geçmiş");
   const interviews = useInterviewsStore((s) => s.allInterviews);
   const allFetchedAt = useInterviewsStore((s) => s.allFetchedAt);
   const isLoading = useInterviewsStore((s) => s.loadingAll);

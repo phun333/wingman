@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { usePageTitle } from "@/lib/usePageTitle";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, useMotionValue, useTransform, animate } from "motion/react";
 import { useAuth } from "@/lib/auth";
@@ -248,6 +249,7 @@ function TypingPlaceholder() {
 // ─── Main Dashboard ──────────────────────────────────────
 
 export function DashboardPage() {
+  usePageTitle("Dashboard");
   const { user } = useAuth();
   const navigate = useNavigate();
 

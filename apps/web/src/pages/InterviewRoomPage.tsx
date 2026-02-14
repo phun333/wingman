@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { usePageTitle } from "@/lib/usePageTitle";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/Button";
@@ -38,6 +39,7 @@ const languageLabels: Record<CodeLanguage, string> = {
 };
 
 export function InterviewRoomPage() {
+  usePageTitle("Mülakat");
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();

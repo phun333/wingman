@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { usePageTitle } from "@/lib/usePageTitle";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { createInterview } from "@/lib/api";
@@ -46,6 +47,7 @@ const CHART_TICK_DIM = "rgba(85, 85, 95, 1)";
 // ─── Main Component ──────────────────────────────────────
 
 export function ProgressPage() {
+  usePageTitle("İlerleme");
   const navigate = useNavigate();
 
   // Zustand stores
