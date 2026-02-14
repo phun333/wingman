@@ -16,6 +16,7 @@ import { leetcodeRoutes } from "./routes/leetcode";
 import { studyPathRoutes } from "./routes/study-paths";
 import { recommendationRoutes } from "./routes/recommendations";
 import { docsSearchRoutes as searchRoutes } from "./routes/docs-search";
+import { exploreRoutes } from "./routes/explore";
 
 export const apiRoutes = new Hono();
 
@@ -90,6 +91,12 @@ apiRoutes.route("/recommendations", recommendationRoutes);
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 apiRoutes.route("/search", searchRoutes);
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  Explore (scraped jobs)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+apiRoutes.route("/explore", exploreRoutes);
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  Users

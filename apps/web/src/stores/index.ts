@@ -5,3 +5,4 @@ export { useInterviewsStore } from "./use-interviews-store";
 export { useProfileStore } from "./use-profile-store";
 export { useJobsStore } from "./use-jobs-store";
 export type { JobPath } from "./use-jobs-store";
+export { useExploreStore } from "./use-explore-store";

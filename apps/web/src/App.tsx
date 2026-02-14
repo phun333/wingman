@@ -13,6 +13,7 @@ import { ReportPage } from "@/pages/ReportPage";
 import { ProgressPage } from "@/pages/ProgressPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { JobsPage } from "@/pages/JobsPage";
+import { ExplorePage } from "@/pages/ExplorePage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -90,6 +91,7 @@ export function App() {
         <Route path="questions" element={<QuestionsPage />} />
         <Route path="history" element={<HistoryPage />} />
         <Route path="progress" element={<ProgressPage />} />
+        <Route path="explore" element={<ExplorePage />} />
         <Route path="jobs" element={<JobsPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>

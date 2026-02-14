@@ -381,6 +381,135 @@ export async function deleteStudyPath(id: string): Promise<void> {
   await request<{ deleted: boolean }>(`/study-paths/${id}`, { method: "DELETE" });
 }
 
+// ─── Explore (scraped jobs) ──────────────────────────────
+
+export interface ScrapedJob {
+  _id: string;
+  externalId: string;
+  title: string;
+  company: string;
+  applyUrl: string;
+  source: string;
+  location: string;
+  workplaceType: string;
+  countries: string[];
+  seniorityLevel?: string;
+  commitment: string[];
+  category?: string;
+  roleType?: string;
+  minYoe?: number;
+  skills: string[];
+  requirements?: string;
+  description?: string;
+  salaryMin?: number;
+  salaryMax?: number;
+  salaryCurrency?: string;
+  salaryFrequency?: string;
+  isCompensationTransparent: boolean;
+  companyLogo?: string;
+  companyWebsite?: string;
+  companyLinkedin?: string;
+  companyIndustry?: string;
+  companySize?: number;
+  companyTagline?: string;
+  publishedAt?: number;
+  scrapedAt: number;
+  isExpired: boolean;
+}
+
+export interface ExploreStats {
+  total: number;
+  active: number;
+  companies: number;
+  categories: number;
+  byWorkplace: Record<string, number>;
+  bySeniority: Record<string, number>;
+}
+
+export interface ExplorePath {
+  _id: string;
+  userId: string;
+  jobId: string;
+  title: string;
+  description: string;
+  totalQuestions: number;
+  completedQuestions: number;
+  categories: Array<{
+    name: string;
+    type: "live-coding" | "system-design" | "phone-screen";
+    questions: Array<{
+      id: string;
+      question: string;
+      difficulty: "easy" | "medium" | "hard";
+      completed: boolean;
+      interviewId?: string;
+      score?: number;
+      leetcodeId?: number;
+      leetcodeUrl?: string;
+    }>;
+  }>;
+  progress: number;
+  job?: ScrapedJob | null;
+}
+
+export async function searchExploreJobs(params?: {
+  q?: string;
+  workplaceType?: string;
+  seniorityLevel?: string;
+  category?: string;
+  company?: string;
+  limit?: number;
+}): Promise<ScrapedJob[]> {
+  const qs = new URLSearchParams();
+  if (params?.q) qs.set("q", params.q);
+  if (params?.workplaceType) qs.set("workplaceType", params.workplaceType);
+  if (params?.seniorityLevel) qs.set("seniorityLevel", params.seniorityLevel);
+  if (params?.category) qs.set("category", params.category);
+  if (params?.company) qs.set("company", params.company);
+  if (params?.limit) qs.set("limit", String(params.limit));
+  const q = qs.toString();
+  return request<ScrapedJob[]>(`/explore/jobs${q ? `?${q}` : ""}`);
+}
+
+export async function getExploreJobStats(): Promise<ExploreStats> {
+  return request<ExploreStats>("/explore/jobs/stats");
+}
+
+export async function getExploreJob(id: string): Promise<ScrapedJob> {
+  return request<ScrapedJob>(`/explore/jobs/${id}`);
+}
+
+export async function createExplorePath(jobId: string): Promise<ExplorePath> {
+  return request<ExplorePath>("/explore/paths", {
+    method: "POST",
+    body: JSON.stringify({ jobId }),
+  });
+}
+
+export async function listExplorePaths(): Promise<ExplorePath[]> {
+  return request<ExplorePath[]>("/explore/paths");
+}
+
+export async function getExplorePath(id: string): Promise<ExplorePath> {
+  return request<ExplorePath>(`/explore/paths/${id}`);
+}
+
+export async function updateExplorePathProgress(
+  pathId: string,
+  categoryIndex: number,
+  questionIndex: number,
+  data: { completed: boolean; interviewId?: string; score?: number },
+): Promise<ExplorePath> {
+  return request<ExplorePath>(`/explore/paths/${pathId}/progress`, {
+    method: "PUT",
+    body: JSON.stringify({ categoryIndex, questionIndex, ...data }),
+  });
+}
+
+export async function deleteExplorePath(id: string): Promise<void> {
+  await request<{ deleted: boolean }>(`/explore/paths/${id}`, { method: "DELETE" });
+}
+
 // ─── Job Interview Paths ────────────────────────────────
 
 export async function getJobPaths(): Promise<any[]> {

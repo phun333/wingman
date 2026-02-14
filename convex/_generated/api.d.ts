@@ -11,6 +11,7 @@
 import type * as auth from "../auth.js";
 import type * as companyStudyPaths from "../companyStudyPaths.js";
 import type * as designProblems from "../designProblems.js";
+import type * as explorePaths from "../explorePaths.js";
 import type * as http from "../http.js";
 import type * as interviewResults from "../interviewResults.js";
 import type * as interviews from "../interviews.js";
@@ -37,6 +38,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   companyStudyPaths: typeof companyStudyPaths;
   designProblems: typeof designProblems;
+  explorePaths: typeof explorePaths;
   http: typeof http;
   interviewResults: typeof interviewResults;
   interviews: typeof interviews;

@@ -96,6 +96,7 @@ export const list = query({
   handler: async (ctx, args) => {
     const limit = args.limit ?? 20;
 
+    // Use one index for primary filter, then apply remaining filters in-memory
     const buildQuery = () => {
       if (args.workplaceType) {
         return ctx.db
@@ -128,10 +129,21 @@ export const list = query({
       return ctx.db.query("jobs");
     };
 
-    const results = await buildQuery().order("desc").take(limit + 1);
+    // Fetch extra to compensate for in-memory filtering
+    const fetchLimit = limit * 3 + 1;
+    const raw = await buildQuery().order("desc").take(fetchLimit);
 
-    const hasMore = results.length > limit;
-    const jobs = hasMore ? results.slice(0, limit) : results;
+    // Apply remaining filters that weren't used by the index
+    const filtered = raw.filter((j) => {
+      if (args.workplaceType && j.workplaceType !== args.workplaceType) return false;
+      if (args.seniorityLevel && j.seniorityLevel !== args.seniorityLevel) return false;
+      if (args.category && j.category !== args.category) return false;
+      if (args.company && j.company !== args.company) return false;
+      return true;
+    });
+
+    const hasMore = filtered.length > limit;
+    const jobs = hasMore ? filtered.slice(0, limit) : filtered;
 
     return {
       jobs,
@@ -173,6 +185,7 @@ export const search = query({
 // ─── List ALL (export/seed amaçlı) ──────────────────────
 
 export const listAll = query({
+  args: {},
   handler: async (ctx) => {
     return await ctx.db.query("jobs").collect();
   },
@@ -190,6 +203,7 @@ export const getById = query({
 // ─── Stats ───────────────────────────────────────────────
 
 export const stats = query({
+  args: {},
   handler: async (ctx) => {
     const all = await ctx.db.query("jobs").collect();
     const total = all.length;

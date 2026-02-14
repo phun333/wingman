@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Play, History, TrendingUp, Settings, Code, Briefcase, BookOpen } from "lucide-react";
+import { LayoutDashboard, Play, History, TrendingUp, Settings, Code, Briefcase, BookOpen, Compass } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { WingLogo } from "@/components/icons/WingLogo";
 
@@ -17,6 +17,7 @@ const navItems: NavItem[] = [
   { to: "/dashboard/questions", label: "Sorular", icon: Code, id: "tour-nav-questions" },
   { to: "/dashboard/history", label: "Geçmiş", icon: History, id: "tour-nav-history" },
   { to: "/dashboard/progress", label: "İlerleme", icon: TrendingUp, id: "tour-nav-progress" },
+  { to: "/dashboard/explore", label: "İş Keşfet", icon: Compass, id: "tour-nav-explore" },
   { to: "/dashboard/jobs", label: "İş İlanları", icon: Briefcase, id: "tour-nav-jobs" },
   { to: "/dashboard/settings", label: "Profil & Ayarlar", icon: Settings, id: "tour-nav-settings" },
 ];

@@ -301,6 +301,45 @@ export default defineSchema({
       filterFields: ["company", "workplaceType", "seniorityLevel", "category"],
     }),
 
+  // ─── Explore Interview Paths (scraped jobs üzerinden) ───
+
+  explorePaths: defineTable({
+    userId: v.id("users"),
+    jobId: v.id("jobs"),
+    title: v.string(),
+    description: v.string(),
+    totalQuestions: v.number(),
+    completedQuestions: v.number(),
+    categories: v.array(v.object({
+      name: v.string(),
+      type: v.union(
+        v.literal("live-coding"),
+        v.literal("system-design"),
+        v.literal("phone-screen")
+      ),
+      questions: v.array(v.object({
+        id: v.string(),
+        question: v.string(),
+        difficulty: v.union(
+          v.literal("easy"),
+          v.literal("medium"),
+          v.literal("hard")
+        ),
+        completed: v.boolean(),
+        interviewId: v.optional(v.id("interviews")),
+        score: v.optional(v.number()),
+        leetcodeId: v.optional(v.number()),
+        leetcodeUrl: v.optional(v.string()),
+      })),
+    })),
+    progress: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_job", ["jobId"])
+    .index("by_user_job", ["userId", "jobId"]),
+
   // ─── Faz 6: Kişiselleştirme ────────────────────────────
 
   jobPostings: defineTable({
