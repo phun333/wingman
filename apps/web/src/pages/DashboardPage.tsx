@@ -358,7 +358,7 @@ export function DashboardPage() {
               variants={stagger}
               className="flex flex-wrap items-center justify-center gap-2 mt-4"
             >
-              {suggestions.map((s, i) => {
+              {suggestions.map((s) => {
                 const Icon = s.icon;
                 return (
                   <motion.div key={s.label} variants={fadeUp}>
@@ -484,7 +484,7 @@ export function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {interviewTypes.map((type, i) => {
+            {interviewTypes.map((type) => {
               const Icon = type.icon;
               return (
                 <motion.div

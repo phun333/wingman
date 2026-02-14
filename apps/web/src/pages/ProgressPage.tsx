@@ -8,7 +8,6 @@ import { useInterviewsStore, useJobsStore } from "@/stores";
 import { typeLabels, typeColors, hireLabels, difficultyLabels, formatDate, formatFullDate } from "@/lib/constants";
 import { JobPaths } from "@/components/JobPaths";
 import { TrendingUp, Flame, CheckCircle2, AlertTriangle } from "lucide-react";
-import type { UserProgress, Interview } from "@ffh/types";
 import {
   LineChart,
   Line,

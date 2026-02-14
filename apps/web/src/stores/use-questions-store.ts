@@ -30,11 +30,6 @@ interface QuestionsFilters {
   showFilters: boolean;
 }
 
-interface CachedData<T> {
-  data: T;
-  fetchedAt: number;
-}
-
 interface QuestionsState extends QuestionsFilters {
   // Cached data
   problems: LeetcodeProblem[];

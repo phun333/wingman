@@ -30,13 +30,6 @@ import { ChatThread } from "@/components/interview/ChatThread";
 import { WingLogo } from "@/components/icons/WingLogo";
 import { LatencyPipeline } from "@/components/interview/LatencyPipeline";
 
-const stateLabels: Record<VoicePipelineState, string> = {
-  idle: "Hazır",
-  listening: "Dinliyor…",
-  processing: "Düşünüyor…",
-  speaking: "Konuşuyor…",
-};
-
 const languageLabels: Record<CodeLanguage, string> = {
   javascript: "JavaScript",
   typescript: "TypeScript",
@@ -693,7 +686,7 @@ function VoiceOnlyRoom({
   volume,
   transcript,
   aiText,
-  error,
+  error: _error,
   errorInfo,
   connected,
   voiceStarted,
@@ -701,7 +694,7 @@ function VoiceOnlyRoom({
   formatTime,
   onMicClick,
   onStartVoice,
-  onInterrupt,
+  onInterrupt: _onInterrupt,
   onEnd,
   questionCurrent,
   questionTotal,

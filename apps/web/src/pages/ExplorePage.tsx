@@ -97,7 +97,7 @@ export function ExplorePage() {
     stats,
     filters,
     loading,
-    paths,
+    paths: _paths,
     creatingPathFor,
     setFilters,
     fetchJobs,

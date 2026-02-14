@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Bot, User, Clock } from "lucide-react";
+import { Bot, User } from "lucide-react";
 import Markdown from "react-markdown";
 
 interface Message {

@@ -36,7 +36,7 @@ export function VoiceBar({
   onMicClick,
   showHint,
   onHintRequest,
-  hintLevel = 0,
+  hintLevel: _hintLevel = 0,
   totalHints = 0,
 }: VoiceBarProps) {
   return (

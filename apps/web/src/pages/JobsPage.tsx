@@ -30,7 +30,6 @@ import {
 import { useJobsStore } from "@/stores";
 import type { JobPath } from "@/stores";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
-import type { JobPosting } from "@ffh/types";
 
 // ─── Animation Variants ──────────────────────────────────
 
@@ -70,7 +69,7 @@ export function JobsPage() {
 
   // Zustand store
   const jobs = useJobsStore((s) => s.jobs);
-  const paths = useJobsStore((s) => s.paths);
+  const _paths = useJobsStore((s) => s.paths);
   const fetchedAt = useJobsStore((s) => s.fetchedAt);
   const isLoading = useJobsStore((s) => s.loading);
   const loading = fetchedAt === 0 || isLoading;

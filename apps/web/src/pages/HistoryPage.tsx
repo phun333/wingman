@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/Badge";
 import { useInterviewsStore } from "@/stores";
 import { typeLabels, statusLabels, difficultyLabels, formatFullDate, formatDuration } from "@/lib/constants";
 import { BarChart3 } from "lucide-react";
-import type { Interview } from "@ffh/types";
 
 export function HistoryPage() {
   usePageTitle("Geçmiş");

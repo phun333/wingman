@@ -50,12 +50,6 @@ const typeIcons = {
   "phone-screen": MessageSquare,
 };
 
-const difficultyColors = {
-  easy: "text-success",
-  medium: "text-amber",
-  hard: "text-error",
-};
-
 interface JobPathsProps {
   paths: JobPath[];
   onStartInterview?: (path: JobPath, question: any, category: any) => void;
@@ -171,7 +165,7 @@ export function JobPaths({ paths, onStartInterview, onDeletePath }: JobPathsProp
                 const Icon = typeIcons[category.type];
                 const completedCount = category.questions.filter(q => q.completed).length;
                 const totalCount = category.questions.length;
-                const categoryProgress = totalCount > 0
+                const _categoryProgress = totalCount > 0
                   ? Math.round((completedCount / totalCount) * 100)
                   : 0;
 
@@ -188,7 +182,7 @@ export function JobPaths({ paths, onStartInterview, onDeletePath }: JobPathsProp
                     </div>
 
                     <div className="space-y-1.5">
-                      {category.questions.slice(0, 3).map((q, qIdx) => (
+                      {category.questions.slice(0, 3).map((q) => (
                         <div
                           key={q.id}
                           className="flex items-start gap-2 text-xs"

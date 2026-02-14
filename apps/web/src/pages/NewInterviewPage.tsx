@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { usePageTitle } from "@/lib/usePageTitle";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -12,7 +12,7 @@ import {
   listLeetcodeProblems,
 } from "@/lib/api";
 import { useInterviewsStore } from "@/stores";
-import { Code2, Waypoints, Phone, Dumbbell, Search, X, Check, Shuffle } from "lucide-react";
+import { Code2, Waypoints, Phone, Dumbbell, Search, X, Shuffle } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { InterviewType, Difficulty, LeetcodeProblem } from "@ffh/types";
 

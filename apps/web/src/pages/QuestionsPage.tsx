@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useQuestionsStore } from "@/stores";
-import type { SortOption, Tab } from "@/stores";
+import type { SortOption } from "@/stores";
 import {
   createInterview,
   startInterview,
@@ -33,7 +33,6 @@ import {
   ChevronDown,
 } from "lucide-react";
 import type {
-  Difficulty,
   LeetcodeProblem,
   CompanyStats,
   TopicStats,
@@ -50,7 +49,7 @@ const PAGE_SIZE = 30;
 
 export function QuestionsPage() {
   usePageTitle("Sorular");
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
 
   // ── Store ──────────────────────────────────────────────
   const {
@@ -58,7 +57,7 @@ export function QuestionsPage() {
     tab, searchTerm, selectedDifficulty, selectedCompany,
     selectedTopic, faangOnly, sortBy, currentPage, showFilters,
     // Data
-    problems, totalCount, companies, topics,
+    problems, totalCount: _totalCount, companies, topics,
     loading, error,
     // Actions
     setTab, setSearchTerm, setSelectedDifficulty, setSelectedCompany,

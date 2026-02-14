@@ -10,13 +10,11 @@ import {
   FileText,
   Briefcase,
   Brain,
-  Flame,
   ChevronDown,
   ChevronUp,
   Building2,
   GraduationCap,
   Clock,
-  Code2,
   Star,
   Award,
   Globe,
@@ -29,7 +27,6 @@ import { StreakHeatmap } from "@/components/ui/StreakHeatmap";
 import { Link } from "react-router-dom";
 import type { Resume } from "@ffh/types";
 import { useProfileStore } from "@/stores";
-import type { ProfileData } from "@/lib/api";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { useTour } from "@/lib/useTour";
 

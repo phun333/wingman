@@ -11,6 +11,7 @@ import {
   MicOff,
   Volume2,
   Sparkles,
+  Zap,
   User,
   GripHorizontal,
   Hand,
