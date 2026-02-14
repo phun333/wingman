@@ -4,7 +4,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/Button";
 import { useVoice } from "@/lib/useVoice";
-import { getInterview, completeInterview, abandonInterview, executeCode as executeCodeApi, getRandomProblem, getProblem, startInterview, getLeetcodeProblem, getRandomLeetcodeProblem } from "@/lib/api";
+import { getInterview, completeInterview, abandonInterview, executeCode as executeCodeApi, getRandomProblem, getProblem, startInterview, getLeetcodeProblem, getRandomLeetcodeProblem, getLeetcodeCodingData } from "@/lib/api";
 import { useInterviewsStore } from "@/stores";
 import { typeLabels } from "@/lib/constants";
 import { Mic, MicOff, Hand, Coffee, Clock, AlertTriangle, CheckCircle2, X, Volume2, Play, MicOff as MicOffIcon, RefreshCw, VolumeX, WifiOff, MessageSquareText, RotateCcw } from "lucide-react";
@@ -190,12 +190,14 @@ export function InterviewRoomPage() {
         try {
           console.log("Interview room loading problem. Problem ID from URL:", requestedProblemId);
           let p: Problem;
+          let leetcodeIdForCoding: number | null = null;
 
           if (requestedProblemId) {
             // Load specific problem — try leetcodeProblems first, then legacy problems
             console.log("Loading specific problem with ID:", requestedProblemId);
             try {
               const lc = await getLeetcodeProblem(requestedProblemId);
+              leetcodeIdForCoding = lc.leetcodeId;
               // Adapt LeetcodeProblem → Problem shape
               p = {
                 _id: lc._id,
@@ -216,6 +218,7 @@ export function InterviewRoomPage() {
             console.log("Loading random problem with difficulty:", interview.difficulty);
             try {
               const lc = await getRandomLeetcodeProblem({ difficulty: interview.difficulty });
+              leetcodeIdForCoding = lc.leetcodeId;
               p = {
                 _id: lc._id,
                 title: lc.title,
@@ -230,6 +233,21 @@ export function InterviewRoomPage() {
               p = await getRandomProblem({ difficulty: interview.difficulty });
             }
             console.log("Loaded random problem:", p.title);
+          }
+
+          // Fetch coding data (starter code + test cases) for LeetCode problems
+          if (leetcodeIdForCoding) {
+            try {
+              console.log("Fetching coding data for leetcodeId:", leetcodeIdForCoding);
+              const codingData = await getLeetcodeCodingData(leetcodeIdForCoding);
+              if (codingData) {
+                p.starterCode = codingData.starterCode;
+                p.testCases = codingData.testCases;
+                console.log(`Coding data loaded: ${codingData.testCases.length} test cases, starter code for 3 languages`);
+              }
+            } catch (err) {
+              console.warn("Failed to fetch coding data, using empty defaults:", err);
+            }
           }
 
           handleProblemLoaded(p);

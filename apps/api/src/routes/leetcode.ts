@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { describeRoute } from "hono-openapi";
 import { convex } from "@ffh/db";
 import { api } from "../../../../convex/_generated/api";
+import { getCodingData } from "../services/coding-data-generator";
 
 export const leetcodeRoutes = new Hono();
 
@@ -162,6 +163,46 @@ leetcodeRoutes.get(
 
     if (!problem) return c.json({ error: "No problems found" }, 404);
     return c.json(problem);
+  },
+);
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  GET /leetcode/:id/coding-data — Get starter code + test cases
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+leetcodeRoutes.get(
+  "/:id/coding-data",
+  describeRoute({
+    tags: ["LeetCode"],
+    summary: "Get starter code templates and test cases for a problem (LLM-generated, cached)",
+    responses: {
+      200: { description: "Coding data with starter code and test cases" },
+      404: { description: "Problem not found" },
+      500: { description: "Generation failed" },
+    },
+  }),
+  async (c) => {
+    const id = c.req.param("id");
+
+    // Resolve to leetcodeId number
+    let leetcodeId: number;
+    const numericId = Number.parseInt(id, 10);
+    if (!Number.isNaN(numericId) && numericId > 0 && numericId < 10000) {
+      leetcodeId = numericId;
+    } else {
+      // Convex doc ID — look up the leetcodeId
+      try {
+        const problem = await convex.query(api.leetcodeProblems.getById, { id: id as any });
+        if (!problem) return c.json({ error: "Problem not found" }, 404);
+        leetcodeId = problem.leetcodeId;
+      } catch {
+        return c.json({ error: "Problem not found" }, 404);
+      }
+    }
+
+    const data = await getCodingData(leetcodeId);
+    if (!data) return c.json({ error: "Failed to generate coding data" }, 500);
+    return c.json(data);
   },
 );
 

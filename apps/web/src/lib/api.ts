@@ -296,6 +296,28 @@ export async function getLeetcodeProblem(id: string | number): Promise<LeetcodeP
   return request<LeetcodeProblem>(`/leetcode/${id}`);
 }
 
+export interface LeetcodeCodingData {
+  starterCode: {
+    javascript: string;
+    python: string;
+    typescript: string;
+  };
+  testCases: {
+    input: string;
+    expectedOutput: string;
+    isHidden: boolean;
+  }[];
+  solutionCode?: {
+    javascript?: string;
+    python?: string;
+    typescript?: string;
+  };
+}
+
+export async function getLeetcodeCodingData(id: string | number): Promise<LeetcodeCodingData> {
+  return request<LeetcodeCodingData>(`/leetcode/${id}/coding-data`);
+}
+
 export async function getRandomLeetcodeProblem(params?: {
   difficulty?: Difficulty;
   company?: string;

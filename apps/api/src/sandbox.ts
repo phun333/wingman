@@ -80,23 +80,32 @@ export async function runJavaScript(
     vm.runInContext(userCode, context, { timeout: SANDBOX.timeoutMs });
 
     // Step 2: Auto-detect & call the function, return result
+    // Convert newline-separated args to comma-separated for JS array literal
+    const argsStr = testInput
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0)
+      .join(",");
+
     const harness = `
       (function() {
-        const __names = [
-          "twoSum","reverseString","isPalindrome","fizzBuzz","maxSubArray",
-          "isValid","search","merge","groupAnagrams","findMedianSortedArrays",
-          "isMatch","mergeKLists","lengthOfLIS","serialize","deserialize",
-          "lengthOfLongestSubstring","maxProfit","climbStairs","rob",
-          "maxDepth","invertTree","levelOrder","isValidBST",
-          "LRUCache",
-        ];
+        // Auto-detect user-defined functions (skip builtins)
+        const __builtins = new Set([
+          "console","Array","Object","Map","Set","String","Number","Boolean",
+          "Math","JSON","parseInt","parseFloat","isNaN","isFinite","Infinity",
+          "NaN","undefined","Error","TypeError","RangeError","SyntaxError",
+          "RegExp","Date","Symbol","WeakMap","WeakSet","Promise",
+          "Float32Array","Float64Array","Int8Array","Int16Array","Int32Array",
+          "Uint8Array","Uint16Array","Uint32Array",
+        ]);
         let __fn = null;
-        for (const n of __names) {
+        const __keys = Object.getOwnPropertyNames(this).filter(n => !n.startsWith("__") && !__builtins.has(n));
+        for (const n of __keys) {
           try { const v = eval(n); if (typeof v === "function") { __fn = v; break; } } catch {}
         }
         if (!__fn) return "__NO_FN__";
         try {
-          const __args = [${testInput}];
+          const __args = [${argsStr}];
           const __result = __fn(...__args);
           return JSON.stringify(__result);
         } catch (e) {
@@ -149,6 +158,13 @@ export async function runPython(
   const dir = await mkdtemp(pathJoin(tmpdir(), "ffh-py-"));
   const filePath = pathJoin(dir, "code.py");
 
+  // Convert newline-separated args to comma-separated for Python list
+  const pyArgsStr = testInput
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0)
+    .join(",");
+
   const wrapped = `
 import json, sys
 
@@ -167,7 +183,7 @@ for __name in list(dir()):
         break
 
 try:
-    __args = [${testInput}]
+    __args = [${pyArgsStr}]
     if __fn:
         __result = __fn(*__args)
         print("__RESULT__:" + json.dumps(__result))

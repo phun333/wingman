@@ -161,6 +161,32 @@ export default defineSchema({
     .index("by_rating", ["rating"])
     .index("by_frequency", ["frequency"]),
 
+  // ─── LeetCode Coding Data (starter code + test cases cache) ─
+
+  leetcodeCodingData: defineTable({
+    leetcodeId: v.number(),
+    starterCode: v.object({
+      javascript: v.string(),
+      python: v.string(),
+      typescript: v.string(),
+    }),
+    testCases: v.array(
+      v.object({
+        input: v.string(),
+        expectedOutput: v.string(),
+        isHidden: v.boolean(),
+      }),
+    ),
+    solutionCode: v.optional(
+      v.object({
+        javascript: v.optional(v.string()),
+        python: v.optional(v.string()),
+        typescript: v.optional(v.string()),
+      }),
+    ),
+    createdAt: v.number(),
+  }).index("by_leetcode_id", ["leetcodeId"]),
+
   // ─── Şirket Bazlı Çalışma Yol Haritaları ──────────────
 
   companyStudyPaths: defineTable({
