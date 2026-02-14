@@ -578,27 +578,128 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
       }
     }
 
-    // 2. Resume context
+    // 2. Resume context (Deep Analysis)
     if (this.interview.resumeId) {
       try {
         const resume = await convex.query(api.resumes.getById, {
           id: this.interview.resumeId as any,
         });
         if (resume) {
-          const expText = resume.experience
-            .slice(0, 3)
-            .map(
-              (e) =>
-                `  - ${e.role} @ ${e.company} (${e.duration})${e.highlights.length > 0 ? `: ${e.highlights.slice(0, 2).join(", ")}` : ""}`,
-            )
-            .join("\n");
-          const eduText = resume.education
-            .map((e) => `  - ${e.degree}, ${e.school}`)
-            .join("\n");
+          const resumeParts: string[] = ["[Aday Özgeçmiş Bilgisi — Detaylı Analiz]"];
 
-          parts.push(
-            `[Aday Özgeçmiş Bilgisi]${resume.name ? `\nİsim: ${resume.name}` : ""}${resume.title ? `\nMevcut Pozisyon: ${resume.title}` : ""}${resume.yearsOfExperience ? `\nDeneyim: ${resume.yearsOfExperience} yıl` : ""}\nYetenekler: ${resume.skills.join(", ")}\nDeneyim:\n${expText}\nEğitim:\n${eduText}\n\nÖzgeçmişindeki deneyimlere ve projelerine referans vererek sorular sor. "Özgeçmişinde X gördüm, bunu detaylandırır mısın?" gibi kişiselleştirilmiş sorular sor.`,
-          );
+          // Basic info
+          if (resume.name) resumeParts.push(`İsim: ${resume.name}`);
+          if (resume.title) resumeParts.push(`Mevcut Pozisyon: ${resume.title}`);
+          if (resume.yearsOfExperience) resumeParts.push(`Toplam Deneyim: ${resume.yearsOfExperience} yıl`);
+
+          // Professional summary
+          if (resume.summary) {
+            resumeParts.push(`\n📋 Profesyonel Özet:\n${resume.summary}`);
+          }
+
+          // Categorized skills
+          const cs = resume.categorizedSkills as any;
+          if (cs) {
+            resumeParts.push("\n🛠️ Teknik Yetenekler (Kategorize):");
+            if (cs.programmingLanguages?.length > 0) resumeParts.push(`  Programlama Dilleri: ${cs.programmingLanguages.join(", ")}`);
+            if (cs.frameworks?.length > 0) resumeParts.push(`  Framework'ler: ${cs.frameworks.join(", ")}`);
+            if (cs.databases?.length > 0) resumeParts.push(`  Veritabanları: ${cs.databases.join(", ")}`);
+            if (cs.tools?.length > 0) resumeParts.push(`  Araçlar: ${cs.tools.join(", ")}`);
+            if (cs.cloud?.length > 0) resumeParts.push(`  Cloud/DevOps: ${cs.cloud.join(", ")}`);
+            if (cs.methodologies?.length > 0) resumeParts.push(`  Metodolojiler: ${cs.methodologies.join(", ")}`);
+            if (cs.other?.length > 0) resumeParts.push(`  Diğer: ${cs.other.join(", ")}`);
+          } else if (resume.skills.length > 0) {
+            resumeParts.push(`\n🛠️ Yetenekler: ${resume.skills.join(", ")}`);
+          }
+
+          // Full experience (no limit)
+          if (resume.experience.length > 0) {
+            resumeParts.push("\n💼 İş Deneyimi:");
+            for (const exp of resume.experience) {
+              const techStr = (exp as any).technologies?.length > 0
+                ? ` [Teknolojiler: ${(exp as any).technologies.join(", ")}]`
+                : "";
+              resumeParts.push(`  ▸ ${exp.role} @ ${exp.company} (${exp.duration})${techStr}`);
+              for (const h of exp.highlights) {
+                resumeParts.push(`    • ${h}`);
+              }
+            }
+          }
+
+          // Projects
+          const projects = (resume as any).projects;
+          if (projects?.length > 0) {
+            resumeParts.push("\n🚀 Projeler:");
+            for (const proj of projects) {
+              resumeParts.push(`  ▸ ${proj.name}: ${proj.description}`);
+              if (proj.technologies?.length > 0) {
+                resumeParts.push(`    Teknolojiler: ${proj.technologies.join(", ")}`);
+              }
+              for (const h of proj.highlights || []) {
+                resumeParts.push(`    • ${h}`);
+              }
+            }
+          }
+
+          // Education
+          if (resume.education.length > 0) {
+            resumeParts.push("\n🎓 Eğitim:");
+            for (const edu of resume.education) {
+              const extras: string[] = [];
+              if ((edu as any).year) extras.push((edu as any).year);
+              if ((edu as any).gpa) extras.push(`GPA: ${(edu as any).gpa}`);
+              const extraStr = extras.length > 0 ? ` (${extras.join(", ")})` : "";
+              resumeParts.push(`  ▸ ${edu.degree}, ${edu.school}${extraStr}`);
+            }
+          }
+
+          // Certifications
+          const certs = (resume as any).certifications;
+          if (certs?.length > 0) {
+            resumeParts.push("\n📜 Sertifikalar:");
+            for (const cert of certs) {
+              const yearStr = cert.year ? ` (${cert.year})` : "";
+              resumeParts.push(`  ▸ ${cert.name} — ${cert.issuer}${yearStr}`);
+            }
+          }
+
+          // Languages
+          const langs = (resume as any).languages;
+          if (langs?.length > 0) {
+            resumeParts.push(`\n🌐 Diller: ${langs.join(", ")}`);
+          }
+
+          // Key achievements
+          const achievements = (resume as any).keyAchievements;
+          if (achievements?.length > 0) {
+            resumeParts.push("\n🏆 Öne Çıkan Başarılar:");
+            for (const a of achievements) {
+              resumeParts.push(`  ★ ${a}`);
+            }
+          }
+
+          // Interview topics (AI-suggested)
+          const topics = (resume as any).interviewTopics;
+          if (topics?.length > 0) {
+            resumeParts.push("\n🎯 Önerilen Mülakat Konuları (CV'ye özel):");
+            for (const t of topics) {
+              resumeParts.push(`  → ${t}`);
+            }
+          }
+
+          // Instructions for using CV data
+          resumeParts.push(`
+--- ÖZGEÇMİŞ KULLANIM TALİMATLARI ---
+1. Adayın özgeçmişindeki spesifik deneyimlere, projelere ve başarılara referans vererek sorular sor.
+2. "Özgeçmişinde X gördüm, bunu detaylandırır mısın?" gibi kişiselleştirilmiş sorular sor.
+3. Adayın kullandığı teknolojiler hakkında derinlemesine teknik sorular sor.
+4. Sayısal başarıları (performans artışı, kullanıcı sayısı vb.) sorgula ve detaylandırmasını iste.
+5. Projelerdeki teknik kararları ve trade-off'ları sor.
+6. Yukarıdaki "Önerilen Mülakat Konuları"nı aktif olarak kullan.
+7. Adayın deneyim seviyesine uygun zorlukta sorular sor.
+8. Takım çalışması, liderlik ve iletişim becerilerini de değerlendir.`);
+
+          parts.push(resumeParts.join("\n"));
         }
       } catch {
         // non-fatal
