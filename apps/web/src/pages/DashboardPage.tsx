@@ -137,8 +137,7 @@ const interviewTypes: {
     id: "live-coding",
     icon: Code2,
     title: "Live Coding",
-    description:
-      "Algoritmik problemleri gerçek zamanlı çöz, AI interviewer eşliğinde",
+    description: "Algoritmik problemleri gerçek zamanlı çöz",
     gradient: "from-info/8 to-transparent",
     iconBg: "bg-info/15 text-info",
     borderHover: "hover:border-info/40",
@@ -244,7 +243,6 @@ function TypingPlaceholder() {
     </span>
   );
 }
-
 
 // ─── Main Dashboard ──────────────────────────────────────
 
