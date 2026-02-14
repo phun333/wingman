@@ -131,6 +131,37 @@ export function InterviewRoomPage() {
     setDesignProblemLoading(false);
   }, []);
 
+  // Fetch coding data (starter code + test cases) if problem loaded without them
+  useEffect(() => {
+    if (!problem || !showCodeEditor) return;
+    // Already has starter code — nothing to do
+    if (problem.starterCode?.javascript) return;
+
+    let cancelled = false;
+
+    // Try to resolve leetcodeId from the problem
+    (async () => {
+      try {
+        // Try fetching by Convex doc ID first — API accepts both formats
+        console.log("[coding-data] Problem loaded without starter code, fetching for:", problem._id);
+        const codingData = await getLeetcodeCodingData(problem._id);
+        if (cancelled) return;
+        if (codingData) {
+          console.log(`[coding-data] Loaded: ${codingData.testCases.length} test cases`);
+          setProblem((prev) => prev ? {
+            ...prev,
+            starterCode: codingData.starterCode,
+            testCases: codingData.testCases,
+          } : prev);
+        }
+      } catch (err) {
+        console.warn("[coding-data] Failed to fetch:", err);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [problem?._id, showCodeEditor]);
+
   // Update code when problem or language changes
   useEffect(() => {
     if (problem && codeLanguage) {
