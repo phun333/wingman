@@ -400,6 +400,15 @@ export type ClientMessage =
   | { type: "hint_request" }
   | { type: "whiteboard_update"; state: WhiteboardState };
 
+// ─── Error Types ─────────────────────────────────────────
+
+export type ErrorType =
+  | "stt_failed"
+  | "llm_failed"
+  | "llm_timeout"
+  | "tts_failed"
+  | "connection";
+
 /** Server → Client */
 export type ServerMessage =
   | { type: "transcript"; text: string; final: boolean }
@@ -407,7 +416,7 @@ export type ServerMessage =
   | { type: "ai_audio"; data: string }
   | { type: "ai_audio_done" }
   | { type: "state_change"; state: VoicePipelineState }
-  | { type: "error"; message: string }
+  | { type: "error"; message: string; errorType?: ErrorType; retry?: boolean; fallbackText?: string }
   | { type: "problem_loaded"; problem: Problem }
   | { type: "design_problem_loaded"; problem: DesignProblem }
   | { type: "hint_given"; level: number; totalHints: number }

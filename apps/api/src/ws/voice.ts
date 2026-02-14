@@ -64,6 +64,7 @@ export class VoiceSession {
   private currentCodeLanguage: CodeLanguage = "javascript";
   private hintCount: number = 0;
   private processing = false; // Guards against concurrent pipeline runs
+  private consecutiveErrors = 0; // Track consecutive pipeline errors for connection fallback
   private currentWhiteboardState: WhiteboardState | null = null;
 
   // Question tracking (phone-screen)
@@ -1020,10 +1021,25 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
       this.conversationHistory.push({ role: "assistant", content: aiResponse });
       await this.persistMessage("assistant", aiResponse);
       this.trackQuestionProgress(aiResponse);
+
+      // Reset consecutive errors on successful pipeline
+      this.consecutiveErrors = 0;
     } catch (err) {
       if (!signal.aborted) {
-        const message = err instanceof Error ? err.message : "Pipeline hatası";
-        this.send({ type: "error", message });
+        this.consecutiveErrors++;
+
+        // After 3 consecutive errors, signal connection issue
+        if (this.consecutiveErrors >= 3) {
+          this.send({
+            type: "error",
+            message: "Bağlantı sorunu. Yeniden bağlanılıyor...",
+            errorType: "connection",
+            retry: true,
+          });
+        } else {
+          const message = err instanceof Error ? err.message : "Pipeline hatası";
+          this.send({ type: "error", message });
+        }
       }
     } finally {
       this.processing = false;
@@ -1088,7 +1104,13 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
     if (!response.ok) {
       const errorBody = await response.text().catch(() => "");
       console.error(`[STT] Failed: ${response.status} — ${errorBody}`);
-      throw new Error(`STT failed: ${response.status}`);
+      this.send({
+        type: "error",
+        message: "Ses anlaşılamadı, tekrar deneyin.",
+        errorType: "stt_failed",
+        retry: true,
+      });
+      return null;
     }
 
     const result = (await response.json()) as { text: string };
@@ -1221,7 +1243,22 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
       );
 
       if (!response.ok) {
-        throw new Error(`LLM failed: ${response.status}`);
+        if (response.status === 429) {
+          this.send({
+            type: "error",
+            message: "AI meşgul, tekrar deneniyor...",
+            errorType: "llm_timeout",
+            retry: true,
+          });
+        } else {
+          this.send({
+            type: "error",
+            message: "AI yanıt veremedi.",
+            errorType: "llm_failed",
+            retry: true,
+          });
+        }
+        return null;
       }
 
       const reader = response.body?.getReader();
@@ -1282,6 +1319,19 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
       }
 
       this.send({ type: "ai_text", text: "", done: true });
+    } catch (err) {
+      // LLM network/fetch error — send granular error if not aborted
+      if (!signal.aborted) {
+        const isAbortError = err instanceof Error && err.name === "AbortError";
+        if (!isAbortError) {
+          this.send({
+            type: "error",
+            message: "AI yanıt veremedi, tekrar deneniyor...",
+            errorType: "llm_timeout",
+            retry: true,
+          });
+        }
+      }
     } finally {
       // Signal TTS consumer that LLM is done
       llmDone = true;
@@ -1324,7 +1374,19 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
     } catch {
       if (signal.aborted) return;
       // Fallback: generate full audio via /audio/speech
-      await this.ttsFallback(text, signal);
+      try {
+        await this.ttsFallback(text, signal);
+      } catch {
+        if (signal.aborted) return;
+        // Both TTS methods failed — send text as fallback
+        this.send({
+          type: "error",
+          message: "Ses oluşturulamadı — metin olarak gösteriliyor.",
+          errorType: "tts_failed",
+          retry: false,
+          fallbackText: text,
+        });
+      }
     }
   }
 
