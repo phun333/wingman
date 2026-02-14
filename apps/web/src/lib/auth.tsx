@@ -96,6 +96,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       method: "POST",
       credentials: "include",
     });
+
+    // Manually clear better-auth cookies (proxy may not forward Set-Cookie properly)
+    const cookieNames = [
+      "better-auth.session_token",
+      "better-auth.convex_jwt",
+    ];
+    for (const name of cookieNames) {
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+    }
+
     setUser(null);
   }, []);
 
