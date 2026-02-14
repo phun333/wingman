@@ -37,7 +37,6 @@ app.all("/api/auth/*", async (c) => {
     method: c.req.method,
     headers,
     body: ["GET", "HEAD"].includes(c.req.method) ? undefined : c.req.raw.body,
-    // @ts-expect-error — duplex needed for streaming body
     duplex: "half",
   });
 
