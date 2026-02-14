@@ -23,7 +23,7 @@ import { CodeEditor } from "@/components/interview/CodeEditor";
 import { TestResultsPanel } from "@/components/interview/TestResultsPanel";
 import { ResizableSplitter } from "@/components/interview/ResizableSplitter";
 import { SolutionComparisonPanel } from "@/components/interview/SolutionComparisonPanel";
-import { WhiteboardCanvas } from "@/components/interview/whiteboard/WhiteboardCanvas";
+import { WhiteboardCanvas, type WhiteboardCanvasHandle } from "@/components/interview/whiteboard/WhiteboardCanvas";
 import { SystemDesignProblemPanel } from "@/components/interview/SystemDesignProblemPanel";
 import { AIChat } from "@/components/interview/AIChat";
 import { ChatThread } from "@/components/interview/ChatThread";
@@ -60,6 +60,9 @@ export function InterviewRoomPage() {
 
   // Debounced code update ref
   const codeUpdateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Whiteboard ref — used to flush state before voice pipeline
+  const whiteboardRef = useRef<WhiteboardCanvasHandle>(null);
 
   const isSystemDesign = interview?.type === "system-design";
   const isLiveCoding = interview?.type === "live-coding";
@@ -407,6 +410,10 @@ export function InterviewRoomPage() {
       interrupt();
       return;
     }
+    // Flush whiteboard state before voice pipeline starts (system-design)
+    if (isSystemDesign) {
+      whiteboardRef.current?.flush();
+    }
     toggleMic();
   }
 
@@ -580,6 +587,7 @@ export function InterviewRoomPage() {
             isSystemDesign ? (
               <div className="h-full relative">
                 <WhiteboardCanvas
+                  ref={whiteboardRef}
                   onStateChange={handleWhiteboardChange}
                 />
               </div>

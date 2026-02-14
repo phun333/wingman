@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useImperativeHandle, forwardRef } from "react";
 import { Tldraw, type Editor } from "tldraw";
 import "tldraw/tldraw.css";
 import { designShapeUtils } from "./design-shapes";
@@ -11,10 +11,32 @@ interface WhiteboardCanvasProps {
   onEditorReady?: (editor: Editor) => void;
 }
 
-export function WhiteboardCanvas({ onStateChange, onEditorReady }: WhiteboardCanvasProps) {
+export interface WhiteboardCanvasHandle {
+  /** Immediately serialize & emit the current whiteboard state (skip debounce) */
+  flush: () => void;
+}
+
+export const WhiteboardCanvas = forwardRef<WhiteboardCanvasHandle, WhiteboardCanvasProps>(
+  function WhiteboardCanvas({ onStateChange, onEditorReady }, ref) {
   const [editor, setEditor] = useState<Editor | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastStateRef = useRef<string>("");
+  const onStateChangeRef = useRef(onStateChange);
+  onStateChangeRef.current = onStateChange;
+
+  const emitNow = useCallback(() => {
+    if (!editor) return;
+    const state = serializeWhiteboard(editor);
+    const stateStr = JSON.stringify(state);
+    if (stateStr !== lastStateRef.current) {
+      lastStateRef.current = stateStr;
+      console.log(`[Whiteboard] Emitting state: ${state.components.length} components, ${state.connections.length} connections`);
+      onStateChangeRef.current(state);
+    }
+  }, [editor]);
+
+  // Expose flush() to parent via ref
+  useImperativeHandle(ref, () => ({ flush: emitNow }), [emitNow]);
 
   const handleMount = useCallback(
     (editorInstance: Editor) => {
@@ -30,21 +52,12 @@ export function WhiteboardCanvas({ onStateChange, onEditorReady }: WhiteboardCan
 
     const handleChange = () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => {
-        const state = serializeWhiteboard(editor);
-        const stateStr = JSON.stringify(state);
-
-        // Only emit if changed
-        if (stateStr !== lastStateRef.current) {
-          lastStateRef.current = stateStr;
-          onStateChange(state);
-        }
-      }, 3000); // 3 second debounce
+      debounceRef.current = setTimeout(emitNow, 800); // 800ms debounce
     };
 
-    // Listen to store changes
+    // Listen to ALL store changes (not just "user" source)
+    // so programmatic createShape() from ComponentPalette is captured too
     const unsub = editor.store.listen(handleChange, {
-      source: "user",
       scope: "document",
     });
 
@@ -52,7 +65,7 @@ export function WhiteboardCanvas({ onStateChange, onEditorReady }: WhiteboardCan
       unsub();
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [editor, onStateChange]);
+  }, [editor, emitNow]);
 
   return (
     <div className="relative w-full h-full whiteboard-container">
@@ -64,4 +77,4 @@ export function WhiteboardCanvas({ onStateChange, onEditorReady }: WhiteboardCan
       />
     </div>
   );
-}
+});
