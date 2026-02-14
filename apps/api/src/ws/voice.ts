@@ -434,6 +434,19 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
         break;
 
       case "start_listening":
+        // Wait for init() to finish before processing
+        if (!this.initialized) {
+          console.log("[start_listening] Waiting for init to complete...");
+          await new Promise<void>((resolve) => {
+            const check = () => {
+              if (this.initialized) return resolve();
+              setTimeout(check, 100);
+            };
+            check();
+          });
+          console.log("[start_listening] Init complete, proceeding.");
+        }
+
         this.audioChunks = [];
         this.setState("listening");
 
@@ -500,28 +513,16 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
             }
           } else if (this.interview.type === "system-design") {
             // System design: short greeting, problem is visible in the panel
-            console.log("[start_listening] System design — playing short greeting...");
+            console.log(`[start_listening] System design — designProblem: ${this.currentDesignProblem?.title ?? "null"}`);
 
-            if (this.currentDesignProblem?.title) {
-              const introText = `Selam! Bu mülakatında sana ben yardımcı olacağım. Problemi sol panelde görebilirsin. Hazır olduğunda başlayalım.`;
+            const introText = this.currentDesignProblem?.title
+              ? `Selam! Bugün seninle ${this.currentDesignProblem.title.toLowerCase()} üzerinde çalışacağız. Problemi sol panelde görebilirsin. Hazır olduğunda whiteboard'a bileşenleri eklemeye başlayabilirsin.`
+              : `Selam! Bugün seninle bir sistem tasarımı üzerinde çalışacağız. Nasıl başlamak istersin?`;
 
-              this.send({ type: "ai_text", text: introText, done: true });
-
-              // Persist AI intro
-              this.conversationHistory.push({ role: "assistant", content: introText });
-              this.persistMessage("assistant", introText);
-
-              // Generate TTS audio for the intro
-              this.generateIntroAudio(introText);
-            } else {
-              // No design problem loaded, use LLM to generate the question
-              console.log("[start_listening] No design problem loaded, using LLM...");
-              this.conversationHistory.push({
-                role: "user",
-                content: "[SYSTEM: Kullanıcı hazır, system design problemi sor ve açıkla]",
-              });
-              this.triggerAIResponse();
-            }
+            this.send({ type: "ai_text", text: introText, done: true });
+            this.conversationHistory.push({ role: "assistant", content: introText });
+            this.persistMessage("assistant", introText);
+            this.generateIntroAudio(introText);
           } else if (this.interview.type === "phone-screen") {
             // Phone screen: AI introduces itself and starts with the first question
             console.log("[start_listening] Phone screen — triggering AI intro...");
@@ -797,6 +798,10 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
 
   private handleWhiteboardUpdate(state: WhiteboardState): void {
     this.currentWhiteboardState = state;
+    console.log(`[Whiteboard] Updated — ${state.components.length} components, ${state.connections.length} connections`);
+    if (state.textRepresentation) {
+      console.log(`[Whiteboard] Text:\n${state.textRepresentation}`);
+    }
 
     // Persist whiteboard state to Convex periodically
     if (this.interview) {
@@ -999,6 +1004,12 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
         spaceComplexity: this.currentProblem.spaceComplexity,
       });
     }
+  }
+
+  // ─── LLM Output Sanitization ───────────────────────────
+  // Strip [SYSTEM: ...] markers that LLM sometimes echoes back
+  private sanitizeLLMOutput(text: string): string {
+    return text.replace(/\[SYSTEM:[^\]]*\]/g, "").trim();
   }
 
   // ─── Pipeline ────────────────────────────────────────
@@ -1388,7 +1399,7 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
             }
 
             if (splitIdx !== -1) {
-              const chunk = sentenceBuffer.slice(0, splitIdx).trim();
+              const chunk = this.sanitizeLLMOutput(sentenceBuffer.slice(0, splitIdx));
               sentenceBuffer = sentenceBuffer.slice(splitIdx + skipChars);
               if (chunk.length >= 3) {
                 if (!firstChunkSent) {
@@ -1409,7 +1420,7 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
       }
 
       // Flush remaining text as final sentence
-      const remaining = sentenceBuffer.trim();
+      const remaining = this.sanitizeLLMOutput(sentenceBuffer);
       if (remaining) {
         const optimized =
           this.interview?.language === "tr"
@@ -1442,7 +1453,9 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
     // Wait for all TTS sentences to finish playing
     await ttsPromise;
 
-    return fullText || null;
+    // Sanitize fullText before storing in conversation history
+    const sanitized = this.sanitizeLLMOutput(fullText);
+    return sanitized || null;
   }
 
   // ─── Single Sentence TTS ─────────────────────────────
@@ -1475,12 +1488,15 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
       );
 
       if (!response.ok) {
-        // Fallback to /audio/speech
+        console.warn(`[TTS] SSE stream failed (${response.status}), falling back to /audio/speech for: "${optimizedText.slice(0, 50)}"`);
         return this.synthesizeSentenceFallback(optimizedText, signal);
       }
 
       const reader = response.body?.getReader();
-      if (!reader) return this.synthesizeSentenceFallback(optimizedText, signal);
+      if (!reader) {
+        console.warn(`[TTS] No response body reader, falling back for: "${optimizedText.slice(0, 50)}"`);
+        return this.synthesizeSentenceFallback(optimizedText, signal);
+      }
 
       const decoder = new TextDecoder();
       let buffer = "";
@@ -1514,8 +1530,9 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
           }
         }
       }
-    } catch {
+    } catch (err) {
       if (signal.aborted) return;
+      console.warn(`[TTS] SSE stream error, falling back:`, err instanceof Error ? err.message : err);
       return this.synthesizeSentenceFallback(optimizedText, signal);
     }
   }
