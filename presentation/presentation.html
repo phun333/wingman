@@ -614,7 +614,7 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
 
 <!-- NAVIGATION -->
 <div class="nav-dots" id="navDots"></div>
-<div class="slide-counter"><span class="current" id="currentSlide">01</span> <span style="margin:0 2px;">/</span> <span id="totalSlides">16</span></div>
+<div class="slide-counter"><span class="current" id="currentSlide">01</span> <span style="margin:0 2px;">/</span> <span id="totalSlides">17</span></div>
 <div class="key-hint"><kbd>←</kbd><kbd>→</kbd><span>ile gezin</span></div>
 
 <!-- ═══════════════════════════════════════════════════
@@ -1910,8 +1910,196 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
     </div>
   </div>
 
-  <!-- ═══════════ SLIDE 15 — Evaluation Criteria Alignment ═══════════ -->
+  <!-- ═══════════ SLIDE 15 — Unit Economics ═══════════ -->
   <div class="slide" data-slide="14">
+    <div class="slide-content flex flex-col gap-8">
+      <div class="reveal">
+        <p class="t-amber t-mono" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px;">Ticarileşme</p>
+        <h2 style="font-size:40px;">Birim Ekonomi — <span class="t-amber">Kârlılık Analizi</span></h2>
+      </div>
+
+      <div class="flex gap-6">
+        <!-- Sol Sütun: Mülakat Başına Maliyet Dağılımı -->
+        <div class="reveal card" style="flex:1; border-color:rgba(229,161,14,0.2);">
+          <div class="flex items-center gap-3" style="margin-bottom:16px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(229,161,14,0.1);border:1px solid rgba(229,161,14,0.2);display:flex;align-items:center;justify-content:center;">
+              <i class="ri-money-dollar-circle-line t-amber icon-md"></i>
+            </div>
+            <div>
+              <h3 style="font-size:15px;">Mülakat Başına Maliyet</h3>
+              <p class="t-muted" style="font-size:11px;">Ortalama 15 dk · ~15 konuşma turu</p>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-3">
+            <!-- STT -->
+            <div>
+              <div class="flex justify-between items-center" style="margin-bottom:3px;">
+                <span class="t-secondary" style="font-size:13px;"><i class="ri-mic-line icon-xs t-info" style="margin-right:5px;"></i>Freya STT</span>
+                <span class="t-mono" style="font-size:12px; color:var(--color-text);">$0.09</span>
+              </div>
+              <p class="t-muted" style="font-size:10px; margin-bottom:4px;">15 konuşma turu × ~20sn ses → 15 transcription çağrısı</p>
+              <div class="flex items-center gap-3">
+                <div style="flex:1; height:6px; border-radius:4px; background:var(--color-surface-raised); overflow:hidden;">
+                  <div style="height:100%; width:23%; border-radius:4px; background:var(--color-info);"></div>
+                </div>
+                <span class="t-muted t-mono" style="font-size:10px; min-width:62px; text-align:right;">15 × $0.006</span>
+              </div>
+            </div>
+
+            <!-- LLM -->
+            <div>
+              <div class="flex justify-between items-center" style="margin-bottom:3px;">
+                <span class="t-secondary" style="font-size:13px;"><i class="ri-brain-line icon-xs t-amber" style="margin-right:5px;"></i>LLM (OpenRouter)</span>
+                <span class="t-mono" style="font-size:12px; color:var(--color-text);">$0.20</span>
+              </div>
+              <p class="t-muted" style="font-size:10px; margin-bottom:4px;">~35K input (system prompt + geçmiş) + ~17K output token</p>
+              <div class="flex items-center gap-3">
+                <div style="flex:1; height:6px; border-radius:4px; background:var(--color-surface-raised); overflow:hidden;">
+                  <div style="height:100%; width:51%; border-radius:4px; background:var(--color-amber);"></div>
+                </div>
+                <span class="t-muted t-mono" style="font-size:10px; min-width:62px; text-align:right;">~52K token</span>
+              </div>
+            </div>
+
+            <!-- TTS -->
+            <div>
+              <div class="flex justify-between items-center" style="margin-bottom:3px;">
+                <span class="t-secondary" style="font-size:13px;"><i class="ri-volume-up-line icon-xs t-success" style="margin-right:5px;"></i>Freya TTS</span>
+                <span class="t-mono" style="font-size:12px; color:var(--color-text);">$0.10</span>
+              </div>
+              <p class="t-muted" style="font-size:10px; margin-bottom:4px;">15 AI yanıtı → cümle bazlı PCM16 ses sentezi</p>
+              <div class="flex items-center gap-3">
+                <div style="flex:1; height:6px; border-radius:4px; background:var(--color-surface-raised); overflow:hidden;">
+                  <div style="height:100%; width:26%; border-radius:4px; background:var(--color-success);"></div>
+                </div>
+                <span class="t-muted t-mono" style="font-size:10px; min-width:62px; text-align:right;">15 × $0.007</span>
+              </div>
+            </div>
+
+            <!-- Divider -->
+            <div style="height:1px; background:var(--color-border); margin:2px 0;"></div>
+
+            <!-- Total -->
+            <div>
+              <div class="flex justify-between items-center">
+                <span style="font-size:14px; font-weight:700;"><i class="ri-wallet-3-line icon-xs t-amber" style="margin-right:5px;"></i>Toplam Maliyet</span>
+                <span class="t-amber t-mono" style="font-size:16px; font-weight:700;">$0.39</span>
+              </div>
+              <div style="margin-top:6px; height:8px; border-radius:5px; background:var(--color-surface-raised); overflow:hidden; display:flex;">
+                <div style="height:100%; width:23%; background:var(--color-info); border-radius:5px 0 0 5px;" title="STT %23"></div>
+                <div style="height:100%; width:51%; background:var(--color-amber);" title="LLM %51"></div>
+                <div style="height:100%; width:26%; background:var(--color-success); border-radius:0 5px 5px 0;" title="TTS %26"></div>
+              </div>
+              <div class="flex justify-between" style="margin-top:4px;">
+                <span class="t-muted" style="font-size:9px;"><span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:var(--color-info);vertical-align:middle;margin-right:3px;"></span>STT %23</span>
+                <span class="t-muted" style="font-size:9px;"><span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:var(--color-amber);vertical-align:middle;margin-right:3px;"></span>LLM %51</span>
+                <span class="t-muted" style="font-size:9px;"><span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:var(--color-success);vertical-align:middle;margin-right:3px;"></span>TTS %26</span>
+              </div>
+            </div>
+
+            <!-- Per-interview revenue comparison -->
+            <div style="margin-top:2px; padding:8px 12px; border-radius:8px; background:rgba(34,197,94,0.04); border:1px solid rgba(34,197,94,0.15);">
+              <div class="flex justify-between items-center">
+                <span class="t-secondary" style="font-size:11px;"><i class="ri-exchange-dollar-line icon-xs t-success" style="margin-right:4px;"></i>Pro plan mülakat başı gelir</span>
+                <span class="t-success t-mono" style="font-size:12px; font-weight:600;">$0.95</span>
+              </div>
+              <p class="t-muted" style="font-size:10px; margin-top:2px;">$19 ÷ 20 mülakat = $0.95 → <span class="t-success" style="font-weight:600;">net kâr: $0.56/mülakat</span></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sağ Sütun: Kârlılık Modeli -->
+        <div class="reveal card" style="flex:1.2; border-color:rgba(139,91,246,0.2);">
+          <div class="flex items-center gap-3" style="margin-bottom:16px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:rgba(139,91,246,0.1);border:1px solid rgba(139,91,246,0.2);display:flex;align-items:center;justify-content:center;">
+              <i class="ri-line-chart-line t-purple icon-md"></i>
+            </div>
+            <div>
+              <h3 style="font-size:15px;">Kârlılık Modeli</h3>
+              <p class="t-muted" style="font-size:11px;">SaaS tiered pricing</p>
+            </div>
+          </div>
+
+          <!-- 3 Tier Pricing -->
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px;">
+            <!-- Free -->
+            <div style="border-radius:10px; border:1px solid var(--color-border-subtle); background:var(--color-surface-raised); padding:14px 12px; text-align:center;">
+              <div style="font-size:18px; margin-bottom:4px;">🆓</div>
+              <h3 style="font-size:14px; font-weight:700; margin-bottom:2px;">Free</h3>
+              <p class="t-amber t-display" style="font-size:20px; font-weight:800;">$0<span class="t-muted" style="font-size:11px; font-weight:400;">/ay</span></p>
+              <p class="t-muted" style="font-size:11px; margin:8px 0;">3 mülakat/ay</p>
+              <div style="height:1px; background:var(--color-border-subtle); margin:8px 0;"></div>
+              <div style="font-size:10px; line-height:1.6;">
+                <p class="t-secondary">Maliyet: <span class="t-mono" style="color:var(--color-text);">$1.17</span></p>
+                <p class="t-secondary">Gelir: <span class="t-mono" style="color:var(--color-text);">$0</span></p>
+                <p class="t-danger" style="font-weight:600;">Margin: -%100</p>
+              </div>
+            </div>
+
+            <!-- Pro -->
+            <div style="border-radius:10px; border:1px solid rgba(229,161,14,0.4); background:rgba(229,161,14,0.03); padding:14px 12px; text-align:center; box-shadow:0 0 15px var(--color-amber-glow); position:relative;">
+              <div style="position:absolute; top:-8px; left:50%; transform:translateX(-50%);">
+                <span class="badge badge-amber" style="font-size:9px; padding:1px 8px;">Popüler</span>
+              </div>
+              <div style="font-size:18px; margin-bottom:4px;">⭐</div>
+              <h3 style="font-size:14px; font-weight:700; margin-bottom:2px;">Pro</h3>
+              <p class="t-amber t-display" style="font-size:20px; font-weight:800;">$19<span class="t-muted" style="font-size:11px; font-weight:400;">/ay</span></p>
+              <p class="t-muted" style="font-size:11px; margin:8px 0;">20 mülakat/ay</p>
+              <div style="height:1px; background:rgba(229,161,14,0.2); margin:8px 0;"></div>
+              <div style="font-size:10px; line-height:1.6;">
+                <p class="t-secondary">Maliyet: <span class="t-mono" style="color:var(--color-text);">$7.80</span></p>
+                <p class="t-secondary">Gelir: <span class="t-mono" style="color:var(--color-text);">$19</span></p>
+                <p class="t-success" style="font-weight:600;">Margin: %59</p>
+              </div>
+            </div>
+
+            <!-- Enterprise -->
+            <div style="border-radius:10px; border:1px solid rgba(139,91,246,0.3); background:rgba(139,91,246,0.03); padding:14px 12px; text-align:center;">
+              <div style="font-size:18px; margin-bottom:4px;">🏢</div>
+              <h3 style="font-size:14px; font-weight:700; margin-bottom:2px;">Enterprise</h3>
+              <p class="t-amber t-display" style="font-size:20px; font-weight:800;">Custom</p>
+              <p class="t-muted" style="font-size:11px; margin:8px 0;">Sınırsız + Admin</p>
+              <div style="height:1px; background:rgba(139,91,246,0.2); margin:8px 0;"></div>
+              <div style="font-size:10px; line-height:1.6;">
+                <p class="t-secondary">Maliyet: <span class="t-mono" style="color:var(--color-text);">~</span></p>
+                <p class="t-secondary">Gelir: <span class="t-mono" style="color:var(--color-text);">$X</span></p>
+                <p class="t-success" style="font-weight:600;">Margin: %70+</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alt Stat Kartları -->
+      <div class="reveal" style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px;">
+        <div class="stat-card" style="border-color:rgba(229,161,14,0.2); text-align:center; padding:20px;">
+          <div class="stat-label" style="margin-bottom:4px;"><i class="ri-scales-3-line icon-xs t-amber" style="margin-right:4px;"></i>Break-even</div>
+          <div class="stat-value" style="color:var(--color-amber);">~150</div>
+          <p class="t-muted" style="font-size:11px; margin-top:2px;">Pro kullanıcı</p>
+        </div>
+        <div class="stat-card" style="border-color:rgba(34,197,94,0.2); text-align:center; padding:20px;">
+          <div class="stat-label" style="margin-bottom:4px;"><i class="ri-group-line icon-xs t-success" style="margin-right:4px;"></i>1000 Kullanıcı</div>
+          <div class="stat-value" style="color:var(--color-success);">$19K</div>
+          <p class="t-muted" style="font-size:11px; margin-top:2px;">MRR · $11K net</p>
+        </div>
+        <div class="stat-card" style="border-color:rgba(139,91,246,0.2); text-align:center; padding:20px;">
+          <div class="stat-label" style="margin-bottom:4px;"><i class="ri-percent-line icon-xs t-purple" style="margin-right:4px;"></i>Gross Margin</div>
+          <div class="stat-value" style="color:var(--color-purple);">%59</div>
+          <p class="t-muted" style="font-size:11px; margin-top:2px;">Pro plan</p>
+        </div>
+      </div>
+
+      <div class="reveal flex gap-3 justify-center">
+        <span class="badge badge-success"><i class="ri-check-double-line icon-xs"></i> SaaS Ready</span>
+        <span class="badge badge-amber"><i class="ri-percent-line icon-xs"></i> %59 Margin</span>
+        <span class="badge badge-info"><i class="ri-arrow-up-circle-line icon-xs"></i> Ölçeklenebilir</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SLIDE 16 — Evaluation Criteria Alignment ═══════════ -->
+  <div class="slide" data-slide="15">
     <div class="slide-content flex flex-col gap-8">
       <div class="reveal">
         <p class="t-amber t-mono" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px;">Değerlendirme</p>
@@ -2043,8 +2231,8 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
     </div>
   </div>
 
-  <!-- ═══════════ SLIDE 16 — Thank You + Hackathon Final ═══════════ -->
-  <div class="slide" data-slide="15">
+  <!-- ═══════════ SLIDE 17 — Thank You + Hackathon Final ═══════════ -->
+  <div class="slide" data-slide="16">
     <div class="grid-bg"></div>
     <div class="ambient-glow" style="width:600px;height:600px;background:rgba(229,161,14,0.04);top:50%;left:50%;transform:translate(-50%,-50%)"></div>
 
