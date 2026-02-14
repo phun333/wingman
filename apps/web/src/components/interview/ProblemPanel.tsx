@@ -189,18 +189,18 @@ export function ProblemPanel({
   );
 
   // ─── Loading / empty ───
-  if (loading) {
+  if (loading || !problem) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-amber border-t-transparent" />
-      </div>
-    );
-  }
-
-  if (!problem) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <p className="text-sm text-text-muted">Problem yükleniyor…</p>
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-10 w-10 rounded-xl bg-amber/10 border border-amber/20 flex items-center justify-center">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-amber border-t-transparent" />
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-medium text-text">Soru hazırlanıyor…</p>
+            <p className="text-xs text-text-muted mt-1">Kod şablonları ve test case'ler yükleniyor</p>
+          </div>
+        </div>
       </div>
     );
   }

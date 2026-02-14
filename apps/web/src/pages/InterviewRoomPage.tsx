@@ -47,7 +47,7 @@ export function InterviewRoomPage() {
 
   // Live Coding state
   const [problem, setProblem] = useState<Problem | null>(null);
-  const [problemLoading, setProblemLoading] = useState(false);
+  const [problemLoading, setProblemLoading] = useState(true);
   const [codeLanguage, setCodeLanguage] = useState<CodeLanguage>("javascript");
   const [code, setCode] = useState("");
   const [executionResult, setExecutionResult] = useState<CodeExecutionResult | null>(null);
@@ -77,13 +77,6 @@ export function InterviewRoomPage() {
       .then((iv) => {
         setInterview(iv);
         if (iv.type === "live-coding" || iv.type === "practice") {
-          // Only set loading if we don't have a problem yet
-          setProblem((currentProblem) => {
-            if (!currentProblem) {
-              setProblemLoading(true);
-            }
-            return currentProblem;
-          });
           // Set code language from interview if available
           if (iv.language) {
             setCodeLanguage(iv.language as CodeLanguage);
@@ -117,9 +110,9 @@ export function InterviewRoomPage() {
         return;
       }
 
-      // Fetch coding data (starter code + test cases) before setting problem
-      // so the code-update effect sees starterCode from the start
-      if (showCodeEditor && !p.starterCode?.javascript) {
+      // Always fetch coding data if not present — don't gate on showCodeEditor
+      // because interview may not be loaded yet when WS fires problem_loaded
+      if (!p.starterCode?.javascript) {
         try {
           console.log("[coding-data] Fetching starter code for:", p._id);
           const codingData = await getLeetcodeCodingData(p._id);
@@ -136,7 +129,7 @@ export function InterviewRoomPage() {
       setProblem(p);
       setProblemLoading(false);
     },
-    [searchParams, showCodeEditor],
+    [searchParams],
   );
 
   const handleDesignProblemLoaded = useCallback((p: DesignProblem) => {
@@ -203,15 +196,12 @@ export function InterviewRoomPage() {
         try {
           console.log("Interview room loading problem. Problem ID from URL:", requestedProblemId);
           let p: Problem;
-          let leetcodeIdForCoding: number | null = null;
 
           if (requestedProblemId) {
             // Load specific problem — try leetcodeProblems first, then legacy problems
             console.log("Loading specific problem with ID:", requestedProblemId);
             try {
               const lc = await getLeetcodeProblem(requestedProblemId);
-              leetcodeIdForCoding = lc.leetcodeId;
-              // Adapt LeetcodeProblem → Problem shape
               p = {
                 _id: lc._id,
                 title: lc.title,
@@ -231,7 +221,6 @@ export function InterviewRoomPage() {
             console.log("Loading random problem with difficulty:", interview.difficulty);
             try {
               const lc = await getRandomLeetcodeProblem({ difficulty: interview.difficulty });
-              leetcodeIdForCoding = lc.leetcodeId;
               p = {
                 _id: lc._id,
                 title: lc.title,
@@ -248,21 +237,7 @@ export function InterviewRoomPage() {
             console.log("Loaded random problem:", p.title);
           }
 
-          // Fetch coding data (starter code + test cases) for LeetCode problems
-          if (leetcodeIdForCoding) {
-            try {
-              console.log("Fetching coding data for leetcodeId:", leetcodeIdForCoding);
-              const codingData = await getLeetcodeCodingData(leetcodeIdForCoding);
-              if (codingData) {
-                p.starterCode = codingData.starterCode;
-                p.testCases = codingData.testCases;
-                console.log(`Coding data loaded: ${codingData.testCases.length} test cases, starter code for 3 languages`);
-              }
-            } catch (err) {
-              console.warn("Failed to fetch coding data, using empty defaults:", err);
-            }
-          }
-
+          // handleProblemLoaded will fetch coding data (starter code + test cases)
           handleProblemLoaded(p);
         } catch (err) {
           console.error("Problem loading failed:", err);
