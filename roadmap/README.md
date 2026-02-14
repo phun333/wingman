@@ -1,207 +1,59 @@
-# 🗺️ Proje Yol Haritası
+# roadmap
 
-> AI Mülakat Platformu — Fazlara Ayrılmış Geliştirme Planı
+Wingman platformunun fazlara ayrılmış geliştirme yol haritasını içerir. Her faz bağımsız okunabilir bir belge olarak hazırlanmıştır. Görevler, bağımlılıklar ve tamamlanma durumları her dosyada ayrıntılı şekilde belirtilir.
 
-## Bağımlılık Grafiği
+## Görevleri
 
-```
-FAZ 0 ─── Temel Altyapı & Doğrulama
-  │
-  ├──► FAZ 1 ─── Sesli AI Ajanı (Voice Pipeline)
-  │      │
-  │      ├──► FAZ 2 ─── Mülakat Oturum Yönetimi
-  │      │      │
-  │      │      ├──► FAZ 3 ─── Live Coding Modülü
-  │      │      │      │
-  │      │      │      └──► FAZ 5A ─── Practice Coding
-  │      │      │
-  │      │      ├──► FAZ 4 ─── System Design (Whiteboard)
-  │      │      │
-  │      │      ├──► FAZ 5B ─── Phone Screen
-  │      │      │
-  │      │      └──► FAZ 6 ─── Kişiselleştirme (Job Parse, Resume, Memory)
-  │      │             │
-  │      │             └──► FAZ 7 ─── Raporlama & Geri Bildirim
-  │      │                    │
-  │      │                    └──► FAZ 8 ─── Enterprise Panel
-  │      │
-  │      └──► FAZ 9 ─── Frontend UI
-  │
-  └──► FAZ 10 ── Production & Optimizasyon
-```
+- Geliştirme sürecini mantıksal fazlara ayırma
+- Her faz için görevleri, bağımlılıkları ve dosya yollarını belgeleme
+- İlerleme durumunu takip etme
 
-## Faz Dosyaları (Bağımlılık Sırasına Göre)
+## Faz Dosyaları
 
-| #  | Dosya | Başlık | Bağımlılık | Öncelik |
-|----|-------|--------|------------|---------|
-| 0  | [FAZ-00.md](./FAZ-00.md) | Temel Altyapı & Doğrulama | — | 🔴 P0 |
-| 1  | [FAZ-01.md](./FAZ-01.md) | Sesli AI Ajanı (Voice Pipeline) | Faz 0 | 🔴 P0 |
-| 9  | [FAZ-09.md](./FAZ-09.md) | Frontend UI & Tasarım Sistemi | Faz 0 | 🔴 P0 |
-| 2  | [FAZ-02.md](./FAZ-02.md) | Mülakat Oturum Yönetimi | Faz 0, 1 | 🟠 P1 |
-| 3  | [FAZ-03.md](./FAZ-03.md) | Live Coding Modülü | Faz 1, 2 | 🟠 P1 |
-| 5  | [FAZ-05.md](./FAZ-05.md) | Phone Screen & Practice | Faz 1, 2 | 🟡 P2 |
-| 4  | [FAZ-04.md](./FAZ-04.md) | System Design (Whiteboard) | Faz 1, 2 | 🟢 P3 |
-| 6  | [FAZ-06.md](./FAZ-06.md) | Kişiselleştirme & Hazırlık | Faz 2 | 🟢 P3 |
-| 7  | [FAZ-07.md](./FAZ-07.md) | Raporlama & Geri Bildirim | Faz 2, 3, 6 | 🟡 P2 |
-| 8  | [FAZ-08.md](./FAZ-08.md) | Enterprise Panel | Faz 2, 7 | 🔵 P4 |
-| 10 | [FAZ-10.md](./FAZ-10.md) | Production & Optimizasyon | Tümü | ⚪ P5 |
+| Faz | Dosya | Başlık | Durum |
+|-----|-------|--------|-------|
+| 0 | FAZ-00.md | Temel Altyapı ve Doğrulama | Tamamlandı |
+| 1 | FAZ-01.md | Sesli Yapay Zeka Ajanı (Ses Boru Hattı) | Tamamlandı |
+| 2 | FAZ-02.md | Mülakat Oturum Yönetimi | Tamamlandı |
+| 3 | FAZ-03.md | Canlı Kodlama Modülü | Tamamlandı |
+| 4 | FAZ-04.md | Sistem Tasarımı (Beyaz Tahta) | Tamamlandı |
+| 5 | FAZ-05.md | Telefon Mülakatı ve Pratik Modu | Tamamlandı |
+| 6 | FAZ-06.md | Kişiselleştirme ve Hazırlık | Tamamlandı |
+| 7 | FAZ-07.md | Raporlama ve Geri Bildirim | Tamamlandı |
+| 8 | FAZ-08.md | Kurumsal Panel | Yapılmadı |
+| 9 | FAZ-09.md | Ön Yüz Arayüzü ve Tasarım Sistemi | Tamamlandı |
+| 10 | FAZ-10.md | Üretim ve Optimizasyon | Yapılmadı |
 
-## Hackathon MVP Sırası
-
-Minimum viable demo için bu sırayla ilerle:
-
-1. **FAZ-00** → Altyapıyı kur, tüm servislerin ayakta olduğunu doğrula
-2. **FAZ-01** → Sesli AI ajanı çalışsın (mikrofon → STT → LLM → TTS → hoparlör)
-3. **FAZ-09** → Temel UI: Dashboard + Mülakat odası arayüzü
-4. **FAZ-02** → Oturum yönetimi (mülakat kaydedilsin, mesajlar persist olsun)
-5. **FAZ-03** → Live Coding modülü (kod editörü + AI analizi)
-6. **FAZ-07** → Basit mülakat raporu
-
-## Teknoloji Stack Özeti
-
-| Katman | Teknoloji |
-|--------|-----------|
-| Runtime | Bun |
-| API Framework | Hono + oRPC |
-| Database | Convex (real-time) |
-| Auth | better-auth + Convex plugin |
-| Validation | Zod v4 |
-| STT | Freya STT (fal.ai) |
-| TTS | Freya TTS (fal.ai) |
-| LLM | OpenRouter |
-| AI SDK | @fal-ai/client |
-| Frontend | TBD (React/Solid) + Tailwind |
-
-## Kurallar
-
-- Her faz dosyası bağımsız okunabilir
-- Her task'ta ilgili dosya yolları ve paketler belirtilir
-- Kod yazılmaz, sadece ne yapılacağı ve nasıl yapılacağı anlatılır
-- Checkbox'lar tamamlandıkça işaretlenir
-
----
-
-## 📊 Güncel Durum (10 Şubat 2026)
-
-### Progress Grafiği
+## Bağımlılık Yapısı
 
 ```
-FAZ 0  ████████████████████ 100%  ✅ Tamamlandı
-FAZ 1  ████████████████████ 100%  ✅ Tamamlandı
-FAZ 9  ████████████████████ 100%  ✅ Tamamlandı
-FAZ 2  ████████████████████ 100%  ✅ Tamamlandı
-FAZ 3  ████████████████████ 100%  ✅ Tamamlandı
-FAZ 5  ████████████████████ 100%  ✅ Tamamlandı
-FAZ 4  ████████████████████ 100%  ✅ Tamamlandı
-FAZ 7  ████████████████████ 100%  ✅ Tamamlandı
-FAZ 6  ████████████████████ 100%  ✅ Tamamlandı
-FAZ 8  ░░░░░░░░░░░░░░░░░░░░   0%  ❌ Yapılmadı
-FAZ 10 ░░░░░░░░░░░░░░░░░░░░   0%  ❌ Yapılmadı
+Faz 0 --- Temel Altyapı
+  |
+  +---> Faz 1 --- Ses Boru Hattı
+  |       |
+  |       +---> Faz 2 --- Oturum Yönetimi
+  |       |       |
+  |       |       +---> Faz 3 --- Canlı Kodlama
+  |       |       +---> Faz 4 --- Sistem Tasarımı
+  |       |       +---> Faz 5 --- Telefon Mülakatı ve Pratik
+  |       |       +---> Faz 6 --- Kişiselleştirme
+  |       |               |
+  |       |               +---> Faz 7 --- Raporlama
+  |       |                       |
+  |       |                       +---> Faz 8 --- Kurumsal Panel
+  |       |
+  |       +---> Faz 9 --- Ön Yüz Arayüzü
+  |
+  +---> Faz 10 -- Üretim ve Optimizasyon
 ```
 
-### Detaylı Durum Tablosu
+## Hackathon Asgari Uygulanabilir Ürün Sırası
 
-| Faz | Başlık | Durum | Yapılan | Eksik |
-|-----|--------|-------|---------|-------|
-| **0** | Temel Altyapı | ✅ %100 | Monorepo, ENV, Convex schema, Auth (better-auth), fal.ai/OpenRouter bağlantısı, proxy route'lar, tipler, seed data | — |
-| **1** | Voice Pipeline | ✅ %100 | WebSocket `/ws/voice`, STT→LLM→TTS pipeline, streaming LLM+TTS, VAD, interrupt, PCM16 decode, AudioQueuePlayer, volume meter, auto-reconnect | — |
-| **9** | Frontend UI | ✅ %100 | Vite+React+Tailwind, dark theme, AppLayout+Sidebar+Topbar, Login/Register, Dashboard, NewInterview wizard, InterviewRoom (voice-only + live-coding), History, auth guard, UI kit (Button/Card/Badge/Input/Toast) | — |
-| **2** | Oturum Yönetimi | ✅ %100 | interviews CRUD (create/start/complete), messages persist, Convex'te interviews+messages tabloları, auth middleware, conversation history reload (reconnect), system prompt'lar (4 tür × 3 zorluk), problems tablosu+seed, getUserStats | — |
-| **3** | Live Coding | ✅ %100 | Monaco editor, ResizableSplitter, ProblemPanel, TestResultsPanel, sandbox (node:vm JS + subprocess Python), test case runner, code_update/code_result WS mesajları, AI kod analizi, dil seçimi (JS/TS/Python), starter code | — |
-| **7** | Raporlama | ✅ %100 | interviewResults tablosu+CRUD, LLM ile rapor oluşturma (report-generator service), ReportPage (skor kartı, radar chart, kategori skorları, güçlü/zayıf yön, kod analizi, transkript), ProgressPage (line chart, radar chart, istatistik kartları, mülakat geçmişi), kümülatif analiz (topStrengths/topWeaknesses), recharts entegrasyonu | — |
-| **5** | Phone Screen & Practice | ✅ %100 | VoiceOnlyRoom (ses arayüzü, orb animasyonu), phone-screen prompt, practice prompt, practice modunda kod editörü, hint butonu+kademeli ipucu sistemi (3 seviye), soft timer, soru sayacı (Soru X/Y), zaman limiti + AI geçiş (time_warning), çözüm karşılaştırması (SolutionComparisonPanel), **soru başına süre göstergesi (progress bar + countdown)**, **side-by-side diff view (diff kütüphanesi, diff/yan-yana toggle)** | — |
-| **4** | System Design | ✅ %100 | tldraw whiteboard canvas, 10 custom shape (DB/Cache/Queue/LB/Gateway/Server/CDN/Client/Storage/Auth), ComponentPalette (kategorize sürükle-bırak), whiteboard→LLM serialize (bileşenler+bağlantılar+veri akışı), whiteboard state persist (Convex), DesignProblemPanel (gereksinimler+tartışma noktaları), SystemDesignRoom layout (panel+whiteboard+ses), design problem seed data (7 soru: Easy→Hard), AI whiteboard-aware prompt, WS whiteboard_update mesajı, **tldraw snapshot→PNG/SVG export (indirme + dataURL)**, **label inline editing (çift tıkla düzenle)** | — |
-| **6** | Kişiselleştirme | ✅ %100 | jobPostings tablosu+parse (URL/text→LLM analiz), resumes tablosu+upload (PDF/text→LLM analiz), userProfiles tablosu+upsert, userMemory tablosu+otomatik güncelleme (rapor sonrası), Settings sayfası (profil/resume/job/memory), NewInterview wizard gelişmiş ayarlar (job/resume/memory seçimi), VoiceSession personalization context inject, Sidebar'a Settings linki | — |
-| **8** | Enterprise Panel | ❌ %0 | — | organizations/positions/candidates tabloları, rol yönetimi, pozisyon oluşturma, davet linki akışı, recruiter dashboard, aday listesi+detay, karşılaştırma, funnel chart, dönüşüm oranları |
-| **10** | Production | ❌ %0 | — | Sentence-level TTS pipelining, rate limiting, sandbox güvenlik hardening, structured logging, health checks, error tracking, Fly.io/Railway deploy, Vercel/Cloudflare deploy, GitHub Actions CI/CD, code splitting, caching, scaling |
+Minimum demo için önerilen ilerleme sırası:
 
-### Mevcut Dosya Haritası
-
-```
-apps/api/src/
-├── index.ts                    ← Hono + WS server entrypoint
-├── router.ts                   ← API route'lar (users, proxy TTS/STT/LLM, design-problems)
-├── sandbox.ts                  ← Kod çalıştırma (node:vm + Python subprocess)
-├── middleware/auth.ts           ← better-auth session doğrulama
-├── routes/
-│   ├── interviews.ts           ← CRUD + start/complete/messages
-│   ├── problems.ts             ← list/random/getById
-│   ├── design-problems.ts      ← System design soru bankası API
-│   ├── code.ts                 ← POST /execute (sandbox)
-│   ├── reports.ts              ← Rapor oluşturma + getirme
-│   ├── jobs.ts                 ← İş ilanı parse (URL/text→LLM)
-│   ├── resume.ts               ← Özgeçmiş upload + analiz
-│   └── profile.ts              ← Profil CRUD + memory
-├── services/
-│   └── report-generator.ts     ← LLM ile mülakat raporu üretme
-├── prompts/
-│   ├── index.ts                ← getSystemPrompt() router
-│   ├── live-coding.ts          ← ✅
-│   ├── system-design.ts        ← ✅ (whiteboard-aware)
-│   ├── phone-screen.ts         ← ✅
-│   └── practice.ts             ← ✅
-└── ws/voice.ts                 ← VoiceSession (STT→LLM→TTS + whiteboard + hints)
-
-apps/web/src/
-├── App.tsx                     ← Router (login/register/dashboard/interview/report/progress)
-├── main.tsx                    ← React entrypoint
-├── lib/
-│   ├── api.ts                  ← fetch wrapper (interviews/problems/code/reports)
-│   ├── audio.ts                ← PCM16 decode, AudioQueuePlayer, volume meter
-│   ├── auth.tsx                ← useAuth() hook + AuthProvider
-│   ├── useVoice.ts             ← WebSocket hook (VAD, auto-reconnect, hint, whiteboard)
-│   └── whiteboard-serializer.ts ← tldraw state → LLM metin dönüştürücü
-├── pages/
-│   ├── DashboardPage.tsx       ← Hoşgeldin + hızlı başlat + son mülakatlar
-│   ├── NewInterviewPage.tsx    ← Tür/zorluk/soru sayısı + gelişmiş ayarlar (job/resume/memory)
-│   ├── InterviewRoomPage.tsx   ← Voice-only + Live Coding + System Design router
-│   ├── ReportPage.tsx          ← Mülakat raporu (skor, radar, güçlü/zayıf)
-│   ├── ProgressPage.tsx        ← İlerleme grafikleri (line, radar, istatistik)
-│   ├── HistoryPage.tsx         ← Geçmiş mülakatlar
-│   ├── SettingsPage.tsx        ← Profil, özgeçmiş, iş ilanları, hafıza
-│   ├── LoginPage.tsx           ← Email/password login
-│   └── RegisterPage.tsx        ← Email/password register
-└── components/
-    ├── ui/                     ← Button, Card, Badge, Input, Toast
-    ├── layout/                 ← AppLayout, Sidebar, Topbar
-    └── interview/
-        ├── VoiceBar.tsx        ← Mikrofon + durum + hint butonu
-        ├── CodeEditor.tsx      ← Monaco editor wrapper
-        ├── ProblemPanel.tsx    ← Coding problem açıklaması
-        ├── TestResultsPanel.tsx ← Test sonuçları
-        ├── ResizableSplitter.tsx ← Panel boyutlandırma
-        ├── SolutionComparisonPanel.tsx ← Optimal çözüm karşılaştırma
-        ├── SystemDesignRoom.tsx ← System Design ana layout
-        └── whiteboard/
-            ├── WhiteboardCanvas.tsx  ← tldraw wrapper + debounced sync
-            ├── ComponentPalette.tsx  ← Sürükle-bırak bileşen paneli
-            ├── DesignProblemPanel.tsx ← Soru + gereksinimler paneli
-            ├── design-shapes.tsx     ← 10 custom tldraw shape
-            └── index.ts              ← Barrel export
-
-convex/
-├── schema.ts                   ← users, interviews, messages, problems, designProblems, interviewResults, jobPostings, resumes, userProfiles, userMemory
-├── users.ts                    ← CRUD + list + getById
-├── interviews.ts               ← create/start/complete/saveCode/setProblem/setDesignProblem/saveWhiteboardState/stats
-├── messages.ts                 ← add/listByInterview/getRecent
-├── problems.ts                 ← create/list/getById/getRandom
-├── designProblems.ts           ← CRUD + getRandom + 7 seed soru
-├── interviewResults.ts         ← create/getByInterview/getByUser/getUserProgress
-├── jobPostings.ts              ← CRUD + listByUser
-├── resumes.ts                  ← CRUD + listByUser
-├── userProfiles.ts             ← getByUser + upsert
-├── userMemory.ts               ← getByKey + getAllByUser + upsert
-├── auth.ts                     ← better-auth createAuth()
-├── http.ts                     ← HTTP routes (auth endpoints)
-└── seed.ts                     ← Coding problem seed data
-```
-
-### Önerilen Sıralama (Kalan Fazlar)
-
-```
-Şimdi  ──► FAZ 8   Enterprise panel
-       ──► FAZ 10  Production & deploy
-
-> ✅ FAZ 4 & 5 eksikleri kapatıldı (10 Şubat 2026)
-> ✅ FAZ 6 tamamlandı (10 Şubat 2026)
-```
+1. Faz 0 — Altyapıyı kur
+2. Faz 1 — Sesli yapay zeka ajanını çalıştır
+3. Faz 9 — Temel arayüzü oluştur
+4. Faz 2 — Oturum yönetimini ekle
+5. Faz 3 — Canlı kodlama modülünü entegre et
+6. Faz 7 — Basit raporlama ekle

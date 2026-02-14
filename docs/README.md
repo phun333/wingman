@@ -1,46 +1,35 @@
-# Freya + fal.ai Entegrasyon Dökümantasyonu
+# docs
 
-Bu klasör, Freya TTS/STT ve fal.ai platformunun projemizde nasıl kullanılacağına dair TypeScript örneklerini içerir.
+fal.ai platformu ve Freya STT/TTS modelleri ile ilgili entegrasyon dokümantasyonunu ve örnek kodları içerir. Geliştiricilerin ses boru hattını anlaması ve uygulaması için referans kaynağıdır.
 
-## 📁 Dosya Yapısı
+## Görevleri
+
+- fal.ai SDK kullanım örnekleri sunma
+- Freya STT/TTS uç noktalarını belgeleme
+- OpenAI uyumlu kullanım örnekleri sağlama
+- LiveKit entegrasyon rehberi sunma
+
+## Dosyalar
 
 | Dosya | Açıklama |
 |-------|----------|
-| [`endpoints.md`](./endpoints.md) | Tüm Freya endpoint'lerinin referans listesi |
-| [`setup.md`](./setup.md) | fal.ai client kurulumu ve yapılandırması |
-| [`freya-tts-streaming.ts`](./freya-tts-streaming.ts) | TTS Streaming — PCM16 chunk'larla gerçek zamanlı ses üretimi |
-| [`freya-tts-openai-compat.ts`](./freya-tts-openai-compat.ts) | TTS OpenAI-Compatible — `/audio/speech` endpoint'i ile ses üretimi |
-| [`freya-pipeline.ts`](./freya-pipeline.ts) | TTS → STT Pipeline — Metin→Ses→Metin round-trip |
-| [`freya-livekit.ts`](./freya-livekit.ts) | LiveKit + OpenAI uyumlu STT/TTS entegrasyonu |
+| `README.md` | Genel bakış ve hızlı başlangıç |
+| `endpoints.md` | Tüm Freya STT/TTS uç noktalarının detaylı referansı |
+| `setup.md` | fal.ai istemci kurulumu ve yapılandırması |
+| `freya-tts-streaming.ts` | Gerçek zamanlı TTS akış örneği (PCM16 formatında) |
+| `freya-tts-openai-compat.ts` | OpenAI uyumlu TTS kullanım örneği |
+| `freya-pipeline.ts` | TTS ve STT boru hattı örneği (metin, ses, metin döngüsü) |
+| `freya-livekit.ts` | LiveKit ile gerçek zamanlı sesli iletişim entegrasyonu |
 
-## 🚀 Hızlı Başlangıç
+## Uç Nokta Bilgisi
 
-```bash
-# 1. @fal-ai/client paketini kur
-bun add @fal-ai/client
+### Metinden Konuşmaya (TTS)
+- Uç nokta: `freya-mypsdi253hbk/freya-tts`
+- `/generate` — CDN URL'si ile ses üretimi
+- `/stream` — PCM16 formatında gerçek zamanlı akış
+- `/audio/speech` — OpenAI uyumlu ikili ses yanıtı
 
-# 2. .env dosyasına FAL_KEY ekle
-echo "FAL_KEY=your-fal-api-key" >> .env
-echo "TTS_ENDPOINT=freya-mypsdi253hbk/freya-tts" >> .env
-echo "STT_ENDPOINT=freya-mypsdi253hbk/freya-stt" >> .env
-
-# 3. Örnekleri çalıştır
-bun run docs/freya-tts-streaming.ts
-```
-
-## 🔑 Kullanılabilir Servisler
-
-### Text-to-Speech (TTS)
-Metin → Ses dönüşümü. Streaming ve batch modları desteklenir.
-
-### Speech-to-Text (STT)  
-Ses → Metin dönüşümü. OpenAI Whisper API uyumlu.
-
-### LLM (OpenRouter)
-Dil modeli çıkarımı. OpenRouter üzerinden çeşitli modellere erişim.
-
-## 📖 Kaynaklar
-
-- [fal.ai Dökümantasyonu](https://docs.fal.ai)
-- [fal.ai JS Client GitHub](https://github.com/fal-ai/fal-js)
-- [@fal-ai/client npm](https://www.npmjs.com/package/@fal-ai/client)
+### Konuşmadan Metne (STT)
+- Uç nokta: `freya-mypsdi253hbk/freya-stt`
+- `/audio/transcriptions` — OpenAI uyumlu çeviri yazımı
+- `/generate` — fal.subscribe ile çeviri yazımı

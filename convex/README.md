@@ -1,90 +1,60 @@
-# Welcome to your Convex functions directory!
+# convex
 
-Write your Convex functions here.
-See https://docs.convex.dev/functions for more.
+Wingman platformunun arka uç veritabanı katmanıdır. Convex gerçek zamanlı veritabanı üzerine kurulu şema tanımları, sorgular ve mutasyonları içerir. Kimlik doğrulama için better-auth entegrasyonu kullanır.
 
-A query function that takes two arguments looks like:
+## Görevleri
 
-```ts
-// convex/myFunctions.ts
-import { query } from "./_generated/server";
-import { v } from "convex/values";
+- Veritabanı şema tanımları ve dizin (index) yapılandırması
+- CRUD sorguları ve mutasyonları
+- Kimlik doğrulama (better-auth + Convex eklentisi)
+- HTTP rotaları (kimlik doğrulama uç noktaları)
+- Başlangıç verisi (kodlama soruları, tasarım soruları)
 
-export const myQueryFunction = query({
-  // Validators for arguments.
-  args: {
-    first: v.number(),
-    second: v.string(),
-  },
+## Veritabanı Tabloları
 
-  // Function implementation.
-  handler: async (ctx, args) => {
-    // Read the database as many times as you need here.
-    // See https://docs.convex.dev/database/reading-data.
-    const documents = await ctx.db.query("tablename").collect();
+| Tablo | Açıklama |
+|-------|----------|
+| `users` | Kullanıcı hesapları (e-posta, ad, kimlik doğrulama bağlantısı) |
+| `interviews` | Mülakat oturumları (tür, zorluk, durum, yapılandırma) |
+| `messages` | Mülakat sohbet mesajları (rol, içerik, zaman damgası) |
+| `problems` | Kodlama soruları (başlangıç kodu, test senaryoları, optimal çözüm) |
+| `designProblems` | Sistem tasarımı soruları (gereksinimler, beklenen bileşenler) |
+| `leetcodeProblems` | LeetCode soru bankası (2000+ soru, şirket bilgisi, kabul oranı) |
+| `interviewResults` | Mülakat sonuç raporları (puanlar, güçlü/zayıf yönler, kod analizi) |
+| `jobPostings` | Kullanıcının eklediği iş ilanları (ayrıştırılmış gereksinimler, beceriler) |
+| `resumes` | Kullanıcı özgeçmişleri (deneyim, eğitim, beceriler, projeler) |
+| `userProfiles` | Kullanıcı profilleri (ilgi alanları, hedefler, tercih edilen dil) |
+| `userMemory` | Kullanıcı hafızası (zayıf/güçlü konular, ortalama puan) |
+| `companyStudyPaths` | Şirket bazlı çalışma yol haritaları (konu bazlı LeetCode soruları) |
+| `jobInterviewPaths` | İş ilanına özel mülakat hazırlık planları |
 
-    // Arguments passed from the client are properties of the args object.
-    console.log(args.first, args.second);
+## Dosya Yapısı
 
-    // Write arbitrary JavaScript here: filter, aggregate, build derived data,
-    // remove non-public properties, or create new objects.
-    return documents;
-  },
-});
+```
+auth.config.ts        Kimlik doğrulama yapılandırması
+auth.ts               better-auth createAuth() fonksiyonu
+convex.config.ts      Convex proje yapılandırması
+http.ts               HTTP rotaları (kimlik doğrulama uç noktaları)
+schema.ts             Tüm tablo tanımları ve dizinler
+seed.ts               Başlangıç kodlama soruları
+users.ts              Kullanıcı CRUD işlemleri
+interviews.ts         Mülakat oluşturma, başlatma, tamamlama, kod/beyaz tahta kaydetme
+messages.ts           Mesaj ekleme ve listeleme
+problems.ts           Kodlama sorusu CRUD ve rastgele seçim
+designProblems.ts     Sistem tasarımı sorusu CRUD ve başlangıç verisi (7 soru)
+leetcodeProblems.ts   LeetCode sorusu sorgulama ve filtreleme
+interviewResults.ts   Rapor oluşturma ve kullanıcı ilerleme istatistikleri
+jobPostings.ts        İş ilanı CRUD
+resumes.ts            Özgeçmiş CRUD
+userProfiles.ts       Profil getirme ve güncelleme
+userMemory.ts         Hafıza okuma ve yazma
+companyStudyPaths.ts  Şirket çalışma yolu yönetimi
+jobInterviewPaths.ts  İş ilanı mülakat yolu yönetimi
 ```
 
-Using this query function in a React component looks like:
+## Yerel Geliştirme
 
-```ts
-const data = useQuery(api.myFunctions.myQueryFunction, {
-  first: 10,
-  second: "hello",
-});
+```bash
+bunx convex dev       # Geliştirme sunucusunu başlat (otomatik şema senkronizasyonu)
+bunx convex deploy    # Üretime dağıt
 ```
-
-A mutation function looks like:
-
-```ts
-// convex/myFunctions.ts
-import { mutation } from "./_generated/server";
-import { v } from "convex/values";
-
-export const myMutationFunction = mutation({
-  // Validators for arguments.
-  args: {
-    first: v.string(),
-    second: v.string(),
-  },
-
-  // Function implementation.
-  handler: async (ctx, args) => {
-    // Insert or modify documents in the database here.
-    // Mutations can also read from the database like queries.
-    // See https://docs.convex.dev/database/writing-data.
-    const message = { body: args.first, author: args.second };
-    const id = await ctx.db.insert("messages", message);
-
-    // Optionally, return a value from your mutation.
-    return await ctx.db.get("messages", id);
-  },
-});
-```
-
-Using this mutation function in a React component looks like:
-
-```ts
-const mutation = useMutation(api.myFunctions.myMutationFunction);
-function handleButtonPress() {
-  // fire and forget, the most common way to use mutations
-  mutation({ first: "Hello!", second: "me" });
-  // OR
-  // use the result once the mutation has completed
-  mutation({ first: "Hello!", second: "me" }).then((result) =>
-    console.log(result),
-  );
-}
-```
-
-Use the Convex CLI to push your functions to a deployment. See everything
-the Convex CLI can do by running `npx convex -h` in your project root
-directory. To learn more, launch the docs with `npx convex docs`.

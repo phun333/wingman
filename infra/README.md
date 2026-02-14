@@ -1,90 +1,46 @@
-# 🚀 Dokploy Deployment
+# infra
+
+Wingman platformunun Docker ile paketlenmesi ve dağıtım yapılandırmasını içerir. Tek bir konteyner içinde API sunucusu, WebSocket, statik dosya sunumu ve kimlik doğrulama vekili çalışır.
+
+## Görevleri
+
+- Çok aşamalı Docker derlemesi ile üretim görüntüsü oluşturma
+- Docker Compose ile tek komutla dağıtım
+- Sağlık kontrolü yapılandırması
+- Ortam değişkeni yönetimi
+
+## Dosyalar
+
+| Dosya | Açıklama |
+|-------|----------|
+| `Dockerfile` | Çok aşamalı derleme (Vite ön yüz derlemesi + Bun API sunucusu) |
+| `docker-compose.yml` | Tek servis yapılandırması (Dokploy/Traefik uyumlu) |
+| `.env.example` | Gerekli ortam değişkenleri şablonu |
+
+## Derleme Aşamaları
+
+Dockerfile iki aşamadan oluşur:
+
+1. **Derleme aşaması** (`builder`): Bağımlılıkları yükler, Vite ile ön yüzü derler ve statik dosyaları hazırlar
+2. **Üretim aşaması**: Sadece gerekli dosyaları (`apps/api`, `packages`, `convex`, `public`, `node_modules`) kopyalayarak küçük boyutlu bir görüntü oluşturur
 
 ## Mimari
 
-```
-    Browser
-      │
-      ▼
-┌─────────────┐
-│   Traefik   │  ← Dokploy (SSL + domain)
-│  (Dokploy)  │
-└──────┬──────┘
-       │ :3001
-┌──────▼──────────────────────────────────┐
-│          Bun (Hono) — tek servis         │
-│                                          │
-│  /api/auth/*   → proxy → Convex Cloud    │
-│  /api/*        → REST API                │
-│  /ws/voice     → WebSocket               │
-│  /health       → healthcheck             │
-│  /docs         → Scalar API docs         │
-│  /*            → static files (SPA)      │
-└──────┬──────────────────┬────────────────┘
-       │                  │
-  ┌────▼────┐     ┌───────▼──────┐
-  │ Convex  │     │   fal.ai     │
-  │ Cloud   │     │  (Freya)     │
-  │ DB+Auth │     │  STT / TTS   │
-  └─────────┘     └──────────────┘
-```
+Tek konteyner mimarisi şu bileşenleri barındırır:
 
-Tek container — nginx yok. Traefik (Dokploy) SSL ve routing'i halleder.
+- **REST API**: Hono üzerinde HTTP uç noktaları
+- **WebSocket**: Sesli mülakat oturumları (`/ws/voice`)
+- **Statik Dosya Sunumu**: Vite çıktısı (`/public` dizini)
+- **Kimlik Doğrulama Vekili**: Convex HTTP'ye yönlendirme (`/api/auth/*`)
 
-## Ön Koşullar
-
-1. **Convex deploy:**
-   ```bash
-   bunx convex deploy
-   ```
-   Convex dashboard'dan environment variables:
-   - `SITE_URL` = production domain (`https://myapp.com`)
-   - `BETTER_AUTH_SECRET` = güçlü random string
-
-2. **Convex URL'leri** not edin:
-   - `CONVEX_URL` → `https://xxx.convex.cloud`
-   - `CONVEX_HTTP_URL` → `https://xxx.convex.site` (`.cloud` → `.site`)
-
-## Dokploy Kurulumu
-
-### 1. Docker Compose projesi oluşturun
-
-- **Source**: Git repository
-- **Compose Path**: `infra/docker-compose.yml`
-
-### 2. Environment Variables
-
-| Variable | Zorunlu | Açıklama | Örnek |
-|----------|---------|----------|-------|
-| `SITE_URL` | ✅ | Production domain | `https://myapp.com` |
-| `CONVEX_URL` | ✅ | Convex client URL | `https://xxx.convex.cloud` |
-| `CONVEX_HTTP_URL` | ✅ | Convex HTTP actions | `https://xxx.convex.site` |
-| `FAL_KEY` | ✅ | fal.ai API key | `fal_...` |
-| `OPENROUTER_API_KEY` | ✅ | OpenRouter API key | `sk-or-...` |
-| `OPENROUTER_MODEL` | ❌ | LLM model | `google/gemini-2.5-flash` |
-| `HYPERBROWSER_API_KEY` | ❌ | Web scraping | |
-
-### 3. Domain
-
-Dokploy'da domain'i `app` servisine, port `3001`'e yönlendirin.
-
-### 4. Deploy 🚀
-
-## Lokal Test
+## Çalıştırma
 
 ```bash
-cd infra
-cp .env.example .env
-# .env'i doldurun
-docker compose up --build
-# → http://localhost:3001
+# Görüntüyü derle ve başlat
+docker compose -f infra/docker-compose.yml up --build
+
+# Arka planda çalıştır
+docker compose -f infra/docker-compose.yml up -d --build
 ```
 
-## Troubleshooting
-
-| Sorun | Çözüm |
-|-------|-------|
-| Auth çalışmıyor | `CONVEX_HTTP_URL` doğru mu? (`.convex.site`) |
-| 503 auth hatası | `CONVEX_HTTP_URL` set edilmemiş |
-| WebSocket kopuyor | Dokploy'da WebSocket timeout artır |
-| API 502 | `docker compose logs app` — env var'ları kontrol et |
+Konteyner `3001` portunu açar. SSL ve alan adı yönlendirmesi Traefik (Dokploy) tarafından yönetilir.
