@@ -1,0 +1,9 @@
+{
+  "extends": "@ffh/tsconfig/web.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "include": ["src"]
+}

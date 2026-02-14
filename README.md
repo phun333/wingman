@@ -1,4 +1,10 @@
 <p align="center">
+  <video src="https://github.com/user-attachments/assets/wingman-demo.mp4" width="720" controls autoplay muted loop>
+    <a href="apps/video/out/wingman-demo.mp4">🎬 Demo Videoyu İzle</a>
+  </video>
+</p>
+
+<p align="center">
   <img src="marketing/logo.png" width="80" height="80" alt="Wingman" />
 </p>
 
@@ -166,6 +172,7 @@ Her modülün kendi README dosyasında ayrıntılı açıklama, klasör yapısı
 |-------|----------|--------|
 | **apps/api** | Hono REST API + WebSocket sunucusu | [Oku](apps/api/README.md) |
 | **apps/web** | React tek sayfa uygulaması | [Oku](apps/web/README.md) |
+| **apps/video** | Remotion ile hackathon tanıtım videosu | [Oku](apps/video/README.md) |
 | **convex** | Veritabanı şeması, sorgular ve mutasyonlar | [Oku](convex/README.md) |
 | **packages/db** | Convex istemci sarmalayıcısı | [Oku](packages/db/README.md) |
 | **packages/env** | Ortam değişkeni yönetimi | [Oku](packages/env/README.md) |
