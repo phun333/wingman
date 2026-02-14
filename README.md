@@ -1,10 +1,4 @@
 <p align="center">
-  <video src="https://github.com/user-attachments/assets/wingman-demo.mp4" width="720" controls autoplay muted loop>
-    <a href="apps/video/out/wingman-demo.mp4">🎬 Demo Videoyu İzle</a>
-  </video>
-</p>
-
-<p align="center">
   <img src="marketing/logo.png" width="80" height="80" alt="Wingman" />
 </p>
 
@@ -14,7 +8,11 @@
   Yapay zeka destekli sesli teknik mülakat platformu
 </p>
 
-https://github.com/user-attachments/assets/201563ec-225c-40d5-82e3-99fc86f9cd4c
+<p align="center">
+  <video src="https://github.com/user-attachments/assets/201563ec-225c-40d5-82e3-99fc86f9cd4c" width="720" controls autoplay muted loop>
+    <a href="apps/video/out/wingman-demo.mp4">🎬 Demo Videoyu İzle</a>
+  </video>
+</p>
 
 <p align="center">
   <a href="#özellikler">Özellikler</a> •
