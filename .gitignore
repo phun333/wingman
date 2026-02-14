@@ -4,3 +4,9 @@ dist
 .env.local
 *.log
 .DS_Store
+apps/video/out
+.next
+.source
+
+# Scraper binary
+apps/scraper/scraper

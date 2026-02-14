@@ -1,48 +1,108 @@
 # dataset
 
-LeetCode soru veri setini ve Convex veritabanına aktarmak için kullanılan dönüştürme aracını içerir.
-
-## Görevleri
-
-- LeetCode sorularını CSV formatından Convex'in kabul ettiği JSONL formatına dönüştürme
-- Soru verilerini temizleme, doğrulama ve zenginleştirme (FAANG kontrolü, alan hesaplama)
+Convex veritabanını seed etmek için kullanılan veri dosyaları.
 
 ## Dosyalar
 
-| Dosya | Açıklama |
-|-------|----------|
-| `leetcode.csv` | Ham LeetCode soru veri seti (CSV formatında) |
-| `leetcode-problems.jsonl` | Dönüştürülmüş soru veri seti (Convex'e aktarılmaya hazır JSONL) |
-| `convert-leetcode-csv.ts` | CSV'den JSONL'ye dönüştürme betiği |
+| Dosya | Kayıt | Açıklama |
+|-------|-------|----------|
+| `leetcode.csv` | ~1825 | Ham LeetCode soru veri seti |
+| `leetcode-problems.jsonl` | 1825 | Convex'e aktarılmaya hazır LeetCode soruları |
+| `jobs.jsonl` | ~1826 | hiring.cafe'den scrape edilen iş ilanları |
+| `convert-leetcode-csv.ts` | — | CSV → JSONL dönüştürme betiği |
 
-## Kullanım
+## Yeni Ortam Kurulumu (Seed)
+
+Yeni bir Convex deployment'ında veritabanını doldurmak için:
 
 ```bash
-# CSV'yi JSONL'ye dönüştür
-bun run dataset/convert-leetcode-csv.ts
-
-# Convex veritabanına aktar
+# 1. LeetCode sorularını yükle
 bunx convex import --table leetcodeProblems dataset/leetcode-problems.jsonl
+
+# 2. İş ilanlarını yükle (Go scraper ile)
+cd apps/scraper && go build -o scraper .
+./scraper -seed -input ../../dataset/jobs.jsonl
+
+# 3. Coding problemlerini yükle (Convex internal mutation)
+bunx convex run seed:seedProblems
 ```
 
-## Veri Yapısı
+## Verileri Güncelleme
 
-Her soru kaydı şu alanları içerir:
+### Job'ları Güncelleme (hiring.cafe'den taze çekim)
 
-- LeetCode kimlik numarası ve başlığı
-- Açıklama ve zorluk seviyesi
-- Kabul oranı ve sıklık puanı
-- İlgili konular (dizi, dinamik programlama, vb.)
-- Soran şirketler listesi
-- FAANG tarafından sorulma durumu
-- Beğeni/beğenmeme sayıları ve puan
+```bash
+cd apps/scraper && go build -o scraper .
 
-## Öneri Sistemi Entegrasyonu
+# 1. Tüm job'ları scrape et → Convex'e yaz
+./scraper -sync
 
-Bu veri seti, CV bazlı akıllı öneri sistemi (`apps/api/src/services/recommendation.ts`) tarafından kullanılır. Sistem, kullanıcının CV'sini LLM ile analiz ettikten sonra bu 1825 problemi 7 farklı kriterle puanlar:
+# 2. Convex'ten export et → dataset/jobs.jsonl (repo'ya commit için)
+./scraper -export
+```
 
-- **relatedTopics** → CV'deki zayıf alanlarla eşleştirme
-- **companies** → Hedef şirket eşleştirme
-- **difficulty** → Deneyim seviyesine uygun zorluk filtresi
-- **frequency** → Sık sorulan sorulara öncelik
-- **askedByFaang** → FAANG bonusu
+### Tam Döngü
+
+```
+hiring.cafe ──scraper -sync──▸ Convex DB ──scraper -export──▸ dataset/jobs.jsonl
+                                                                    │
+                                                               git commit
+                                                                    │
+                                            Yeni Convex ◂──scraper -seed──
+```
+
+## Scraper Komutları
+
+```bash
+cd apps/scraper
+
+# Tüm job'ları scrape et → Convex
+./scraper -sync
+
+# Belirli query'ler ile scrape
+./scraper -sync -queries "React,Go Developer"
+
+# Convex → JSONL export
+./scraper -export                          # → dataset/jobs.jsonl
+./scraper -export -output /tmp/backup.jsonl
+
+# JSONL → Convex seed
+./scraper -seed                            # ← dataset/jobs.jsonl
+./scraper -seed -input /tmp/backup.jsonl
+
+# Tek query test
+./scraper -query "Software Engineer"
+
+# HTTP API server
+./scraper -serve
+```
+
+## Veri Yapıları
+
+### jobs.jsonl
+
+Her satır bir iş ilanı:
+
+```json
+{
+  "externalId": "lever___picus___abc123",
+  "title": "Software Engineer",
+  "company": "Picus Security",
+  "applyUrl": "https://jobs.lever.co/picus/...",
+  "source": "lever",
+  "location": "Turkey",
+  "workplaceType": "Remote",
+  "countries": ["TR"],
+  "seniorityLevel": "Mid Level",
+  "commitment": ["Full Time"],
+  "category": "Software Development",
+  "skills": ["Go", "Python", "AWS"],
+  "companyIndustry": "Information Technology",
+  "isExpired": false,
+  "scrapedAt": 1771083488000
+}
+```
+
+### leetcode-problems.jsonl
+
+Her satır bir LeetCode sorusu (bkz. `convex/schema.ts` → `leetcodeProblems`).
