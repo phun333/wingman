@@ -139,10 +139,8 @@ export function InterviewRoomPage() {
 
     let cancelled = false;
 
-    // Try to resolve leetcodeId from the problem
     (async () => {
       try {
-        // Try fetching by Convex doc ID first — API accepts both formats
         console.log("[coding-data] Problem loaded without starter code, fetching for:", problem._id);
         const codingData = await getLeetcodeCodingData(problem._id);
         if (cancelled) return;
@@ -153,6 +151,10 @@ export function InterviewRoomPage() {
             starterCode: codingData.starterCode,
             testCases: codingData.testCases,
           } : prev);
+          // Directly set code — don't rely on the problem-change effect
+          // because Monaco may not pick up the value prop change
+          const starter = codingData.starterCode[codeLanguage] ?? "";
+          if (starter) setCode(starter);
         }
       } catch (err) {
         console.warn("[coding-data] Failed to fetch:", err);
@@ -160,7 +162,7 @@ export function InterviewRoomPage() {
     })();
 
     return () => { cancelled = true; };
-  }, [problem?._id, showCodeEditor]);
+  }, [problem?._id, showCodeEditor, codeLanguage]);
 
   // Update code when problem or language changes
   useEffect(() => {
