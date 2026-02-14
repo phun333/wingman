@@ -18,8 +18,8 @@ Bu dosya, bu repo üzerinde çalışan AI agent'ları (Claude, Copilot, Cursor, 
 **Freya Fal Hackathon** — Türkçe sesli AI uygulaması. Freya (fal.ai) STT/TTS modelleri + OpenRouter LLM kullanır.
 
 **Monorepo yapısı** (Bun workspaces):
-- `apps/api` — Hono + oRPC REST API
-- `apps/web` — Bun web sunucusu
+- `apps/api` — Hono REST API + WebSocket (Bun runtime)
+- `apps/web` — React + Vite SPA
 - `packages/types` — Paylaşılan tipler (`@ffh/types`)
 - `packages/env` — Env yönetimi (`@ffh/env`)
 - `packages/db` — Convex client (`@ffh/db`)
@@ -59,12 +59,18 @@ bun add -d <package>
 
 ## 📁 Dosya Yapısı Kuralları
 
-1. **Yeni API endpoint'i** → `apps/api/src/router.ts` içine oRPC route ekle
+1. **Yeni API endpoint'i** → `apps/api/src/routes/` altına dosya oluştur, `router.ts`'de mount et
 2. **Yeni shared tip** → `packages/types/src/index.ts` içine ekle
 3. **Yeni env variable** → `.env`, `.env.example`, ve `packages/env/src/index.ts` güncelle
 4. **Yeni Convex tablo** → `convex/schema.ts` + ilgili query/mutation dosyası
 5. **fal.ai entegrasyonu** → `docs/` klasöründeki örneklere bak, `@fal-ai/client` kullan
 6. **Öneri sistemi** → `apps/api/src/services/recommendation.ts` (scoring) + `convex/resumeAnalysis.ts` (DB)
+7. **Yeni service** → `apps/api/src/services/` altına ekle
+8. **Yeni prompt** → `apps/api/src/prompts/` altına ekle
+9. **Yeni React sayfa** → `apps/web/src/pages/` altına ekle, router'a bağla
+10. **Yeni React component** → `apps/web/src/components/` altına ekle
+11. **Yeni store** → `apps/web/src/stores/` altına ekle
+12. **Yeni hook** → `apps/web/src/lib/` altına ekle
 
 ---
 
@@ -156,30 +162,73 @@ const sttClient = new OpenAI({
 
 ---
 
-## 🧩 API Route Ekleme (oRPC)
+## 🧩 API Route Ekleme (Hono)
+
+Proje Hono framework kullanır. Route dosyaları `apps/api/src/routes/` altındadır.
 
 ```typescript
-// apps/api/src/router.ts
-import { os } from "@orpc/server";
+// apps/api/src/routes/my-feature.ts
+import { Hono } from "hono";
+import { describeRoute, validator } from "hono-openapi";
 import { z } from "zod";
 
-export const myRoute = os
-  .route({ method: "POST", path: "/my-route", summary: "Açıklama" })
-  .input(z.object({ text: z.string() }))
-  .handler(async ({ input }) => {
-    // Business logic
-    return { result: "..." };
-  });
+export const myFeatureRoutes = new Hono();
 
-// Router objesine ekle
-export const router = {
-  // ... mevcut route'lar
-  myRoute,
-};
+myFeatureRoutes.get(
+  "/",
+  describeRoute({
+    tags: ["MyFeature"],
+    summary: "Liste",
+    responses: { 200: { description: "OK" } },
+  }),
+  async (c) => {
+    return c.json({ items: [] });
+  },
+);
 ```
 
-API'ye `http://localhost:3001/rpc/myRoute` olarak erişilir.
+Router'a bağlama (`apps/api/src/router.ts`):
+```typescript
+import { myFeatureRoutes } from "./routes/my-feature";
+apiRoutes.route("/my-feature", myFeatureRoutes);
+```
+
+### Mevcut Route Dosyaları
+
+| Dosya | Path | Açıklama |
+|-------|------|----------|
+| `routes/interviews.ts` | `/api/interviews` | Mülakat CRUD |
+| `routes/problems.ts` | `/api/problems` | Coding soruları |
+| `routes/design-problems.ts` | `/api/design-problems` | System design soruları |
+| `routes/code.ts` | `/api/code` | Sandbox kod çalıştırma |
+| `routes/reports.ts` | `/api/reports` | Mülakat raporları |
+| `routes/jobs.ts` | `/api/jobs` | İş ilanları (scrape) |
+| `routes/resume.ts` | `/api/resume` | CV parse |
+| `routes/profile.ts` | `/api/profile` | Kullanıcı profili |
+| `routes/leetcode.ts` | `/api/leetcode` | LeetCode soru bankası |
+| `routes/study-paths.ts` | `/api/study-paths` | Şirket çalışma yolları |
+| `routes/recommendations.ts` | `/api/recommendations` | CV→LeetCode önerileri |
+| `routes/docs-search.ts` | `/api/search` | Doküman arama |
+| `routes/explore.ts` | `/api/explore` | Keşfet (scraped jobs) |
+
+### Proxy Endpoint'leri (router.ts içinde inline)
+
+| Path | Açıklama |
+|------|----------|
+| `/api/proxy/tts` | fal.ai TTS proxy |
+| `/api/proxy/stt` | fal.ai STT proxy |
+| `/api/proxy/llm` | OpenRouter LLM proxy |
+| `/api/users` | User CRUD |
+
+### WebSocket
+
+| Path | Açıklama |
+|------|----------|
+| `/ws/voice` | Sesli mülakat pipeline (STT→LLM→TTS) |
+
+API: `http://localhost:3001/api/*`
 Scalar dökümantasyonu: `http://localhost:3001/docs`
+OpenAPI spec: `http://localhost:3001/openapi.json`
 
 ---
 
