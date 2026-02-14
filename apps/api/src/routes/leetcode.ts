@@ -158,6 +158,7 @@ leetcodeRoutes.get(
       difficulty,
       company: company || undefined,
       topic: topic || undefined,
+      seed: Math.random(), // Pass seed to avoid Convex query determinism
     });
 
     if (!problem) return c.json({ error: "No problems found" }, 404);

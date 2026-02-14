@@ -87,6 +87,7 @@ export const getRandom = query({
       v.union(v.literal("easy"), v.literal("medium"), v.literal("hard")),
     ),
     category: v.optional(v.string()),
+    seed: v.optional(v.number()), // Random seed from caller to avoid Convex query determinism
   },
   handler: async (ctx, args) => {
     let problems;
@@ -105,7 +106,8 @@ export const getRandom = query({
 
     if (problems.length === 0) return null;
 
-    const idx = Math.floor(Math.random() * problems.length);
+    const random = args.seed !== undefined ? args.seed : Math.random();
+    const idx = Math.floor(random * problems.length) % problems.length;
     return problems[idx]!;
   },
 });

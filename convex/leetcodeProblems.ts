@@ -265,6 +265,7 @@ export const getRandom = query({
     ),
     company: v.optional(v.string()),
     topic: v.optional(v.string()),
+    seed: v.optional(v.number()), // Random seed from caller to avoid Convex query determinism
   },
   handler: async (ctx, args) => {
     let problems = await ctx.db.query("leetcodeProblems").collect();
@@ -287,7 +288,9 @@ export const getRandom = query({
 
     if (problems.length === 0) return null;
 
-    const idx = Math.floor(Math.random() * problems.length);
+    // Use provided seed for randomness (Convex queries may be deterministic)
+    const random = args.seed !== undefined ? args.seed : Math.random();
+    const idx = Math.floor(random * problems.length) % problems.length;
     return problems[idx]!;
   },
 });

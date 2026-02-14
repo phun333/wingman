@@ -50,6 +50,7 @@ problemRoutes.get(
     const problem = await convex.query(api.problems.getRandom, {
       difficulty,
       category,
+      seed: Math.random(), // Pass seed to avoid Convex query determinism
     });
 
     if (!problem) {

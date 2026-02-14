@@ -28,6 +28,7 @@ export const getById = query({
 export const getRandom = query({
   args: {
     difficulty: v.union(v.literal("easy"), v.literal("medium"), v.literal("hard")),
+    seed: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const problems = await ctx.db
@@ -35,7 +36,8 @@ export const getRandom = query({
       .withIndex("by_difficulty", (q) => q.eq("difficulty", args.difficulty))
       .collect();
     if (problems.length === 0) return null;
-    const idx = Math.floor(Math.random() * problems.length);
+    const random = args.seed !== undefined ? args.seed : Math.random();
+    const idx = Math.floor(random * problems.length) % problems.length;
     return problems[idx];
   },
 });
