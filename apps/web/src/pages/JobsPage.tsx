@@ -30,6 +30,7 @@ import {
 import { useJobsStore } from "@/stores";
 import type { JobPath } from "@/stores";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { createInterview, startInterview } from "@/lib/api";
 
 // ─── Animation Variants ──────────────────────────────────
 
@@ -138,10 +139,44 @@ export function JobsPage() {
     return storeGetPathForJob(jobId);
   }
 
+  const [startingQuestionId, setStartingQuestionId] = useState<string | null>(null);
+
+  async function handleStartQuestion(
+    question: { id: string; question: string; difficulty: "easy" | "medium" | "hard"; completed: boolean },
+    type: "live-coding" | "system-design" | "phone-screen",
+  ) {
+    if (question.completed || startingQuestionId) return;
+    setStartingQuestionId(question.id);
+    try {
+      const interviewType = type === "live-coding" ? "practice" : type;
+      const interview = await createInterview({
+        type: interviewType,
+        difficulty: question.difficulty,
+        language: "tr",
+        questionCount: 1,
+      });
+      await startInterview(interview._id);
+
+      if (type === "live-coding") {
+        // question.id is "lc-{leetcodeId}" — extract the numeric leetcodeId for the API
+        const leetcodeId = question.id.replace("lc-", "");
+        navigate(`/interview/${interview._id}?problemId=${leetcodeId}`);
+      } else {
+        // phone-screen / system-design — pass question text
+        navigate(`/interview/${interview._id}?customQuestion=${encodeURIComponent(question.question)}`);
+      }
+    } catch {
+      // fallback to new interview page
+      navigate(`/dashboard/interview/new?type=${type}`);
+    } finally {
+      setStartingQuestionId(null);
+    }
+  }
+
   function handleStartInterview(path: JobPath, category: any) {
     const nextQuestion = category.questions.find((q: any) => !q.completed);
     if (nextQuestion) {
-      navigate(`/dashboard/interview/new?type=${category.type}&jobPathId=${path._id}`);
+      handleStartQuestion(nextQuestion, category.type);
     }
   }
 
@@ -563,20 +598,17 @@ export function JobsPage() {
                                             <div className="flex-1 min-w-0">
                                               <button
                                                 type="button"
-                                                onClick={() => {
-                                                  if (!q.completed) {
-                                                    navigate(
-                                                      `/dashboard/interview/new?type=${category.type}&jobPathId=${path._id}&questionId=${q.id}`
-                                                    );
-                                                  }
-                                                }}
+                                                onClick={() => handleStartQuestion(q, category.type)}
+                                                disabled={q.completed || startingQuestionId === q.id}
                                                 className={`text-left text-xs leading-relaxed transition-colors cursor-pointer ${
                                                   q.completed
-                                                    ? "line-through text-text-muted"
-                                                    : "text-text-secondary hover:text-amber"
+                                                    ? "line-through text-text-muted cursor-default"
+                                                    : startingQuestionId === q.id
+                                                      ? "text-amber animate-pulse"
+                                                      : "text-text-secondary hover:text-amber"
                                                 }`}
                                               >
-                                                {q.question}
+                                                {startingQuestionId === q.id ? "Başlatılıyor..." : q.question}
                                               </button>
                                               <div className="flex items-center gap-2 mt-1.5">
                                                 <span
