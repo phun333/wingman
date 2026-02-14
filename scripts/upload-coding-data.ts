@@ -89,14 +89,16 @@ async function main() {
         try {
           const cd = row.codingData;
 
-          // Ensure expectedOutput is always a string (Convex schema expects string)
-          const testCases = cd.testCases.map((tc: any) => ({
-            input: String(tc.input),
-            expectedOutput: typeof tc.expectedOutput === "string"
-              ? tc.expectedOutput
-              : JSON.stringify(tc.expectedOutput),
-            isHidden: !!tc.isHidden,
-          }));
+          // Filter out test cases missing expectedOutput, then ensure string types
+          const testCases = cd.testCases
+            .filter((tc: any) => tc.expectedOutput != null && tc.input != null)
+            .map((tc: any) => ({
+              input: String(tc.input),
+              expectedOutput: typeof tc.expectedOutput === "string"
+                ? tc.expectedOutput
+                : JSON.stringify(tc.expectedOutput),
+              isHidden: !!tc.isHidden,
+            }));
 
           await convex.mutation(api.leetcodeCodingData.upsert, {
             leetcodeId: row.leetcodeId,

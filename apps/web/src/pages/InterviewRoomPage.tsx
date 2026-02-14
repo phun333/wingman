@@ -111,10 +111,15 @@ export function InterviewRoomPage() {
       console.log("handleProblemLoaded called with:", p.title);
 
       // If a specific problem was requested but we got a different one from WebSocket,
-      // we should override it with the correct one
+      // we should override it with the correct one.
+      // For numeric leetcodeIds (e.g. "1"), compare against leetcodeId field too.
       if (requestedProblemId && p._id !== requestedProblemId) {
-        console.log("WebSocket loaded wrong problem, will override with correct one");
-        return;
+        const isNumericRequest = /^\d+$/.test(requestedProblemId);
+        const pLeetcodeId = (p as any).leetcodeId;
+        if (!isNumericRequest || String(pLeetcodeId) !== requestedProblemId) {
+          console.log("WebSocket loaded wrong problem, will override with correct one");
+          return;
+        }
       }
 
       // Always fetch coding data if not present — don't gate on showCodeEditor
@@ -167,7 +172,7 @@ export function InterviewRoomPage() {
 
     async function fetchAndSet() {
       try {
-        // 1. Fetch problem info
+        // 1. Fetch problem info (supports both numeric leetcodeId and Convex doc ID)
         let p: Problem;
         try {
           const lc = await getLeetcodeProblem(problemId!);
@@ -181,6 +186,9 @@ export function InterviewRoomPage() {
             createdAt: lc.createdAt,
           };
         } catch {
+          // Only try legacy problems table if it looks like a Convex ID (not a number)
+          const isNumeric = /^\d+$/.test(problemId!);
+          if (isNumeric) throw new Error(`LeetCode problem #${problemId} not found`);
           p = await getProblem(problemId!);
         }
 

@@ -243,10 +243,12 @@ export class VoiceSession {
         try {
           let problem: any;
           if (problemId) {
-            // Try leetcodeProblems first, then fall back to legacy problems
-            try {
-              const lc = await convex.query(api.leetcodeProblems.getById, {
-                id: problemId as any,
+            // Check if problemId is a numeric leetcodeId (e.g. "1" for Two Sum)
+            const numericId = Number.parseInt(problemId, 10);
+            if (!Number.isNaN(numericId) && numericId > 0 && numericId < 10000) {
+              // Resolve by leetcodeId
+              const lc = await convex.query(api.leetcodeProblems.getByLeetcodeId, {
+                leetcodeId: numericId,
               });
               if (lc) {
                 problem = {
@@ -255,11 +257,25 @@ export class VoiceSession {
                   testCases: [],
                 };
               }
-            } catch {
-              // Not a leetcode problem ID, try legacy
-              problem = await convex.query(api.problems.getById, {
-                id: problemId as any,
-              });
+            } else {
+              // Try as Convex doc ID — leetcodeProblems first, then legacy problems
+              try {
+                const lc = await convex.query(api.leetcodeProblems.getById, {
+                  id: problemId as any,
+                });
+                if (lc) {
+                  problem = {
+                    ...lc,
+                    category: lc.relatedTopics?.[0] ?? "general",
+                    testCases: [],
+                  };
+                }
+              } catch {
+                // Not a leetcode problem ID, try legacy
+                problem = await convex.query(api.problems.getById, {
+                  id: problemId as any,
+                });
+              }
             }
             console.log("Specific problem loaded:", problem?._id);
           } else {
