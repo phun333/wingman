@@ -319,6 +319,13 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
   color: var(--color-amber);
 }
 
+.orb-logo {
+  display: flex; align-items: center; justify-content: center;
+}
+.orb-logo svg {
+  filter: drop-shadow(0 0 8px rgba(229, 161, 14, 0.4));
+}
+
 .orb-ring {
   position: absolute; inset: -12px; border-radius: 50%;
   border: 1px solid rgba(229, 161, 14, 0.15);
@@ -607,7 +614,7 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
 
 <!-- NAVIGATION -->
 <div class="nav-dots" id="navDots"></div>
-<div class="slide-counter"><span class="current" id="currentSlide">01</span> <span style="margin:0 2px;">/</span> <span id="totalSlides">14</span></div>
+<div class="slide-counter"><span class="current" id="currentSlide">01</span> <span style="margin:0 2px;">/</span> <span id="totalSlides">15</span></div>
 <div class="key-hint"><kbd>←</kbd><kbd>→</kbd><span>ile gezin</span></div>
 
 <!-- ═══════════════════════════════════════════════════
@@ -633,7 +640,11 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
         <div class="orb" style="animation: float 3s ease-in-out infinite;">
           <div class="orb-ring"></div>
           <div class="orb-ring" style="animation-delay:0.8s; inset:-24px;"></div>
-          <span class="orb-letter">W</span>
+          <div class="orb-logo">
+            <svg width="70" height="70" viewBox="0 0 122.88 121.46" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M12.35,121.46c-8.01-9.72-11.92-19.29-12.31-28.71C-0.78,73.01,10.92,58.28,28.3,47.67 c18.28-11.16,37.08-13.93,55.36-22.25C92.79,21.27,103.68,14.47,121.8,0c5.92,15.69-12.92,40.9-43.52,54.23 c9.48,0.37,19.69-2.54,30.85-9.74c-0.76,19.94-16.46,32.21-51.3,36.95c7.33,2.45,16.09,2.58,27.27-0.58 C74.33,116.81,29.9,91.06,12.35,121.46L12.35,121.46z" fill="var(--color-amber)"/>
+            </svg>
+          </div>
         </div>
       </div>
 
@@ -659,7 +670,10 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
 
       <div class="reveal flex items-center gap-4" style="margin-top:20px;">
         <span class="t-muted" style="font-size:11px;">Powered by</span>
-        <span class="t-secondary" style="font-size:12px; font-weight:500;">Freya AI</span>
+        <span class="t-secondary flex items-center gap-1" style="font-size:12px; font-weight:500;">
+          <svg width="12" height="12" viewBox="0 0 122.88 121.46" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.35,121.46c-8.01-9.72-11.92-19.29-12.31-28.71C-0.78,73.01,10.92,58.28,28.3,47.67 c18.28-11.16,37.08-13.93,55.36-22.25C92.79,21.27,103.68,14.47,121.8,0c5.92,15.69-12.92,40.9-43.52,54.23 c9.48,0.37,19.69-2.54,30.85-9.74c-0.76,19.94-16.46,32.21-51.3,36.95c7.33,2.45,16.09,2.58,27.27-0.58 C74.33,116.81,29.9,91.06,12.35,121.46L12.35,121.46z" fill="var(--color-amber)"/></svg>
+          Freya AI
+        </span>
         <span class="t-muted" style="font-size:11px;">×</span>
         <span class="t-secondary" style="font-size:12px; font-weight:500;">fal.ai</span>
         <span class="t-muted" style="font-size:11px;">×</span>
@@ -976,11 +990,12 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
               <span class="badge badge-info" style="margin-top:4px;"><i class="ri-code-s-slash-line icon-xs"></i> Kod + Ses</span>
             </div>
           </div>
-          <p class="t-secondary" style="font-size:13px; line-height:1.6;">Monaco Editor ile gerçek zamanlı kodlama. Test çalıştırma, AI kod analizi ve sesli geri bildirim. Problem havuzundan dinamik soru atama.</p>
+          <p class="t-secondary" style="font-size:13px; line-height:1.6;">Monaco Editor ile gerçek zamanlı kodlama. Test çalıştırma, AI kod analizi, çözüm karşılaştırma ve sesli geri bildirim.</p>
           <div class="flex gap-2 flex-wrap" style="margin-top:12px;">
             <span class="badge badge-default">JS</span>
             <span class="badge badge-default">TS</span>
             <span class="badge badge-default">Python</span>
+            <span class="badge badge-info"><i class="ri-git-merge-line icon-xs"></i> Çözüm Karşılaştırma</span>
           </div>
         </div>
 
@@ -1044,8 +1059,9 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
             <div class="mockup-dot" style="background:#ef4444;"></div>
             <div class="mockup-dot" style="background:#eab308;"></div>
             <div class="mockup-dot" style="background:#22c55e;"></div>
-            <span class="t-muted" style="font-size:11px; margin-left:8px; font-family:var(--font-mono);">
-              <i class="ri-code-s-slash-line icon-xs t-amber" style="margin-right:4px;"></i>Wingman — Live Coding · Orta
+            <span class="t-muted" style="font-size:11px; margin-left:8px; font-family:var(--font-mono); display:flex; align-items:center; gap:5px;">
+              <svg width="13" height="13" viewBox="0 0 122.88 121.46" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.35,121.46c-8.01-9.72-11.92-19.29-12.31-28.71C-0.78,73.01,10.92,58.28,28.3,47.67 c18.28-11.16,37.08-13.93,55.36-22.25C92.79,21.27,103.68,14.47,121.8,0c5.92,15.69-12.92,40.9-43.52,54.23 c9.48,0.37,19.69-2.54,30.85-9.74c-0.76,19.94-16.46,32.21-51.3,36.95c7.33,2.45,16.09,2.58,27.27-0.58 C74.33,116.81,29.9,91.06,12.35,121.46L12.35,121.46z" fill="var(--color-amber)"/></svg>
+              Wingman — Live Coding · Orta
             </span>
             <span style="margin-left:auto; display:flex; align-items:center; gap:6px;">
               <span style="font-size:10px; font-family:var(--font-mono); color:var(--color-text-muted);">12:34</span>
@@ -1136,8 +1152,9 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
             <div class="mockup-dot" style="background:#ef4444;"></div>
             <div class="mockup-dot" style="background:#eab308;"></div>
             <div class="mockup-dot" style="background:#22c55e;"></div>
-            <span class="t-muted" style="font-size:11px; margin-left:8px; font-family:var(--font-mono);">
-              <i class="ri-mind-map icon-xs t-amber" style="margin-right:4px;"></i>Wingman — System Design · Orta
+            <span class="t-muted" style="font-size:11px; margin-left:8px; font-family:var(--font-mono); display:flex; align-items:center; gap:5px;">
+              <svg width="13" height="13" viewBox="0 0 122.88 121.46" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.35,121.46c-8.01-9.72-11.92-19.29-12.31-28.71C-0.78,73.01,10.92,58.28,28.3,47.67 c18.28-11.16,37.08-13.93,55.36-22.25C92.79,21.27,103.68,14.47,121.8,0c5.92,15.69-12.92,40.9-43.52,54.23 c9.48,0.37,19.69-2.54,30.85-9.74c-0.76,19.94-16.46,32.21-51.3,36.95c7.33,2.45,16.09,2.58,27.27-0.58 C74.33,116.81,29.9,91.06,12.35,121.46L12.35,121.46z" fill="var(--color-amber)"/></svg>
+              Wingman — System Design · Orta
             </span>
             <span style="margin-left:auto; display:flex; align-items:center; gap:6px;">
               <span style="font-size:10px; font-family:var(--font-mono); color:var(--color-text-muted);">18:42</span>
@@ -1256,11 +1273,127 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
     </div>
   </div>
 
-  <!-- ═══════════ SLIDE 9 — Personalization (Faz 6) ═══════════ -->
+  <!-- ═══════════ SLIDE 9 — Questions & Job Paths ═══════════ -->
   <div class="slide" data-slide="8">
+    <div class="slide-content flex flex-col gap-8">
+      <div class="reveal">
+        <p class="t-amber t-mono" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px;">Soru Bankası & Kariyer</p>
+        <h2 style="font-size:40px;">LeetCode <span class="t-amber">Soru Bankası</span> & İş Yolları</h2>
+        <p class="t-secondary" style="margin-top:6px; font-size:15px;">1000+ soru, FAANG filtreleri, şirket bazlı kariyer yolları</p>
+      </div>
+
+      <div class="reveal flex gap-6">
+        <!-- Questions Bank -->
+        <div class="card" style="flex:1.3;">
+          <div class="flex items-center gap-3" style="margin-bottom:16px;">
+            <div class="feature-icon" style="background:rgba(229,161,14,0.1); border:1px solid rgba(229,161,14,0.2);">
+              <i class="ri-code-s-slash-line t-amber icon-md"></i>
+            </div>
+            <div>
+              <h3 style="font-size:16px;">Soru Bankası</h3>
+              <p class="t-muted" style="font-size:11px;">LeetCode entegrasyonu</p>
+            </div>
+          </div>
+          <!-- Mock table -->
+          <div style="border:1px solid var(--color-border-subtle); border-radius:8px; overflow:hidden;">
+            <div style="display:grid; grid-template-columns:40px 1fr 70px 80px 60px; padding:8px 12px; background:var(--color-surface-raised); font-size:10px; color:var(--color-text-muted); text-transform:uppercase; letter-spacing:0.05em; border-bottom:1px solid var(--color-border-subtle);">
+              <span>#</span><span>Problem</span><span>Zorluk</span><span>Şirket</span><span>Oran</span>
+            </div>
+            <div style="display:grid; grid-template-columns:40px 1fr 70px 80px 60px; padding:8px 12px; font-size:12px; align-items:center; border-bottom:1px solid var(--color-border-subtle);">
+              <span class="t-muted t-mono" style="font-size:11px;">1</span>
+              <span>Two Sum</span>
+              <span class="badge badge-success" style="font-size:9px; padding:1px 5px;">Kolay</span>
+              <span style="font-size:10px; color:var(--color-text-secondary);">Google</span>
+              <span class="t-success t-mono" style="font-size:11px;">72%</span>
+            </div>
+            <div style="display:grid; grid-template-columns:40px 1fr 70px 80px 60px; padding:8px 12px; font-size:12px; align-items:center; border-bottom:1px solid var(--color-border-subtle);">
+              <span class="t-muted t-mono" style="font-size:11px;">42</span>
+              <span>Trapping Rain Water</span>
+              <span class="badge badge-danger" style="font-size:9px; padding:1px 5px;">Zor</span>
+              <span style="font-size:10px; color:var(--color-text-secondary);">Amazon</span>
+              <span class="t-amber t-mono" style="font-size:11px;">58%</span>
+            </div>
+            <div style="display:grid; grid-template-columns:40px 1fr 70px 80px 60px; padding:8px 12px; font-size:12px; align-items:center;">
+              <span class="t-muted t-mono" style="font-size:11px;">200</span>
+              <span>Number of Islands</span>
+              <span class="badge badge-amber" style="font-size:9px; padding:1px 5px;">Orta</span>
+              <span style="font-size:10px; color:var(--color-text-secondary);">Meta</span>
+              <span class="t-success t-mono" style="font-size:11px;">68%</span>
+            </div>
+          </div>
+          <div class="flex gap-2 flex-wrap" style="margin-top:12px;">
+            <span class="badge badge-default"><i class="ri-search-line icon-xs"></i> Arama & Filtre</span>
+            <span class="badge badge-default"><i class="ri-building-line icon-xs"></i> Şirket Filtresi</span>
+            <span class="badge badge-default"><i class="ri-star-line icon-xs"></i> FAANG Modu</span>
+            <span class="badge badge-default"><i class="ri-hashtag icon-xs"></i> Konu Bazlı</span>
+          </div>
+        </div>
+
+        <!-- Job Paths -->
+        <div class="card" style="flex:1;">
+          <div class="flex items-center gap-3" style="margin-bottom:16px;">
+            <div class="feature-icon" style="background:rgba(139,91,246,0.1); border:1px solid rgba(139,91,246,0.2);">
+              <i class="ri-briefcase-4-line t-purple icon-md"></i>
+            </div>
+            <div>
+              <h3 style="font-size:16px;">İş İlanları & Kariyer Yolları</h3>
+              <p class="t-muted" style="font-size:11px;">URL yapıştır, AI analiz etsin</p>
+            </div>
+          </div>
+          <!-- Job card mockup -->
+          <div style="border:1px solid rgba(139,91,246,0.2); border-radius:10px; padding:14px; background:rgba(139,91,246,0.03); margin-bottom:10px;">
+            <div class="flex items-center gap-2" style="margin-bottom:8px;">
+              <i class="ri-building-2-line t-purple icon-sm"></i>
+              <span style="font-size:13px; font-weight:600;">Sr. Frontend Developer</span>
+            </div>
+            <p class="t-muted" style="font-size:11px; margin-bottom:10px;">Trendyol · İstanbul · Remote</p>
+            <div style="margin-bottom:8px;">
+              <div class="flex justify-between" style="margin-bottom:4px;">
+                <span class="t-muted" style="font-size:10px;">İlerleme</span>
+                <span class="t-purple t-mono" style="font-size:10px;">3/5 mülakat</span>
+              </div>
+              <div style="height:5px; border-radius:3px; background:var(--color-surface-raised); overflow:hidden;">
+                <div style="height:100%; width:60%; border-radius:3px; background:var(--color-purple);"></div>
+              </div>
+            </div>
+            <div class="flex gap-2 flex-wrap">
+              <span class="badge badge-success" style="font-size:9px; padding:1px 5px;"><i class="ri-check-line" style="font-size:8px;"></i> Live Coding</span>
+              <span class="badge badge-success" style="font-size:9px; padding:1px 5px;"><i class="ri-check-line" style="font-size:8px;"></i> System Design</span>
+              <span class="badge badge-amber" style="font-size:9px; padding:1px 5px;"><i class="ri-play-line" style="font-size:8px;"></i> Phone Screen</span>
+              <span class="badge badge-default" style="font-size:9px; padding:1px 5px;">Practice</span>
+              <span class="badge badge-default" style="font-size:9px; padding:1px 5px;">Behavioral</span>
+            </div>
+          </div>
+          <!-- Another job -->
+          <div style="border:1px solid var(--color-border-subtle); border-radius:10px; padding:14px;">
+            <div class="flex items-center gap-2" style="margin-bottom:8px;">
+              <i class="ri-building-2-line t-info icon-sm"></i>
+              <span style="font-size:13px; font-weight:600;">Full Stack Engineer</span>
+            </div>
+            <p class="t-muted" style="font-size:11px; margin-bottom:6px;">Getir · İstanbul</p>
+            <div class="flex gap-2 flex-wrap">
+              <span class="badge badge-default" style="font-size:9px; padding:1px 5px;">React</span>
+              <span class="badge badge-default" style="font-size:9px; padding:1px 5px;">Node.js</span>
+              <span class="badge badge-default" style="font-size:9px; padding:1px 5px;">PostgreSQL</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal flex gap-3 justify-center">
+        <span class="badge badge-amber"><i class="ri-code-s-slash-line icon-xs"></i> 1000+ LeetCode Soruları</span>
+        <span class="badge badge-purple"><i class="ri-briefcase-4-line icon-xs"></i> AI İlan Analizi</span>
+        <span class="badge badge-info"><i class="ri-route-line icon-xs"></i> Kişisel Mülakat Yolu</span>
+        <span class="badge badge-success"><i class="ri-building-2-line icon-xs"></i> Şirket Bazlı Hazırlık</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SLIDE 10 — Personalization ═══════════ -->
+  <div class="slide" data-slide="9">
     <div class="slide-content flex flex-col gap-10">
       <div class="reveal">
-        <p class="t-amber t-mono" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px;">Kişiselleştirme · Faz 6</p>
+        <p class="t-amber t-mono" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px;">Kişiselleştirme</p>
         <h2 style="font-size:40px;">Akıllı <span class="t-amber">Kişiselleştirme</span></h2>
         <p class="t-secondary" style="margin-top:6px; font-size:15px;">CV, iş ilanı ve hafıza sistemi ile her mülakatı sana özel yap</p>
       </div>
@@ -1327,8 +1460,8 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
     </div>
   </div>
 
-  <!-- ═══════════ SLIDE 10 — Progress & History ═══════════ -->
-  <div class="slide" data-slide="9">
+  <!-- ═══════════ SLIDE 11 — Progress & History ═══════════ -->
+  <div class="slide" data-slide="10">
     <div class="slide-content flex flex-col gap-8">
       <div class="reveal">
         <p class="t-amber t-mono" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px;">İlerleme Takibi</p>
@@ -1435,8 +1568,8 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
     </div>
   </div>
 
-  <!-- ═══════════ SLIDE 11 — Report System ═══════════ -->
-  <div class="slide" data-slide="10">
+  <!-- ═══════════ SLIDE 12 — Report System ═══════════ -->
+  <div class="slide" data-slide="11">
     <div class="slide-content flex flex-col gap-8">
       <div class="reveal">
         <p class="t-amber t-mono" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px;">Değerlendirme</p>
@@ -1535,8 +1668,8 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
     </div>
   </div>
 
-  <!-- ═══════════ SLIDE 12 — User Journey ═══════════ -->
-  <div class="slide" data-slide="11">
+  <!-- ═══════════ SLIDE 13 — User Journey ═══════════ -->
+  <div class="slide" data-slide="12">
     <div class="slide-content flex flex-col gap-10">
       <div class="reveal">
         <p class="t-amber t-mono" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px;">Kullanıcı Deneyimi</p>
@@ -1600,18 +1733,18 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
             <div class="flow-num">6</div>
             <i class="ri-line-chart-line t-info icon-xl"></i>
           </div>
-          <h3 style="font-size:13px;">İlerleme Takibi</h3>
-          <p class="t-muted" style="font-size:11px;">Grafik · radar · geçmiş</p>
+          <h3 style="font-size:13px;">İlerleme & Soru Bankası</h3>
+          <p class="t-muted" style="font-size:11px;">Grafik · LeetCode · FAANG</p>
         </div>
         <span class="flow-arrow"><i class="ri-arrow-right-line"></i></span>
 
         <div class="flow-step">
           <div class="flow-circle" style="border-color:rgba(139,91,246,0.4); background:rgba(139,91,246,0.05);">
             <div class="flow-num">7</div>
-            <i class="ri-settings-4-line t-purple icon-xl"></i>
+            <i class="ri-briefcase-4-line t-purple icon-xl"></i>
           </div>
-          <h3 style="font-size:13px;">Kişiselleştirme</h3>
-          <p class="t-muted" style="font-size:11px;">CV · İlan · Hafıza</p>
+          <h3 style="font-size:13px;">İş Yolları & Profil</h3>
+          <p class="t-muted" style="font-size:11px;">CV · İlan · Kariyer Yolu</p>
         </div>
       </div>
 
@@ -1619,19 +1752,19 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
       <div class="reveal" style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px;">
         <div class="stat-card">
           <div class="stat-label"><i class="ri-pages-line icon-xs" style="margin-right:4px;"></i>Sayfa</div>
-          <div class="stat-value">9</div>
+          <div class="stat-value">12</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label"><i class="ri-server-line icon-xs" style="margin-right:4px;"></i>API Endpoint</div>
-          <div class="stat-value">20+</div>
+          <div class="stat-label"><i class="ri-server-line icon-xs" style="margin-right:4px;"></i>API Route</div>
+          <div class="stat-value">10+</div>
         </div>
         <div class="stat-card">
           <div class="stat-label"><i class="ri-database-2-line icon-xs" style="margin-right:4px;"></i>Convex Tablo</div>
-          <div class="stat-value">11</div>
+          <div class="stat-value">13</div>
         </div>
         <div class="stat-card">
           <div class="stat-label"><i class="ri-link icon-xs" style="margin-right:4px;"></i>WS Mesaj Tipi</div>
-          <div class="stat-value">9+13</div>
+          <div class="stat-value">10+14</div>
         </div>
       </div>
 
@@ -1644,8 +1777,8 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
     </div>
   </div>
 
-  <!-- ═══════════ SLIDE 13 — Evaluation Criteria Alignment ═══════════ -->
-  <div class="slide" data-slide="12">
+  <!-- ═══════════ SLIDE 14 — Evaluation Criteria Alignment ═══════════ -->
+  <div class="slide" data-slide="13">
     <div class="slide-content flex flex-col gap-8">
       <div class="reveal">
         <p class="t-amber t-mono" style="font-size:12px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px;">Değerlendirme</p>
@@ -1705,7 +1838,7 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
             </div>
             <div style="display:flex; align-items:flex-start; gap:8px;">
               <span style="width:18px;height:18px;border-radius:50%;background:rgba(59,130,246,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;"><i class="ri-check-line t-info" style="font-size:11px;"></i></span>
-              <span class="t-secondary" style="font-size:12px; line-height:1.4;">Ses + Kod + Whiteboard + AI Rapor + Kişiselleştirme (CV/İlan/Hafıza)</span>
+              <span class="t-secondary" style="font-size:12px; line-height:1.4;">Ses + Kod + Whiteboard + AI Rapor + LeetCode Bankası + İş Yolları + Kişiselleştirme</span>
             </div>
             <div style="display:flex; align-items:flex-start; gap:8px;">
               <span style="width:18px;height:18px;border-radius:50%;background:rgba(59,130,246,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;"><i class="ri-check-line t-info" style="font-size:11px;"></i></span>
@@ -1731,7 +1864,7 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
           <div class="flex flex-col gap-2">
             <div style="display:flex; align-items:flex-start; gap:8px;">
               <span style="width:18px;height:18px;border-radius:50%;background:rgba(34,197,94,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;"><i class="ri-check-line t-success" style="font-size:11px;"></i></span>
-              <span class="t-secondary" style="font-size:12px; line-height:1.4;">4 mülakat türü · whiteboard takibi · CV/İlan bazlı kişiselleştirilmiş sorular</span>
+              <span class="t-secondary" style="font-size:12px; line-height:1.4;">4 mülakat türü · 1000+ soru · whiteboard takibi · CV/İlan bazlı kişisel sorular</span>
             </div>
             <div style="display:flex; align-items:flex-start; gap:8px;">
               <span style="width:18px;height:18px;border-radius:50%;background:rgba(34,197,94,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;"><i class="ri-check-line t-success" style="font-size:11px;"></i></span>
@@ -1777,8 +1910,8 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
     </div>
   </div>
 
-  <!-- ═══════════ SLIDE 14 — Thank You + Hackathon Final ═══════════ -->
-  <div class="slide" data-slide="13">
+  <!-- ═══════════ SLIDE 15 — Thank You + Hackathon Final ═══════════ -->
+  <div class="slide" data-slide="14">
     <div class="grid-bg"></div>
     <div class="ambient-glow" style="width:600px;height:600px;background:rgba(229,161,14,0.04);top:50%;left:50%;transform:translate(-50%,-50%)"></div>
 
@@ -1786,7 +1919,11 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
       <div class="reveal">
         <div class="orb" style="animation:float 3s ease-in-out infinite; width:110px; height:110px;">
           <div class="orb-ring"></div>
-          <span class="orb-letter" style="font-size:46px;">W</span>
+          <div class="orb-logo">
+            <svg width="56" height="56" viewBox="0 0 122.88 121.46" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M12.35,121.46c-8.01-9.72-11.92-19.29-12.31-28.71C-0.78,73.01,10.92,58.28,28.3,47.67 c18.28-11.16,37.08-13.93,55.36-22.25C92.79,21.27,103.68,14.47,121.8,0c5.92,15.69-12.92,40.9-43.52,54.23 c9.48,0.37,19.69-2.54,30.85-9.74c-0.76,19.94-16.46,32.21-51.3,36.95c7.33,2.45,16.09,2.58,27.27-0.58 C74.33,116.81,29.9,91.06,12.35,121.46L12.35,121.46z" fill="var(--color-amber)"/>
+            </svg>
+          </div>
         </div>
       </div>
 
