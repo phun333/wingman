@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Play, History, TrendingUp, Settings, Code, Briefcase } from "lucide-react";
+import { LayoutDashboard, Play, History, TrendingUp, Settings, Code, Briefcase, BookOpen } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { WingLogo } from "@/components/icons/WingLogo";
 
@@ -57,7 +57,14 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="px-4 py-4 border-t border-border-subtle">
+      <div className="px-4 py-4 border-t border-border-subtle flex flex-col gap-2">
+        <a
+          href="/docs"
+          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-text-secondary hover:text-amber hover:bg-amber/5 transition-colors duration-150"
+        >
+          <BookOpen size={16} strokeWidth={2} aria-hidden="true" />
+          Dokümantasyon
+        </a>
         <p className="text-xs text-text-muted text-center">
           Wingman AI &middot; v0.1
         </p>

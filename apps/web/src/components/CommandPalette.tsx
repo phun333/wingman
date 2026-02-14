@@ -16,6 +16,7 @@ import {
   Sparkles,
   Mic,
   FileText,
+  BookOpen,
   Command as CommandIcon,
 } from "lucide-react";
 
@@ -161,6 +162,14 @@ export function CommandPalette() {
               keywords={["profil", "ayar", "hesap", "özgeçmiş", "cv"]}
               shortcut="G S"
               onSelect={() => runAction(() => navigate("/dashboard/settings"))}
+            />
+            <CommandItem
+              icon={<BookOpen size={16} />}
+              label="Dokümantasyon"
+              description="Kullanım kılavuzu ve rehberler"
+              keywords={["docs", "dokümantasyon", "yardım", "rehber", "help", "kılavuz"]}
+              shortcut="G ?"
+              onSelect={() => runAction(() => { window.location.href = "/docs"; })}
             />
           </Command.Group>
 

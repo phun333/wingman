@@ -102,6 +102,9 @@ function Nav() {
           <a href="#interview-types" className="text-sm text-text-secondary hover:text-text transition-colors duration-200">
             Mülakat Türleri
           </a>
+          <a href="/docs" className="text-sm text-text-secondary hover:text-text transition-colors duration-200">
+            Dokümantasyon
+          </a>
         </div>
 
         <div className="flex items-center gap-3">
@@ -1897,9 +1900,14 @@ function Footer() {
             Wingman AI
           </span>
         </div>
-        <p className="text-xs text-text-muted">
-          &copy; 2026 Wingman &middot; fal.ai Hackathon Projesi
-        </p>
+        <div className="flex items-center gap-6">
+          <a href="/docs" className="text-xs text-text-muted hover:text-amber transition-colors duration-200">
+            Dokümantasyon
+          </a>
+          <p className="text-xs text-text-muted">
+            &copy; 2026 Wingman &middot; fal.ai Hackathon Projesi
+          </p>
+        </div>
       </div>
     </footer>
   );
