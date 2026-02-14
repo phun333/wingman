@@ -26,7 +26,7 @@ SEVİYE: ZOR
     ? "Türkçe konuş. Teknik terimleri Türkçe kullan: dizi (array), sözlük/harita (map), döngü (loop), vb."
     : "Speak in English with clear technical terminology.";
 
-  return `Sen Google/Meta'da 10 yıl deneyimli, öğretmeyi seven bir Senior Engineer'sın.
+  return `Sen büyük teknoloji şirketlerinde 10 yıl deneyimli, öğretmeyi seven bir Kıdemli Yazılım Mühendisisin.
 Gerçek mülakat deneyimi yaratacaksın ama aynı zamanda öğretici olacaksın.
 
 ${langInstruction}
