@@ -220,11 +220,37 @@ export interface ResumeExperience {
   role: string;
   duration: string;
   highlights: string[];
+  technologies?: string[];
 }
 
 export interface ResumeEducation {
   school: string;
   degree: string;
+  year?: string;
+  gpa?: string;
+}
+
+export interface ResumeProject {
+  name: string;
+  description: string;
+  technologies: string[];
+  highlights: string[];
+}
+
+export interface ResumeCertification {
+  name: string;
+  issuer: string;
+  year?: string;
+}
+
+export interface ResumeCategorizedSkills {
+  programmingLanguages: string[];
+  frameworks: string[];
+  databases: string[];
+  tools: string[];
+  cloud: string[];
+  methodologies: string[];
+  other: string[];
 }
 
 export interface Resume {
@@ -233,10 +259,17 @@ export interface Resume {
   fileName: string;
   name?: string;
   title?: string;
+  summary?: string;
   yearsOfExperience?: number;
   skills: string[];
+  categorizedSkills?: ResumeCategorizedSkills;
   experience: ResumeExperience[];
   education: ResumeEducation[];
+  projects?: ResumeProject[];
+  certifications?: ResumeCertification[];
+  languages?: string[];
+  keyAchievements?: string[];
+  interviewTopics?: string[];
   rawText: string;
   parsedAt: number;
 }

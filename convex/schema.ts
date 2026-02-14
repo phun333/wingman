@@ -261,22 +261,59 @@ export default defineSchema({
     fileName: v.string(),
     name: v.optional(v.string()),
     title: v.optional(v.string()),
+    summary: v.optional(v.string()),
     yearsOfExperience: v.optional(v.number()),
     skills: v.array(v.string()),
+    categorizedSkills: v.optional(
+      v.object({
+        programmingLanguages: v.array(v.string()),
+        frameworks: v.array(v.string()),
+        databases: v.array(v.string()),
+        tools: v.array(v.string()),
+        cloud: v.array(v.string()),
+        methodologies: v.array(v.string()),
+        other: v.array(v.string()),
+      }),
+    ),
     experience: v.array(
       v.object({
         company: v.string(),
         role: v.string(),
         duration: v.string(),
         highlights: v.array(v.string()),
+        technologies: v.optional(v.array(v.string())),
       }),
     ),
     education: v.array(
       v.object({
         school: v.string(),
         degree: v.string(),
+        year: v.optional(v.string()),
+        gpa: v.optional(v.string()),
       }),
     ),
+    projects: v.optional(
+      v.array(
+        v.object({
+          name: v.string(),
+          description: v.string(),
+          technologies: v.array(v.string()),
+          highlights: v.array(v.string()),
+        }),
+      ),
+    ),
+    certifications: v.optional(
+      v.array(
+        v.object({
+          name: v.string(),
+          issuer: v.string(),
+          year: v.optional(v.string()),
+        }),
+      ),
+    ),
+    languages: v.optional(v.array(v.string())),
+    keyAchievements: v.optional(v.array(v.string())),
+    interviewTopics: v.optional(v.array(v.string())),
     rawText: v.string(),
     parsedAt: v.number(),
   }).index("by_user", ["userId"]),
