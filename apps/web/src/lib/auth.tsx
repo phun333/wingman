@@ -92,21 +92,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(async () => {
-    await fetch("/api/auth/sign-out", {
-      method: "POST",
-      credentials: "include",
-    });
+    try {
+      await fetch("/api/auth/sign-out", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch {
+      // Sign-out API may fail but we still want to clear local state
+    }
 
-    // Manually clear better-auth cookies (proxy may not forward Set-Cookie properly)
+    // Manually clear better-auth cookies with all possible path/domain combinations
+    // (proxy may not forward Set-Cookie properly, and HttpOnly cookies can't be
+    // cleared from JS — but we try anyway for non-HttpOnly ones)
     const cookieNames = [
       "better-auth.session_token",
       "better-auth.convex_jwt",
     ];
+    const paths = ["/", "/api", "/api/auth"];
     for (const name of cookieNames) {
-      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+      for (const p of paths) {
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=${p};`;
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=${p}; domain=${window.location.hostname};`;
+      }
     }
 
     setUser(null);
+
+    // Force a full page reload to the landing page so that:
+    // 1. All in-memory SPA state is fully cleared
+    // 2. The browser re-evaluates cookies (server-side session is invalidated)
+    // Without this, navigating via React Router may hit stale auth state on reload
+    window.location.href = "/";
   }, []);
 
   return (

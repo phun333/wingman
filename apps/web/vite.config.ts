@@ -13,7 +13,14 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      "/api/auth": "http://127.0.0.1:3211",
+      "/api/auth": {
+        target: "http://127.0.0.1:3211",
+        changeOrigin: true,
+        // Ensure Set-Cookie headers from auth server are properly forwarded
+        // (critical for sign-out cookie clearing)
+        cookieDomainRewrite: "",
+        cookiePathRewrite: "/",
+      },
       "/api": "http://localhost:3001",
       "/ws/voice": {
         target: "ws://localhost:3001",
