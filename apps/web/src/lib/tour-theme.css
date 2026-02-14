@@ -1,0 +1,158 @@
+/* ─── Wingman Tour — driver.js Dark Theme ────────────── */
+
+/* Overlay */
+.driver-overlay {
+  background: rgba(7, 7, 10, 0.82) !important;
+  backdrop-filter: blur(4px);
+}
+
+/* Popover container */
+.driver-popover.wingman-tour {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  box-shadow:
+    0 0 0 1px rgba(229, 161, 14, 0.08),
+    0 24px 48px rgba(0, 0, 0, 0.5),
+    0 0 80px rgba(229, 161, 14, 0.04);
+  min-width: 320px;
+  max-width: 400px;
+  padding: 0;
+  color: var(--color-text);
+  font-family: var(--font-body);
+  overflow: hidden;
+}
+
+/* Popover inner content area */
+.driver-popover.wingman-tour .driver-popover-title {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-text);
+  padding: 20px 20px 0;
+  margin: 0;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.driver-popover.wingman-tour .driver-popover-description {
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+  padding: 8px 20px 0;
+  margin: 0;
+}
+
+/* Progress text */
+.driver-popover.wingman-tour .driver-popover-progress-text {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-muted);
+  letter-spacing: 0.02em;
+  padding: 0 20px;
+  margin-top: 14px;
+}
+
+/* Footer — button area */
+.driver-popover.wingman-tour .driver-popover-footer {
+  padding: 14px 20px 16px;
+  margin-top: 4px;
+  border-top: 1px solid var(--color-border-subtle);
+  background: rgba(22, 22, 29, 0.5);
+}
+
+.driver-popover.wingman-tour .driver-popover-navigation-btns {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* Buttons — base */
+.driver-popover.wingman-tour button {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-shadow: none;
+  line-height: 1;
+}
+
+/* Previous button */
+.driver-popover.wingman-tour .driver-popover-prev-btn {
+  background: var(--color-surface-raised);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+
+.driver-popover.wingman-tour .driver-popover-prev-btn:hover {
+  background: var(--color-surface-overlay);
+  color: var(--color-text);
+  border-color: var(--color-text-muted);
+}
+
+/* Next / Done button — amber accent */
+.driver-popover.wingman-tour .driver-popover-next-btn {
+  background: rgba(229, 161, 14, 0.15);
+  color: var(--color-amber);
+  border: 1px solid rgba(229, 161, 14, 0.3);
+}
+
+.driver-popover.wingman-tour .driver-popover-next-btn:hover {
+  background: rgba(229, 161, 14, 0.25);
+  border-color: rgba(229, 161, 14, 0.5);
+  box-shadow: 0 0 16px rgba(229, 161, 14, 0.1);
+}
+
+/* Close button */
+.driver-popover.wingman-tour .driver-popover-close-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 8px;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  font-size: 18px;
+}
+
+.driver-popover.wingman-tour .driver-popover-close-btn:hover {
+  color: var(--color-text);
+  background: var(--color-surface-raised);
+  border-color: var(--color-border);
+}
+
+/* Arrow — match surface color */
+.driver-popover.wingman-tour.driver-popover-arrow-side-left .driver-popover-arrow {
+  border-left-color: var(--color-surface);
+}
+
+.driver-popover.wingman-tour.driver-popover-arrow-side-right .driver-popover-arrow {
+  border-right-color: var(--color-surface);
+}
+
+.driver-popover.wingman-tour.driver-popover-arrow-side-top .driver-popover-arrow {
+  border-top-color: var(--color-surface);
+}
+
+.driver-popover.wingman-tour.driver-popover-arrow-side-bottom .driver-popover-arrow {
+  border-bottom-color: var(--color-surface);
+}
+
+/* Highlight stage — amber glow around highlighted element */
+.driver-active-element {
+  box-shadow:
+    0 0 0 4px rgba(229, 161, 14, 0.12),
+    0 0 24px rgba(229, 161, 14, 0.08) !important;
+  border-radius: 12px;
+}

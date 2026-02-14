@@ -8,16 +8,17 @@ interface NavItem {
   label: string;
   icon: LucideIcon;
   end?: boolean;
+  id?: string;
 }
 
 const navItems: NavItem[] = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
-  { to: "/dashboard/interview/new", label: "Yeni Mülakat", icon: Play },
-  { to: "/dashboard/questions", label: "Sorular", icon: Code },
-  { to: "/dashboard/history", label: "Geçmiş", icon: History },
-  { to: "/dashboard/progress", label: "İlerleme", icon: TrendingUp },
-  { to: "/dashboard/jobs", label: "İş İlanları", icon: Briefcase },
-  { to: "/dashboard/settings", label: "Profil & Ayarlar", icon: Settings },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true, id: "tour-nav-dashboard" },
+  { to: "/dashboard/interview/new", label: "Yeni Mülakat", icon: Play, id: "tour-nav-new-interview" },
+  { to: "/dashboard/questions", label: "Sorular", icon: Code, id: "tour-nav-questions" },
+  { to: "/dashboard/history", label: "Geçmiş", icon: History, id: "tour-nav-history" },
+  { to: "/dashboard/progress", label: "İlerleme", icon: TrendingUp, id: "tour-nav-progress" },
+  { to: "/dashboard/jobs", label: "İş İlanları", icon: Briefcase, id: "tour-nav-jobs" },
+  { to: "/dashboard/settings", label: "Profil & Ayarlar", icon: Settings, id: "tour-nav-settings" },
 ];
 
 export function Sidebar() {
@@ -38,6 +39,7 @@ export function Sidebar() {
             key={item.to}
             to={item.to}
             end={item.end}
+            id={item.id}
             className={({ isActive }) => `
               flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium
               transition-colors duration-150

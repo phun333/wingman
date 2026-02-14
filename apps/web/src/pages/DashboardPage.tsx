@@ -5,6 +5,7 @@ import { motion, useMotionValue, useTransform, animate } from "motion/react";
 import { useAuth } from "@/lib/auth";
 import { Badge } from "@/components/ui/Badge";
 import { useInterviewsStore } from "@/stores";
+import { useTour } from "@/lib/useTour";
 import {
   typeLabels,
   statusLabels,
@@ -250,6 +251,7 @@ function TypingPlaceholder() {
 
 export function DashboardPage() {
   usePageTitle("Dashboard");
+  useTour();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -323,6 +325,7 @@ export function DashboardPage() {
           {/* Central Prompt Bar */}
           <motion.div variants={scaleIn} className="relative max-w-2xl mx-auto">
             <div
+              id="tour-start-interview"
               className="group relative rounded-2xl border border-border-subtle bg-surface/80 backdrop-blur-sm
                          hover:border-amber/30 transition-all duration-300 cursor-pointer
                          hover:shadow-[0_0_40px_rgba(229,161,14,0.06)]"
@@ -381,7 +384,7 @@ export function DashboardPage() {
 
         {/* ───────── Stats Row ───────── */}
         <motion.div variants={fadeUp}>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div id="tour-stats" className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
               {
                 icon: Target,

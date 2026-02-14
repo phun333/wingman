@@ -31,6 +31,7 @@ import type { Resume } from "@ffh/types";
 import { useProfileStore } from "@/stores";
 import type { ProfileData } from "@/lib/api";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { useTour } from "@/lib/useTour";
 
 
 const fadeUp = {
@@ -442,6 +443,7 @@ function ResumeDetailCard({
 
 export function SettingsPage() {
   usePageTitle("Profil & Ayarlar");
+  const { restartTour } = useTour({ autoStart: false });
   // Zustand profile store
   const profile = useProfileStore((s) => s.profile);
   const isLoading = useProfileStore((s) => s.loading);
@@ -860,6 +862,29 @@ export function SettingsPage() {
               AI performansını hatırlayacak.
             </p>
           )}
+        </Card>
+      </motion.div>
+
+      {/* ─── Tour Restart ─── */}
+      <motion.div variants={fadeUp}>
+        <Card className="!p-7">
+          <div className="flex items-center justify-between gap-4">
+            <div className="space-y-1.5">
+              <h2 className="font-display text-lg font-semibold text-text flex items-center gap-2">
+                <Rocket size={18} className="text-amber" /> Tanıtım Turu
+              </h2>
+              <p className="text-sm text-text-secondary leading-relaxed">
+                Wingman'in özelliklerini adım adım gösteren rehber turu tekrar başlat
+              </p>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={restartTour}
+            >
+              Turu Tekrar Başlat
+            </Button>
+          </div>
         </Card>
       </motion.div>
 
