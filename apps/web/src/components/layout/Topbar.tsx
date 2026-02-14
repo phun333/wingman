@@ -1,6 +1,7 @@
 import { useAuth } from "@/lib/auth";
 import { LogOut } from "lucide-react";
 import { WingLogo } from "@/components/icons/WingLogo";
+import { CommandPalette } from "@/components/CommandPalette";
 
 export function Topbar() {
   const { user, logout } = useAuth();
@@ -13,7 +14,15 @@ export function Topbar() {
         <span className="font-display font-bold text-text">Wingman</span>
       </div>
 
-      <div className="hidden lg:block" />
+      {/* Command Palette trigger — centered on desktop */}
+      <div className="hidden lg:flex flex-1 justify-center">
+        <CommandPalette />
+      </div>
+
+      {/* Mobile: only trigger button */}
+      <div className="lg:hidden">
+        <CommandPalette />
+      </div>
 
       {/* User */}
       <div className="flex items-center gap-4">
