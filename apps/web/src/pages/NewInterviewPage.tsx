@@ -70,7 +70,6 @@ export function NewInterviewPage() {
     preselected || "live-coding", // Default to live-coding for testing
   );
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
-  const [questionCount, setQuestionCount] = useState(1);
   // Question selection
   const [selectedProblem, setSelectedProblem] = useState<LeetcodeProblem | null>(null);
   const [questionSearch, setQuestionSearch] = useState("");
@@ -138,7 +137,7 @@ export function NewInterviewPage() {
         type: selectedType,
         difficulty: selectedProblem?.difficulty ?? difficulty,
         language: "tr",
-        questionCount: selectedProblem ? 1 : questionCount,
+        questionCount: 1,
       });
 
       // Start the interview immediately
@@ -249,29 +248,7 @@ export function NewInterviewPage() {
         </div>
       </motion.div>
 
-      {/* Step 3 — Question count */}
-      <motion.div variants={fadeUp} className="mt-8">
-        <h2 className="text-sm font-medium text-text-muted uppercase tracking-wider mb-3">
-          Soru Sayısı
-        </h2>
-        <div className="flex gap-2">
-          {[1, 3, 5, 7].map((n) => (
-            <button
-              key={n}
-              type="button"
-              onClick={() => setQuestionCount(n)}
-              className={`
-                rounded-lg border px-4 py-2 text-sm font-medium tabular-nums transition-all duration-150 cursor-pointer
-                ${questionCount === n ? "border-amber bg-amber/10 text-amber" : "border-border bg-surface text-text-secondary hover:border-border"}
-              `}
-            >
-              {n} Soru
-            </button>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Step 5 — Question Selection (optional) */}
+      {/* Step 3 — Question Selection (optional) */}
       {(selectedType === "live-coding" || selectedType === "practice") && (
         <motion.div
           key="question-picker"
@@ -449,7 +426,7 @@ export function NewInterviewPage() {
             <div>
               <p className="text-sm text-text-secondary">
                 {selectedType
-                  ? `${types.find((t) => t.id === selectedType)?.title} · ${difficulties.find((d) => d.id === difficulty)?.label} · ${selectedProblem ? `"${selectedProblem.title}"` : `${questionCount} Soru`}`
+                  ? `${types.find((t) => t.id === selectedType)?.title} · ${difficulties.find((d) => d.id === difficulty)?.label}${selectedProblem ? ` · "${selectedProblem.title}"` : ""}`
                   : "Mülakat türü seçin"}
               </p>
             </div>
