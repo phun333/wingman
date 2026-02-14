@@ -441,9 +441,14 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
 
 .waveform { display: flex; align-items: center; gap: 3px; height: 32px; }
 .waveform-bar {
-  width: 3px; background: var(--color-info); border-radius: 2px;
+  width: 3px; height: 16px; background: var(--color-info); border-radius: 2px;
   animation: waveform 0.6s ease-in-out infinite;
 }
+.waveform-bar:nth-child(1) { height: 12px; }
+.waveform-bar:nth-child(2) { height: 22px; }
+.waveform-bar:nth-child(3) { height: 28px; }
+.waveform-bar:nth-child(4) { height: 18px; }
+.waveform-bar:nth-child(5) { height: 10px; }
 
 /* ══════════════════════════════════════════════════
    FEATURE CARD
@@ -1194,53 +1199,67 @@ h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.3; }
               <!-- Grid background -->
               <div style="position:absolute;inset:0;opacity:0.04; background-image:linear-gradient(var(--color-text-muted) 1px, transparent 1px),linear-gradient(90deg, var(--color-text-muted) 1px, transparent 1px);background-size:40px 40px;"></div>
 
-              <!-- Whiteboard components mockup -->
-              <div style="position:relative; width:90%; height:85%;">
-                <!-- Client -->
-                <div style="position:absolute; top:12px; left:50%; transform:translateX(-50%); padding:8px 14px; border-radius:8px; background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.3); font-size:11px; font-weight:600; color:var(--color-info); display:flex; align-items:center; gap:6px; white-space:nowrap;">
-                  <i class="ri-window-line" style="font-size:13px;"></i> Client
-                </div>
-                <!-- Arrow: Client → LB -->
-                <div style="position:absolute; top:44px; left:50%; transform:translateX(-50%); width:2px; height:24px; background:linear-gradient(to bottom, var(--color-info), var(--color-amber));"></div>
-                <!-- Load Balancer -->
-                <div style="position:absolute; top:72px; left:50%; transform:translateX(-50%); padding:8px 14px; border-radius:8px; background:rgba(229,161,14,0.1); border:1px solid rgba(229,161,14,0.3); font-size:11px; font-weight:600; color:var(--color-amber); display:flex; align-items:center; gap:6px; white-space:nowrap;">
-                  <i class="ri-git-branch-line" style="font-size:13px;"></i> Load Balancer
-                </div>
-                <!-- Arrows: LB → Servers (aligned to column centers) -->
-                <div style="position:absolute; top:106px; left:30%; transform:translateX(-50%); width:2px; height:24px; background:linear-gradient(to bottom, var(--color-amber), var(--color-success));"></div>
-                <div style="position:absolute; top:106px; left:70%; transform:translateX(-50%); width:2px; height:24px; background:linear-gradient(to bottom, var(--color-amber), var(--color-success));"></div>
-                <!-- API Servers (centered on same column axis) -->
-                <div style="position:absolute; top:134px; left:30%; transform:translateX(-50%); padding:8px 12px; border-radius:8px; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); font-size:10px; font-weight:600; color:var(--color-success); display:flex; align-items:center; gap:4px; white-space:nowrap;">
-                  <i class="ri-server-line" style="font-size:12px;"></i> API Server 1
-                </div>
-                <div style="position:absolute; top:134px; left:70%; transform:translateX(-50%); padding:8px 12px; border-radius:8px; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); font-size:10px; font-weight:600; color:var(--color-success); display:flex; align-items:center; gap:4px; white-space:nowrap;">
-                  <i class="ri-server-line" style="font-size:12px;"></i> API Server 2
-                </div>
-                <!-- Arrows: Servers → Cache & DB (aligned to column centers) -->
-                <div style="position:absolute; top:170px; left:30%; transform:translateX(-50%); width:2px; height:24px; background:linear-gradient(to bottom, var(--color-success), var(--color-danger));"></div>
-                <div style="position:absolute; top:170px; left:70%; transform:translateX(-50%); width:2px; height:24px; background:linear-gradient(to bottom, var(--color-success), var(--color-purple));"></div>
-                <!-- Cache (centered on left column) -->
-                <div style="position:absolute; top:198px; left:30%; transform:translateX(-50%); padding:8px 12px; border-radius:8px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); font-size:10px; font-weight:600; color:var(--color-danger); display:flex; align-items:center; gap:4px; white-space:nowrap;">
-                  <i class="ri-flashlight-line" style="font-size:12px;"></i> Redis Cache
-                </div>
-                <!-- Database (centered on right column) -->
-                <div style="position:absolute; top:198px; left:70%; transform:translateX(-50%); padding:8px 12px; border-radius:8px; background:rgba(139,91,246,0.1); border:1px solid rgba(139,91,246,0.3); font-size:10px; font-weight:600; color:var(--color-purple); display:flex; align-items:center; gap:4px; white-space:nowrap;">
-                  <i class="ri-database-2-line" style="font-size:12px;"></i> PostgreSQL
-                </div>
-                <!-- CDN -->
-                <div style="position:absolute; top:12px; right:8%; padding:8px 12px; border-radius:8px; background:rgba(229,161,14,0.1); border:1px solid rgba(229,161,14,0.3); font-size:10px; font-weight:600; color:var(--color-amber); display:flex; align-items:center; gap:4px; white-space:nowrap;">
-                  <i class="ri-global-line" style="font-size:12px;"></i> CDN
-                </div>
-              </div>
+              <!-- Full SVG Whiteboard Diagram -->
+              <svg viewBox="0 0 540 310" style="width:92%; height:90%; margin:auto; display:block;" xmlns="http://www.w3.org/2000/svg">
+                <style>
+                  .wb-label { font-family: 'DM Sans', sans-serif; font-weight: 600; }
+                  .wb-icon  { font-family: 'remixicon'; }
+                </style>
 
-              <!-- Component Palette -->
-              <div style="position:absolute; top:8px; left:8px; display:flex; flex-direction:column; gap:4px; padding:8px; border-radius:8px; background:var(--color-surface); border:1px solid var(--color-border-subtle);">
-                <div style="width:28px;height:28px;border-radius:6px;background:rgba(139,91,246,0.15);display:flex;align-items:center;justify-content:center;" title="Database"><i class="ri-database-2-line t-purple" style="font-size:13px;"></i></div>
-                <div style="width:28px;height:28px;border-radius:6px;background:rgba(239,68,68,0.15);display:flex;align-items:center;justify-content:center;" title="Cache"><i class="ri-flashlight-line t-danger" style="font-size:13px;"></i></div>
-                <div style="width:28px;height:28px;border-radius:6px;background:rgba(229,161,14,0.15);display:flex;align-items:center;justify-content:center;" title="LB"><i class="ri-git-branch-line t-amber" style="font-size:13px;"></i></div>
-                <div style="width:28px;height:28px;border-radius:6px;background:rgba(34,197,94,0.15);display:flex;align-items:center;justify-content:center;" title="Server"><i class="ri-server-line t-success" style="font-size:13px;"></i></div>
-                <div style="width:28px;height:28px;border-radius:6px;background:rgba(59,130,246,0.15);display:flex;align-items:center;justify-content:center;" title="Queue"><i class="ri-stack-line t-info" style="font-size:13px;"></i></div>
-              </div>
+                <!-- ── Hand-drawn connection lines ── -->
+                <!-- Client → LB (slight wobble) -->
+                <path d="M270,42 C271,50 269,58 270,68" stroke="#3b82f6" stroke-width="1.8" fill="none" stroke-linecap="round" opacity="0.7"/>
+                <!-- LB → API Server 1 (curve left) -->
+                <path d="M270,100 C268,120 162,125 160,148" stroke="#e5a10e" stroke-width="1.8" fill="none" stroke-linecap="round" opacity="0.7"/>
+                <!-- LB → API Server 2 (curve right) -->
+                <path d="M270,100 C272,120 378,125 380,148" stroke="#e5a10e" stroke-width="1.8" fill="none" stroke-linecap="round" opacity="0.7"/>
+                <!-- Server 1 → Redis Cache -->
+                <path d="M160,180 C161,192 159,206 160,218" stroke="#22c55e" stroke-width="1.8" fill="none" stroke-linecap="round" opacity="0.7"/>
+                <!-- Server 2 → PostgreSQL -->
+                <path d="M380,180 C379,192 381,206 380,218" stroke="#8b5cf6" stroke-width="1.8" fill="none" stroke-linecap="round" opacity="0.7"/>
+
+                <!-- ── Component boxes ── -->
+                <!-- Client -->
+                <rect x="218" y="14" width="104" height="28" rx="7" fill="rgba(59,130,246,0.1)" stroke="rgba(59,130,246,0.35)" stroke-width="1"/>
+                <text x="270" y="33" text-anchor="middle" class="wb-label" fill="#3b82f6" font-size="11">🖥  Client</text>
+
+                <!-- Load Balancer -->
+                <rect x="205" y="68" width="130" height="32" rx="7" fill="rgba(229,161,14,0.1)" stroke="rgba(229,161,14,0.35)" stroke-width="1"/>
+                <text x="270" y="89" text-anchor="middle" class="wb-label" fill="#e5a10e" font-size="11">⑂  Load Balancer</text>
+
+                <!-- API Server 1 -->
+                <rect x="100" y="148" width="120" height="32" rx="7" fill="rgba(34,197,94,0.1)" stroke="rgba(34,197,94,0.35)" stroke-width="1"/>
+                <text x="160" y="169" text-anchor="middle" class="wb-label" fill="#22c55e" font-size="10">🖧  API Server 1</text>
+
+                <!-- API Server 2 -->
+                <rect x="320" y="148" width="120" height="32" rx="7" fill="rgba(34,197,94,0.1)" stroke="rgba(34,197,94,0.35)" stroke-width="1"/>
+                <text x="380" y="169" text-anchor="middle" class="wb-label" fill="#22c55e" font-size="10">🖧  API Server 2</text>
+
+                <!-- Redis Cache -->
+                <rect x="100" y="218" width="120" height="32" rx="7" fill="rgba(239,68,68,0.1)" stroke="rgba(239,68,68,0.35)" stroke-width="1"/>
+                <text x="160" y="239" text-anchor="middle" class="wb-label" fill="#ef4444" font-size="10">⚡ Redis Cache</text>
+
+                <!-- PostgreSQL -->
+                <rect x="320" y="218" width="120" height="32" rx="7" fill="rgba(139,91,246,0.1)" stroke="rgba(139,91,246,0.35)" stroke-width="1"/>
+                <text x="380" y="239" text-anchor="middle" class="wb-label" fill="#8b5cf6" font-size="10">🗄  PostgreSQL</text>
+
+                <!-- CDN -->
+                <rect x="462" y="14" width="68" height="28" rx="7" fill="rgba(229,161,14,0.1)" stroke="rgba(229,161,14,0.35)" stroke-width="1"/>
+                <text x="496" y="33" text-anchor="middle" class="wb-label" fill="#e5a10e" font-size="10">🌐 CDN</text>
+
+                <!-- ── Component Palette (left sidebar) ── -->
+                <rect x="8" y="8" width="40" height="200" rx="7" fill="#0f0f14" stroke="#27272f" stroke-width="1"/>
+                <rect x="14" y="16" width="28" height="28" rx="5" fill="rgba(139,91,246,0.15)"/>
+                <text x="28" y="35" text-anchor="middle" font-size="13" fill="#8b5cf6">🗄</text>
+                <rect x="14" y="52" width="28" height="28" rx="5" fill="rgba(239,68,68,0.15)"/>
+                <text x="28" y="71" text-anchor="middle" font-size="13" fill="#ef4444">⚡</text>
+                <rect x="14" y="88" width="28" height="28" rx="5" fill="rgba(229,161,14,0.15)"/>
+                <text x="28" y="107" text-anchor="middle" font-size="13" fill="#e5a10e">⑂</text>
+                <rect x="14" y="124" width="28" height="28" rx="5" fill="rgba(34,197,94,0.15)"/>
+                <text x="28" y="143" text-anchor="middle" font-size="13" fill="#22c55e">🖧</text>
+                <rect x="14" y="160" width="28" height="28" rx="5" fill="rgba(59,130,246,0.15)"/>
+                <text x="28" y="179" text-anchor="middle" font-size="13" fill="#3b82f6">☰</text>
+              </svg>
             </div>
           </div>
           <!-- Voice Bar -->

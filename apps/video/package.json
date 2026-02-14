@@ -1,0 +1,28 @@
+{
+  "name": "@ffh/video",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "remotion render WingmanDemo out/wingman-demo.mp4",
+    "render:gif": "remotion render WingmanDemo out/wingman-demo.gif --image-format=png",
+    "build": "echo 'Video package - use render script'",
+    "typecheck": "tsgo --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.422",
+    "@remotion/google-fonts": "4.0.422",
+    "@remotion/transitions": "4.0.422",
+    "@remotion/media": "4.0.422",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "remotion": "4.0.422"
+  },
+  "devDependencies": {
+    "@ffh/tsconfig": "workspace:*",
+    "@remotion/bundler": "4.0.422",
+    "@types/react": "^19.1.6",
+    "@types/react-dom": "^19.1.6"
+  }
+}
