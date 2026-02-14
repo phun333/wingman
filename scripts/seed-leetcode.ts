@@ -38,10 +38,10 @@ try {
 ✅ LeetCode Dataset Başarıyla Yüklendi!
 
 📊 İstatistikler:
-   • 1,825 problem
-   • Easy: 463
-   • Medium: 944
-   • Hard: 418
+   • 1,669 problem
+   • Easy: 402
+   • Medium: 904
+   • Hard: 363
    • 100+ şirket verisi (Amazon, Google, Facebook vb.)
 
 🔍 Kontrol etmek için:
