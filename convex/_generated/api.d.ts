@@ -24,6 +24,7 @@ import type * as problems from "../problems.js";
 import type * as resumeAnalysis from "../resumeAnalysis.js";
 import type * as resumes from "../resumes.js";
 import type * as seed from "../seed.js";
+import type * as seedUser from "../seedUser.js";
 import type * as userMemory from "../userMemory.js";
 import type * as userProfiles from "../userProfiles.js";
 import type * as users from "../users.js";
@@ -51,6 +52,7 @@ declare const fullApi: ApiFromModules<{
   resumeAnalysis: typeof resumeAnalysis;
   resumes: typeof resumes;
   seed: typeof seed;
+  seedUser: typeof seedUser;
   userMemory: typeof userMemory;
   userProfiles: typeof userProfiles;
   users: typeof users;

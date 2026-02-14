@@ -20,7 +20,8 @@
     "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules",
     "seed:leetcode": "bun run scripts/seed-leetcode.ts",
     "seed:jobs": "bun run scripts/seed-jobs.ts",
-    "seed": "bun run seed:leetcode && bun run seed:jobs"
+    "seed:user": "bun run scripts/seed-user.ts",
+    "seed": "bun run seed:leetcode && bun run seed:jobs && bun run seed:user"
   },
   "workspaces": [
     "apps/*",
