@@ -13,6 +13,16 @@ export const getByLeetcodeId = query({
   },
 });
 
+// ─── Get all leetcodeIds that have cached coding data ───
+
+export const getAllLeetcodeIds = query({
+  args: {},
+  handler: async (ctx) => {
+    const all = await ctx.db.query("leetcodeCodingData").collect();
+    return all.map((d) => d.leetcodeId);
+  },
+});
+
 // ─── Upsert coding data (create or update) ─────────────
 
 export const upsert = mutation({

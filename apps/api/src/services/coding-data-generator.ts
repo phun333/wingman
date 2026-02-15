@@ -159,6 +159,15 @@ async function generateWithLLM(
       return null;
     }
 
+    // Sanitize test cases — ensure all fields are strings (LLM sometimes returns numbers)
+    parsed.testCases = parsed.testCases.map((tc) => ({
+      input: String(tc.input),
+      expectedOutput: typeof tc.expectedOutput === "string"
+        ? tc.expectedOutput
+        : JSON.stringify(tc.expectedOutput),
+      isHidden: !!tc.isHidden,
+    }));
+
     return parsed;
   } catch (err) {
     console.error("[coding-data] Generation failed:", err);

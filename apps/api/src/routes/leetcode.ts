@@ -154,11 +154,21 @@ leetcodeRoutes.get(
     const company = c.req.query("company");
     const topic = c.req.query("topic");
 
+    // If no company/topic filter, prefer problems with cached coding data
+    if (!company && !topic) {
+      const problem = await convex.query(api.leetcodeProblems.getRandomWithCodingData, {
+        difficulty,
+        seed: Math.random(),
+      });
+      if (problem) return c.json(problem);
+    }
+
+    // Fallback to regular random (with all filters)
     const problem = await convex.query(api.leetcodeProblems.getRandom, {
       difficulty,
       company: company || undefined,
       topic: topic || undefined,
-      seed: Math.random(), // Pass seed to avoid Convex query determinism
+      seed: Math.random(),
     });
 
     if (!problem) return c.json({ error: "No problems found" }, 404);

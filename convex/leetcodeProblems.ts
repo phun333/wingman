@@ -294,3 +294,35 @@ export const getRandom = query({
     return problems[idx]!;
   },
 });
+
+// ─── Get Random Problem (prefer ones with cached coding data) ─
+
+export const getRandomWithCodingData = query({
+  args: {
+    difficulty: v.optional(
+      v.union(v.literal("easy"), v.literal("medium"), v.literal("hard")),
+    ),
+    seed: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    // 1. Get all leetcodeIds that have cached coding data
+    const codingDataEntries = await ctx.db.query("leetcodeCodingData").collect();
+    const idsWithData = new Set(codingDataEntries.map((d) => d.leetcodeId));
+
+    // 2. Get all problems (filtered by difficulty if given)
+    let problems = await ctx.db.query("leetcodeProblems").collect();
+    if (args.difficulty) {
+      problems = problems.filter((p) => p.difficulty === args.difficulty);
+    }
+
+    // 3. Prefer problems that already have coding data cached
+    const withData = problems.filter((p) => idsWithData.has(p.leetcodeId));
+
+    const pool = withData.length > 0 ? withData : problems;
+    if (pool.length === 0) return null;
+
+    const random = args.seed !== undefined ? args.seed : Math.random();
+    const idx = Math.floor(random * pool.length) % pool.length;
+    return pool[idx]!;
+  },
+});
