@@ -279,10 +279,10 @@ export class VoiceSession {
             }
             console.log("Specific problem loaded:", problem?._id);
           } else {
-            // Load random problem from leetcodeProblems table (real question bank)
-            const lc = await convex.query(api.leetcodeProblems.getRandom, {
+            // Load random problem — prefer ones with cached coding data (test cases ready)
+            const lc = await convex.query(api.leetcodeProblems.getRandomWithCodingData, {
               difficulty: this.interview.difficulty as any,
-              seed: Math.random(), // Pass seed to avoid Convex query determinism
+              seed: Math.random(),
             });
             if (lc) {
               problem = {
@@ -291,10 +291,23 @@ export class VoiceSession {
                 testCases: [],
               };
             } else {
-              // Fallback to legacy problems table if leetcode table is empty
-              problem = await convex.query(api.problems.getRandom, {
+              // Fallback to any leetcode problem (coding data will be generated on the fly)
+              const anyLc = await convex.query(api.leetcodeProblems.getRandom, {
                 difficulty: this.interview.difficulty as any,
+                seed: Math.random(),
               });
+              if (anyLc) {
+                problem = {
+                  ...anyLc,
+                  category: anyLc.relatedTopics?.[0] ?? "general",
+                  testCases: [],
+                };
+              } else {
+                // Final fallback to legacy problems table
+                problem = await convex.query(api.problems.getRandom, {
+                  difficulty: this.interview.difficulty as any,
+                });
+              }
             }
             console.log("Random problem loaded:", problem?._id, problem?.title);
           }
@@ -355,11 +368,13 @@ export class VoiceSession {
             // Interview behavior instructions
             contextParts.push(`\n--- MÜLAKAT TALİMATLARI ---`);
             contextParts.push(`Bu bir teknik mülakat sorusudur. Sen mülakatçısın, aday bu problemi çözmeye çalışacak.`);
-            contextParts.push(`1. Problemi doğal bir dille açıkla (kod syntax'ı kullanma).`);
+            contextParts.push(`Problem zaten sol panelde yazılı olarak görünüyor. Aday soruyu okuyabilir.`);
+            contextParts.push(`1. Sorulursa problemi KISA ve ÖZ açıkla. ASLA daha önce söylediğin açıklamayı tekrarlama.`);
             contextParts.push(`2. Adayın yaklaşımını sor, direkt çözüm verme.`);
             contextParts.push(`3. Aday kodlarken sessiz kal, sadece takılırsa veya hata yaparsa yönlendir.`);
             contextParts.push(`4. Test sonuçlarını değerlendir, edge case'leri hatırlat.`);
             contextParts.push(`5. Her zaman bu probleme odaklan — konu dışına çıkma.`);
+            contextParts.push(`6. ASLA önceki cevaplarını kelimesi kelimesine tekrarlama. Conversation history'yi oku ve devam et.`);
 
             this.conversationHistory.push({
               role: "system",
@@ -1056,6 +1071,7 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
   private _ttsStart = 0;
   private _llmFirstTokenRecorded = false;
   private _ttsFirstChunkRecorded = false;
+  private _latencyReportSent = false;
 
   private async processAudio(): Promise<void> {
     if (this.processing) return;
@@ -1072,6 +1088,7 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
     this._ttsStart = 0;
     this._llmFirstTokenRecorded = false;
     this._ttsFirstChunkRecorded = false;
+    this._latencyReportSent = false;
 
     try {
       // 1) STT (with latency measurement)
@@ -1104,16 +1121,9 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
       await this.persistMessage("assistant", aiResponse);
       this.trackQuestionProgress(aiResponse);
 
-      // Send latency report to client
-      const totalMs = this._sttMs + this._llmFirstTokenMs + this._ttsFirstChunkMs;
-      this.send({
-        type: "latency_report",
-        sttMs: this._sttMs,
-        llmFirstTokenMs: this._llmFirstTokenMs,
-        ttsFirstChunkMs: this._ttsFirstChunkMs,
-        totalMs,
-      });
-      console.log(`[Latency] STT: ${this._sttMs}ms | LLM TTFT: ${this._llmFirstTokenMs}ms | TTS TTFB: ${this._ttsFirstChunkMs}ms | Total: ${totalMs}ms`);
+      // Latency report is sent immediately when first TTS chunk arrives (see sendLatencyReportOnce)
+      // If for some reason it wasn't sent yet (e.g. TTS fallback timing), send it now as fallback
+      this.sendLatencyReportOnce();
 
       // Reset consecutive errors on successful pipeline
       this.consecutiveErrors = 0;
@@ -1219,7 +1229,7 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
     // Brevity reminder — LLMs weigh recent instructions more heavily
     messages.push({
       role: "system",
-      content: `[HATIRLATMA] Bu sesli bir konuşmadır. Normalde 2-3 cümle ile kısa ve öz yanıt ver. Ancak bir kavramı açıklaman, problemi tanıtman veya detaylı geri bildirim vermen gerekiyorsa 4-5 cümleye kadar çıkabilirsin. Liste yapma, madde madde yazma. Doğal ve akıcı konuş — gerçek bir sohbet gibi. Her cümleni tamamla, yarıda bırakma.`,
+      content: `[HATIRLATMA] Bu sesli bir konuşmadır. Normalde 2-3 cümle ile kısa ve öz yanıt ver. Ancak bir kavramı açıklaman, problemi tanıtman veya detaylı geri bildirim vermen gerekiyorsa 4-5 cümleye kadar çıkabilirsin. Liste yapma, madde madde yazma. Doğal ve akıcı konuş — gerçek bir sohbet gibi. Her cümleni tamamla, yarıda bırakma. ASLA önceki yanıtlarını tekrarlama — conversation history'yi oku ve adayın son mesajına doğrudan cevap ver.`,
     });
 
     // Inject code context before the last user message
@@ -1251,6 +1261,22 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
     }
 
     return messages;
+  }
+
+  // ─── Latency Report (send once, as early as possible) ──
+
+  private sendLatencyReportOnce(): void {
+    if (this._latencyReportSent) return;
+    this._latencyReportSent = true;
+    const totalMs = this._sttMs + this._llmFirstTokenMs + this._ttsFirstChunkMs;
+    this.send({
+      type: "latency_report",
+      sttMs: this._sttMs,
+      llmFirstTokenMs: this._llmFirstTokenMs,
+      ttsFirstChunkMs: this._ttsFirstChunkMs,
+      totalMs,
+    });
+    console.log(`[Latency] STT: ${this._sttMs}ms | LLM TTFT: ${this._llmFirstTokenMs}ms | TTS TTFB: ${this._ttsFirstChunkMs}ms | Total: ${totalMs}ms`);
   }
 
   // ─── LLM + TTS Interleaved Pipeline ──────────────────
@@ -1556,6 +1582,8 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
               if (!this._ttsFirstChunkRecorded && this._ttsStart > 0) {
                 this._ttsFirstChunkMs = Math.round(performance.now() - this._ttsStart);
                 this._ttsFirstChunkRecorded = true;
+                // Send latency report immediately — all 3 metrics are ready
+                this.sendLatencyReportOnce();
               }
               this.send({ type: "ai_audio", data: event.audio });
             }
@@ -1599,6 +1627,8 @@ Cevapları değerlendirirken yapıcı ol. Kısa ve öz konuş — her cevabın 2
       if (!this._ttsFirstChunkRecorded && this._ttsStart > 0) {
         this._ttsFirstChunkMs = Math.round(performance.now() - this._ttsStart);
         this._ttsFirstChunkRecorded = true;
+        // Send latency report immediately — all 3 metrics are ready
+        this.sendLatencyReportOnce();
       }
       this.send({ type: "ai_audio", data: Buffer.from(arrayBuffer).toString("base64") });
     } catch {
