@@ -382,8 +382,8 @@ export function SystemDesignProblemPanel({
                   )}
                   <motion.button
                     onClick={() => {
-                      if (isSpeaking || isProcessing) onInterrupt?.();
-                      else onMicClick?.();
+                      // Always use onMicClick — it handles interrupt + start recording
+                      onMicClick?.();
                     }}
                     disabled={!connected}
                     className={`relative flex items-center gap-2 px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${

@@ -490,13 +490,8 @@ export function InterviewRoomPage() {
 
   function handleMicClick() {
     if (state === "speaking" || state === "processing") {
-      // Interrupt AI and immediately start recording user's speech
+      // Just interrupt — stop AI audio. User will press "Bas ve Konuş" separately when ready.
       interrupt();
-      // If mic is not active, start recording right away so user doesn't need to press twice
-      if (!micActive) {
-        // Small delay to let interrupt settle before starting recording
-        setTimeout(() => toggleMic(), 50);
-      }
       return;
     }
     // Flush whiteboard state before voice pipeline starts (system-design)
@@ -1006,7 +1001,7 @@ function VoiceOnlyRoom({
                 )}
                 <button
                   onClick={onMicClick}
-                  disabled={!connected || state === "processing"}
+                  disabled={!connected}
                   className={`
                     relative h-14 w-14 rounded-full flex items-center justify-center
                     border-2 transition-all duration-200 cursor-pointer

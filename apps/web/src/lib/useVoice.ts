@@ -119,6 +119,12 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
   // Callback refs to avoid stale closure in WS onmessage
   const onProblemLoadedRef = useRef(options.onProblemLoaded);
   const onDesignProblemLoadedRef = useRef(options.onDesignProblemLoaded);
+  // Guard against rapid toggleMic clicks (PTT debounce)
+  const toggleLockRef = useRef(false);
+  // Ref to track micActive for async callbacks
+  const micActiveRef = useRef(false);
+  // Audio generation — tracks which "session" audio belongs to; stale chunks are rejected
+  const audioGenRef = useRef(0);
 
   // ─── WebSocket (with auto-reconnect) ─────────────────
 
@@ -180,6 +186,9 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
     stateRef.current = state;
   }, [state]);
   useEffect(() => {
+    micActiveRef.current = micActive;
+  }, [micActive]);
+  useEffect(() => {
     pttModeRef.current = !!options.pttMode;
   }, [options.pttMode]);
   useEffect(() => {
@@ -193,6 +202,10 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
     switch (msg.type) {
       case "state_change":
         setState(msg.state);
+        // When AI starts speaking, sync audio generation so new chunks are accepted
+        if (msg.state === "speaking") {
+          audioGenRef.current = playerRef.current.getGeneration();
+        }
         break;
 
       case "transcript":
@@ -213,7 +226,8 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
         break;
 
       case "ai_audio":
-        playerRef.current.enqueue(decodePCM16(msg.data));
+        // Only enqueue if this audio belongs to the current generation (not interrupted)
+        playerRef.current.enqueue(decodePCM16(msg.data), audioGenRef.current);
         break;
 
       case "ai_audio_done":
@@ -367,22 +381,82 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
   // ─── Mic control ─────────────────────────────────────
 
   const toggleMic = useCallback(async () => {
+    // Guard against rapid double-clicks
+    if (toggleLockRef.current) return;
+    toggleLockRef.current = true;
+    // Release lock after a short delay to prevent race conditions
+    setTimeout(() => { toggleLockRef.current = false; }, 150);
+
     if (pttModeRef.current) {
       // PTT mode: toggle recording on existing stream
       if (micActive) {
-        stopRecording();
+        // Stop recording safely — guard against already-stopped recorder
+        try {
+          stopRecording();
+        } catch {
+          // recorder may already be inactive
+        }
         setMicActive(false);
         send({ type: "stop_listening" });
       } else {
         const stream = mediaStreamRef.current;
-        if (stream && stream.active) {
-          setTranscript("");
-          aiTextAccRef.current = "";
-          setAiText("");
-          startRecording(stream);
-          setMicActive(true);
-          send({ type: "start_listening" });
+        if (!stream || !stream.active) {
+          // Stream lost — try to re-acquire
+          try {
+            const newStream = await navigator.mediaDevices.getUserMedia({
+              audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                sampleRate: 16000,
+              },
+            });
+            mediaStreamRef.current = newStream;
+            // Re-create volume meter for new stream
+            volumeMeterRef.current?.stop();
+            let lastVolumeUpdate = 0;
+            volumeMeterRef.current = createVolumeMeter(newStream, (rms) => {
+              const now = Date.now();
+              if (now - lastVolumeUpdate > 50) {
+                setVolume(rms);
+                lastVolumeUpdate = now;
+              }
+              if (!pttModeRef.current) {
+                handleVAD(rms);
+              }
+            });
+            setTranscript("");
+            aiTextAccRef.current = "";
+            setAiText("");
+            // Stop any lingering AI audio — user wants to talk now
+            if (playerRef.current.isPlaying()) {
+              send({ type: "interrupt" });
+            }
+            playerRef.current.flush();
+            audioGenRef.current = playerRef.current.getGeneration();
+            // Ensure no stale recorder exists
+            try { stopRecording(); } catch { /* noop */ }
+            startRecording(newStream);
+            setMicActive(true);
+            send({ type: "start_listening" });
+          } catch {
+            setError("Mikrofon erişimi reddedildi");
+          }
+          return;
         }
+        setTranscript("");
+        aiTextAccRef.current = "";
+        setAiText("");
+        // Stop any lingering AI audio — user wants to talk now
+        if (playerRef.current.isPlaying()) {
+          send({ type: "interrupt" });
+        }
+        playerRef.current.flush();
+        audioGenRef.current = playerRef.current.getGeneration();
+        // Ensure no stale recorder exists before starting a new one
+        try { stopRecording(); } catch { /* noop */ }
+        startRecording(stream);
+        setMicActive(true);
+        send({ type: "start_listening" });
       }
       return;
     }
@@ -452,10 +526,16 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
 
   function stopRecording(): void {
     const recorder = recorderRef.current;
-    if (recorder && recorder.state !== "inactive") {
-      recorder.stop();
+    if (recorder) {
+      try {
+        if (recorder.state !== "inactive") {
+          recorder.stop();
+        }
+      } catch {
+        // Recorder may already be in an invalid state
+      }
+      recorderRef.current = null;
     }
-    recorderRef.current = null;
   }
 
   function stopMicStream(): void {
@@ -577,9 +657,18 @@ export function useVoice(options: UseVoiceOptions = {}): UseVoiceReturn {
 
   const interrupt = useCallback(() => {
     send({ type: "interrupt" });
+    // Flush stops all playing audio and bumps player's internal generation.
+    // DO NOT sync audioGenRef here — leave it at the old value so in-flight
+    // chunks (still carrying the old generation) are rejected by the player.
+    // audioGenRef will be synced when new AI speech starts (state_change:speaking).
     playerRef.current.flush();
     aiTextAccRef.current = "";
     setAiText("");
+    // In PTT mode, ensure mic is stopped cleanly after interrupt
+    if (pttModeRef.current && micActiveRef.current) {
+      try { stopRecording(); } catch { /* noop */ }
+      setMicActive(false);
+    }
   }, []);
 
   const sendCodeUpdate = useCallback((code: string, language: CodeLanguage) => {

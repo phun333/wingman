@@ -498,11 +498,9 @@ export function ProblemPanel({
 
                   <motion.button
                     onClick={() => {
-                      if (isSpeaking || isProcessing) {
-                        onInterrupt?.();
-                      } else {
-                        onMicClick?.();
-                      }
+                      // Always use onMicClick — it handles interrupt + start recording
+                      // for speaking/processing state, and normal toggle for idle
+                      onMicClick?.();
                     }}
                     disabled={!connected}
                     className={`

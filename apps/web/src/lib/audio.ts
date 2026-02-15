@@ -28,6 +28,10 @@ export class AudioQueuePlayer {
   private gainNode: GainNode | null = null;
   private nextStartTime = 0;
   private playing = false;
+  // Generation counter — incremented on flush(), enqueue ignores stale chunks
+  private generation = 0;
+  // Track active sources for immediate stop
+  private activeSources: AudioBufferSourceNode[] = [];
 
   async init(): Promise<void> {
     if (this.ctx) return;
@@ -36,8 +40,15 @@ export class AudioQueuePlayer {
     this.gainNode.connect(this.ctx.destination);
   }
 
-  enqueue(pcmFloat32: Float32Array): void {
+  /** Get current generation — callers can check if their chunks are still valid */
+  getGeneration(): number {
+    return this.generation;
+  }
+
+  enqueue(pcmFloat32: Float32Array, generation?: number): void {
     if (!this.ctx || !this.gainNode) return;
+    // If a generation is provided, reject stale chunks (from before flush)
+    if (generation !== undefined && generation !== this.generation) return;
 
     const buffer = this.ctx.createBuffer(1, pcmFloat32.length, SAMPLE_RATE);
     buffer.getChannelData(0).set(pcmFloat32);
@@ -51,8 +62,12 @@ export class AudioQueuePlayer {
     source.start(startAt);
     this.nextStartTime = startAt + buffer.duration;
     this.playing = true;
+    this.activeSources.push(source);
 
     source.onended = () => {
+      // Remove from active sources
+      const idx = this.activeSources.indexOf(source);
+      if (idx !== -1) this.activeSources.splice(idx, 1);
       if (this.ctx && this.ctx.currentTime >= this.nextStartTime - 0.01) {
         this.playing = false;
       }
@@ -60,6 +75,20 @@ export class AudioQueuePlayer {
   }
 
   flush(): void {
+    // Increment generation so any in-flight enqueue calls are rejected
+    this.generation++;
+
+    // Stop all active source nodes immediately
+    for (const source of this.activeSources) {
+      try {
+        source.stop();
+        source.disconnect();
+      } catch {
+        // Source may already be stopped
+      }
+    }
+    this.activeSources = [];
+
     if (!this.ctx) return;
     // Recreate context to immediately stop all queued audio
     const oldCtx = this.ctx;
@@ -68,11 +97,12 @@ export class AudioQueuePlayer {
     this.gainNode.connect(this.ctx.destination);
     this.nextStartTime = 0;
     this.playing = false;
-    oldCtx.close();
+    oldCtx.close().catch(() => { /* ignore close errors */ });
   }
 
   isPlaying(): boolean {
-    return this.playing;
+    // Check both the flag and whether there are active sources
+    return this.playing || this.activeSources.length > 0;
   }
 
   setVolume(value: number): void {
@@ -82,7 +112,11 @@ export class AudioQueuePlayer {
   }
 
   destroy(): void {
-    this.ctx?.close();
+    for (const source of this.activeSources) {
+      try { source.stop(); source.disconnect(); } catch { /* noop */ }
+    }
+    this.activeSources = [];
+    this.ctx?.close().catch(() => { /* noop */ });
     this.ctx = null;
     this.gainNode = null;
   }
