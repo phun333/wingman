@@ -45,9 +45,8 @@ jobRoutes.post(
 
     let content = rawText ?? "";
 
-    // Scrape strategies in order: Jina Reader → Hyperbrowser → Basic Fetch
+    // Scrape strategies in order: Hyperbrowser → Basic Fetch
     const scrapers = [
-      { name: "Jina Reader", fn: () => scrapeWithJinaReader(url!) },
       { name: "Hyperbrowser", fn: () => scrapeWithHyperbrowser(url!) },
       { name: "Basic Fetch", fn: () => scrapeWithBasicFetch(url!) },
     ];
@@ -321,46 +320,9 @@ jobRoutes.delete(
 );
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//  URL Scraping — Jina Reader (primary) + Basic Fetch (fallback)
+//  URL Scraping — Hyperbrowser (primary) + Basic Fetch (fallback)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-/**
- * Scrape URL using Jina Reader API (free, no API key needed).
- * Converts any web page to clean markdown — handles JS-rendered pages,
- * LinkedIn, Amazon, etc.
- * Docs: https://r.jina.ai
- */
-async function scrapeWithJinaReader(url: string): Promise<string> {
-  const jinaUrl = `https://r.jina.ai/${url}`;
-
-  const res = await fetch(jinaUrl, {
-    method: "GET",
-    headers: {
-      Accept: "text/markdown",
-      "X-Return-Format": "markdown",
-      "X-No-Cache": "true",
-    },
-    signal: AbortSignal.timeout(30_000), // Jina renders JS, may take longer
-  });
-
-  if (!res.ok) {
-    throw new Error(`Jina Reader failed: ${res.status}`);
-  }
-
-  const markdown = await res.text();
-
-  if (!markdown || markdown.length < 50) {
-    throw new Error("Jina Reader returned empty/short content");
-  }
-
-  // Trim to LLM context limit
-  return markdown.slice(0, 15_000);
-}
-
-/**
- * Scrape URL using Patchright (patched Playwright) — bypasses Cloudflare & anti-bot.
- * Launches a real headless Chromium, waits for page to load, extracts text.
- */
 /**
  * Scrape URL using Hyperbrowser — cloud browser with stealth & anti-bot bypass.
  * No local browser needed, handles Cloudflare/JS-rendered pages.
